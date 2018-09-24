@@ -1,0 +1,32 @@
+{
+  "name": "statsim",
+  "version": "0.1.1",
+  "description": "Web app for statistical simulations and bayesian inference",
+  "main": "src/main.js",
+  "scripts": {
+    "build": "browserify src/main.js -t [ vueify ] -t [ babelify ] -g [ envify --NODE_ENV production ] | uglifyjs -cm > dist/bundle.js",
+    "build-dev": "browserify src/main.js -t [ vueify ] -o dist/bundle.js --debug",
+    "watch": "nodemon --watch src --ext vue,js,css,html --exec 'npm run build-dev'",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Anton Zemlyansky",
+  "license": "ISC",
+  "dependencies": {
+    "d3-array": "^1.2.4",
+    "dygraphs": "^2.1.0",
+    "vue": "^2.5.17",
+    "vue-d3-network": "^0.1.26",
+    "vue-material": "^0.8.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "babelify": "^10.0.0",
+    "browserify": "^16.2.2",
+    "envify": "^4.1.0",
+    "nodemon": "^1.18.4",
+    "uglify-es": "^3.3.9",
+    "uglify-js": "^3.4.9",
+    "vueify": "^9.4.1"
+  }
+}

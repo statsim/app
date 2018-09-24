@@ -1,0 +1,283 @@
+<div>
+  <md-toolbar class="tool-bar md-dense">
+    <p class="logo-icon">{{ icon }}</p>
+    <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.1.1</sup></h2>
+    <md-menu md-size="4">
+      <md-button class="md-raised md-primary" md-menu-trigger>
+        + Add element
+      </md-button>
+      <md-menu-content>
+        <md-menu-item v-on:click.native="addBlock(0)">
+          <md-icon>graphic_eq</md-icon>
+          <span>Random Variable</span>
+        </md-menu-item>
+        <md-menu-item v-on:click.native="addBlock(1)">
+          <md-icon>functions</md-icon>
+          <span>Expression</span>
+        </md-menu-item>
+        <md-menu-item v-on:click.native="addBlock(2)">
+          <md-icon>view_headline</md-icon>
+          <span>Data</span>
+        </md-menu-item>
+        <md-menu-item v-on:click.native="addBlock(3)">
+          <md-icon>exposure_plus_1</md-icon>
+          <span>Accumulator</span>
+        </md-menu-item>
+        <md-menu-item v-on:click.native="addBlock(4)">
+          <md-icon>visibility</md-icon>
+          <span>Observer</span>
+        </md-menu-item>
+      </md-menu-content>
+    </md-menu>
+  </md-toolbar>
+  <div id="side-bar" class="side-bar">
+    <!-- BLOCKS -->
+    <md-card 
+      v-for="(block, blockIndex) in blocks"
+      :id="'block-id-' + blockIndex"
+      :class="'block block-' + block.typeCode"
+    >
+      <!-- Block actions bar-->
+      <md-card-actions :class="'block-header-' + block.typeCode">
+        <div class="block-name"><strong>{{ block.name }}</strong> <span style="color: #777">{{ block.type }}</span></div>
+        <md-button class="md-icon-button" v-on:click.native="moveBlockToTop(blockIndex)">
+          <md-icon>keyboard_capslock</md-icon>
+        </md-button>
+        <md-button class="md-icon-button" v-on:click.native="moveBlockUp(blockIndex)">
+          <md-icon>expand_less</md-icon>
+        </md-button>
+        <md-button class="md-icon-button" v-on:click.native="moveBlockDown(blockIndex)">
+          <md-icon>expand_more</md-icon>
+        </md-button>
+        <md-button class="md-icon-button" v-on:click.native="removeBlock(blockIndex)">
+          <md-icon>close</md-icon>
+        </md-button>
+      </md-card-actions>
+
+      <!-- Random Variable -->
+      <md-card-content v-if="block.typeCode === 0">
+        <md-input-container>
+          <label>Name</label>
+          <md-input
+            v-model="block.name"
+          ></md-input>
+        </md-input-container>
+        <md-input-container>
+          <label for="distributionType">Distribution type:</label>
+          <md-select name="distributionType" id="distributionType" v-model="block.distribution">
+            <md-option v-for="(params, distributionType) in distributions" :value="distributionType">{{ distributionType }}</md-option>
+          </md-select>
+        </md-input-container>
+        <md-input-container
+          v-if="block.distribution.length" 
+          v-for="(paramOptions, param) in distributions[block.distribution]"
+          md-clearable
+        >
+          <label>{{ param }}</label>
+          <md-input
+            v-model="block.params[param]"
+          ></md-input>
+        </md-input-container>
+        <!-- Sample once per cycle-->
+        <md-checkbox
+          v-model="block.once"
+          :disabled="steps < 1.5"
+          class="md-primary"
+        >
+          Sampled once
+        </md-checkbox>
+        <md-checkbox
+          :disabled="(steps > 1.5) && !block.once"
+          v-model="block.show"
+          class="md-primary"
+        >
+          Show in results
+        </md-checkbox>
+      </md-card-content>
+
+      <!-- Expression -->
+      <md-card-content v-if="block.typeCode === 1">
+        <md-input-container>
+          <label>Name</label>
+          <md-input
+            v-model="block.name"
+          ></md-input>
+        </md-input-container>
+        <md-input-container>
+          <label>Value</label>
+          <md-input
+            v-model="block.value"
+          ></md-input>
+        </md-input-container>
+        <md-checkbox
+          v-model="block.show"
+          class="md-primary"
+        >
+          Show in results
+        </md-checkbox>
+      </md-card-content>
+
+      <!-- Data -->
+      <md-card-content v-if="block.typeCode === 2">
+        <md-input-container>
+          <label>Name</label>
+          <md-input
+            v-model="block.name"
+          ></md-input>
+        </md-input-container>
+        <md-input-container>
+          <label>Comma-separated values</label>
+          <md-textarea v-model="block.value" height="5"></md-textarea>
+        </md-input-container>
+        <md-input-container>
+          <label>Load from file</label>
+          <md-file @change.native="loadFiles($event.target.files, blockIndex)"></md-file>
+        </md-input-container>
+        <md-checkbox
+          v-model="block.show"
+          class="md-primary"
+        >
+          Show in results
+        </md-checkbox>
+      </md-card-content>
+
+      <!-- Accumulator -->
+      <md-card-content v-if="block.typeCode === 3">
+        <md-input-container>
+          <label>Name</label>
+          <md-input
+            v-model="block.name"
+          ></md-input>
+        </md-input-container>
+        <md-input-container>
+          <label>Change value/expression</label>
+          <md-input
+            v-model="block.value"
+          ></md-input>
+        </md-input-container>
+        <md-input-container>
+          <label>Initial value</label>
+          <md-input
+            v-model="block.initialValue"
+          ></md-input>
+        </md-input-container>
+
+        <md-checkbox v-model="block.show" class="md-primary">
+          Show in results
+        </md-checkbox>
+        <md-checkbox 
+          v-model="block.history"
+          class="md-primary"
+          :disabled="steps < 1.5"
+        >
+          Track history
+        </md-checkbox>
+
+      </md-card-content>
+
+      <!-- Observer -->
+      <md-card-content v-if="block.typeCode === 4">
+        <md-input-container>
+          <label for="distributionType">Distribution:</label>
+          <md-select name="distributionType" id="distributionType" v-model="block.distribution">
+            <md-option v-for="(params, distributionType) in distributions" :value="distributionType">{{ distributionType }}</md-option>
+          </md-select>
+        </md-input-container>
+        <md-input-container
+          v-if="block.distribution.length" 
+          v-for="(paramOptions, param) in distributions[block.distribution]"
+          md-clearable
+        >
+          <label>{{ param }}</label>
+          <md-input
+            v-model="block.params[param]"
+          ></md-input>
+        </md-input-container>
+        <md-input-container>
+          <label>Observed value(s)</label>
+          <md-input
+            v-model="block.value"
+          ></md-input>
+        </md-input-container>
+      </md-card-content>
+
+
+    </md-card>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <md-toolbar :class="'md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
+      <h3 style="flex: 1">{{ (error.length) ? 'Error: ' + error : ''}}</h3>
+      <md-button href="https://github.com/statsim">
+        GitHub
+      </md-button>
+      <md-button href="https://twitter.com/statsimcom">
+        Twitter
+      </md-button>
+
+    </md-toolbar>
+    <svg style="position: absolute">
+      <defs>
+        <marker id="m-end" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth" >
+          <path d="M0,0 L0,6 L9,3 z"></path>
+        </marker>
+      </defs>
+    </svg>
+    <d3-network
+      :net-nodes="graphNodes"
+      :net-links="graphLinks"
+      :options="graphOptions"
+      :link-cb="lcb"
+      v-on:node-click="ncb"
+      v-if="graphNodes.length"
+    ></d3-network>
+    <div class="charts"></div>
+    <pre v-if="code.length">{{ code }}</pre>
+  </div>
+
+  <!-- BOTTOM BAR-->
+  <md-bottom-bar class="bottom-bar">
+    <!-- Time steps-->
+    <md-input-container class="simulation-param">
+      <label for="time-steps">Time steps:</label>
+      <md-input
+        name="time-steps"
+        id="time-steps"
+        type="number"
+        min="1"
+        step="1"
+        v-model="steps"
+      >
+      </md-input>
+    </md-input-container>
+
+    <md-input-container class="simulation-param">
+      <label for="simulation-method">Simulation method:</label>
+      <md-select name="simulation-method" id="simulation-method" v-model="method">
+        <md-option value="deterministic">Deterministic</md-option>
+        <md-option value="enumerate">Enumeration</md-option>
+        <md-option value="rejection">Rejection sampling</md-option>
+        <md-option value="MCMC">MCMC</md-option>
+        <md-option value="HMC">HMC</md-option>
+        <md-option value="incrementalMH">Incremental MH</md-option>
+        <md-option value="SMC">Sequential Monte Carlo</md-option>
+      </md-select>
+    </md-input-container>
+    <md-input-container class="simulation-param">
+      <label for="simulation-samples">Number of samples:</label>
+      <md-input
+        name="simulation-samples"
+        id="simulation-samples"
+        type="number"
+        min="1"
+        step="1"
+        :disabled="['deterministic', 'enumerate', 'SMC'].indexOf(method) >= 0"
+        v-model="samples"
+      >
+      </md-input>
+    </md-input-container>
+    <md-button class="md-raised md-primary" v-on:click.native="run()">Compile & Run</md-button>
+  </md-bottom-bar>
+
+</div>

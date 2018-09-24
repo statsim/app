@@ -1,0 +1,164 @@
+/* Global styles */
+.md-input-container {
+  margin: 5px 0 15px 0;
+}
+
+.md-toolbar.md-dense {
+  min-height: 55px;
+}
+
+.version {
+  font-size: 10px;
+}
+
+.logo {
+  font-weight: bold !important;
+}
+
+.logo-icon {
+  font-weight: normal;
+  width: 15px;
+  text-align: right;
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.tool-bar {
+  z-index: 2;
+  position: fixed;
+  top: 0;
+  width: 27%;
+  left: 0;
+  background-color: #212b61 !important;
+}
+
+.side-bar {
+  position: fixed;
+  padding: 5px;
+  top: 47px;
+  left: 0;
+  bottom: 55px;
+  overflow-y: scroll;
+  background-color: #DDD;
+  width: 27%;
+}
+
+.side-bar .block {
+  margin: 10px;
+}
+
+/* Random variable */
+.side-bar .block-0 {
+  border-top: 4px solid #fab85a;
+}
+
+/* Expression */
+.side-bar .block-1 {
+  border-top: 4px solid #0097cc;
+}
+
+/* Data */
+.side-bar .block-2 {
+  border-top: 4px solid #84c161;
+}
+
+/* Accumulator */
+.side-bar .block-3 {
+  border-top: 4px solid #c44a78;
+}
+
+/* Observer */
+.side-bar .block-4 {
+  border-top: 4px solid #3a3bb6;
+}
+
+.side-bar .block-name {
+  width: 100%;
+  padding-left: 10px;
+  font-size: 20px;
+}
+
+.content {
+  padding-left: 27%;
+  padding-bottom: 100px;
+}
+
+.content pre {
+  margin: 20px;
+  padding: 10px;
+  background-color: #EEE;
+  border: 1px solid #CCC;
+}
+
+.content .charts {
+  margin: 20px;
+}
+
+.content .net {
+  background-color: #F2F2F2;
+}
+
+.content #m-end{
+  fill: rgba(200, 200, 200, 0.8);
+}
+
+.content .charts {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+}
+
+.content .chart {
+  width: 48%;
+  height: 300px;
+  border: 1px solid #EEE;
+  margin: 0 1% 1% 0;
+  display:flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+}
+
+.content .dygraph-legend {
+  top: 0 !important;
+  right: 0 !important;
+  left: inherit !important;
+  position: absolute;
+}
+
+.content .chart-heavy .dygraph-legend > span {
+  display: none;
+}
+
+.content .chart-heavy .dygraph-legend > span.highlight {
+  display: inline;
+}
+
+.content .chart h1 {
+  text-align: center;
+  font-size: 61px;
+  font-weight: 200;
+  color: #1a6fef;
+  margin: 15px;
+}
+
+.content .chart p {
+  text-align: center;
+  font-weight: bold;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  z-index: 2;
+}
+
+.bottom-bar .simulation-param {
+  max-width: 200px;
+  margin-right: 20px;
+}
