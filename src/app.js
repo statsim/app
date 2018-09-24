@@ -3,6 +3,8 @@ const Dygraphs = require('dygraphs')
 const d3 = require('d3-array')
 const D3Network = require('vue-d3-network')
 const distributions = require('./lib/distributions.js')
+const Querify = require('./lib/querify.js')
+const query = new Querify(['b', 'z'])
 
 // Access global objects
 const FileReader = window['FileReader']
@@ -21,6 +23,14 @@ const icons = [
 ]
 
 const icon = icons[Math.floor(Math.random() * 6)]
+
+const blockTypes = [
+  'Random Variable',
+  'Expression',
+  'Data',
+  'Accumulator',
+  'Observer'
+]
 
 const BlockClasses = [
   class RandomVariable {
@@ -68,7 +78,6 @@ const BlockClasses = [
     constructor (counter) {
       this.distribution = 'Uniform'
       this.params = {}
-      this.sequence = false
       this.type = 'Observer'
       this.typeCode = 4
       this.value = ''
@@ -121,6 +130,7 @@ const params = {
       linkWidth: 2
     },
     method: 'MCMC',
+    link: '',
     error: '',
     variableCounter: 0,
     steps: 1,
@@ -179,7 +189,74 @@ const params = {
       return links
     }
   },
+  mounted () {
+    const app = this
+    const kMap = {
+      d: 'distribution',
+      f: 'file',
+      h: 'history',
+      i: 'initialValue',
+      t: 'typeCode',
+      n: 'name',
+      o: 'once',
+      p: 'params',
+      s: 'show',
+      v: 'value'
+    }
+    const zMap = {
+      m: 'method',
+      i: 'steps',
+      s: 'samples'
+    }
+    if (window.location.search) {
+      var queryObj = query.getQueryObject(window.location.search)
+      setTimeout(() => {
+        console.log('Got input params', queryObj)
+        // Read blocks
+        if (queryObj.b && Array.isArray(queryObj.b)) {
+          queryObj.b.forEach(b => {
+            const newb = {}
+            Object.keys(b).forEach(k => {
+              if (k === 'o' || k === 's' || k === 'h') {
+                b[k] = b[k] === 1
+              }
+              newb[kMap[k]] = ((k !== 't') && (typeof b[k] === 'number')) ? b[k] + '' : b[k]
+            })
+            newb.type = blockTypes[b.t]
+            console.log(newb.type)
+            app.blocks.push(newb)
+          })
+        }
+        // Read simulation params
+        if (queryObj.z && (typeof queryObj.z === 'object')) {
+          Object.keys(queryObj.z).forEach(zKey => {
+            app[zMap[zKey]] = queryObj.z[zKey]
+          })
+        }
+      }, 300)
+    }
+  },
   methods: {
+    generateLink () {
+      const bl = this.blocks.map(b => {
+        const o = {}
+        Object.keys(b).forEach(k => {
+          // TODO: Possible error if multiple keys start with the same char
+          if (k !== 'type') {
+            o[k[0]] = (typeof b[k] === 'boolean') ? +b[k] : b[k]
+          }
+        })
+        return o
+      })
+      this.link = 'https://statsim.com/app/' + query.getQueryString({
+        b: bl,
+        z: {
+          m: this.method,
+          i: this.steps,
+          s: this.samples
+        }
+      })
+    },
     lcb (link) {
       link._svgAttrs = { 'marker-end': 'url(#m-end)' }
       return link
@@ -317,7 +394,14 @@ const params = {
             model += observer
           }
         }
-        if (b.name && b.show && (((this.steps > 1.5) && ((b.typeCode === 2) || (b.typeCode === 3))) || (this.steps < 1.5))) { // Return variables
+        if (
+          b.name && b.show && (
+            // Multi step simulation - output only what we can
+            ((this.steps > 1.5) && (((b.typeCode === 0) && b.once) || (b.typeCode === 2) || (b.typeCode === 3))) ||
+            // One step - output all we want
+            (this.steps < 1.5)
+          )
+        ) { // Return variables
           modelOutput += b.name + ', ' + ((b.history && this.steps > 1.5) ? b.name + '_hist, ' : '')
         }
       })

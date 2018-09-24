@@ -29,7 +29,7 @@
   top: 0;
   width: 27%;
   left: 0;
-  background-color: #212b61 !important;
+  background-color: #000832 !important;
 }
 
 .side-bar {
@@ -84,6 +84,7 @@
 }
 
 .content pre {
+  overflow-x: auto;
   margin: 20px;
   padding: 10px;
   background-color: #EEE;

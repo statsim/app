@@ -209,14 +209,16 @@
   <div class="content">
     <md-toolbar :class="'md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
       <h3 style="flex: 1">{{ (error.length) ? 'Error: ' + error : ''}}</h3>
-      <md-button href="https://github.com/statsim">
-        GitHub
+
+      <md-button v-on:click.native="generateLink">
+        Generate link
       </md-button>
-      <md-button href="https://twitter.com/statsimcom">
-        Twitter
+      <md-button href="https://github.com/statsim/app/issues">
+        Feedback
       </md-button>
 
     </md-toolbar>
+    <pre v-if="link.length">{{ link }}</pre>
     <svg style="position: absolute">
       <defs>
         <marker id="m-end" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth" >
