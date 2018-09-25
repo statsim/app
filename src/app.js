@@ -237,7 +237,7 @@ const params = {
         }
         if (queryObj.m && (typeof queryObj.m === 'string')) {
           getJSON(
-            `models/${queryObj.m}.json`,
+            `/models/${queryObj.m}.json`,
             (d) => {
               console.log('Readed data:', d)
               Object.assign(app, d)
