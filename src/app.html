@@ -210,6 +210,9 @@
     <md-toolbar :class="'md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
       <h3 style="flex: 1">{{ (error.length) ? 'Error: ' + error : ''}}</h3>
 
+      <md-button v-on:click.native="generateJSON">
+        Generate JSON
+      </md-button>
       <md-button v-on:click.native="generateLink">
         Generate link
       </md-button>

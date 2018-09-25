@@ -4,7 +4,9 @@ const d3 = require('d3-array')
 const D3Network = require('vue-d3-network')
 const distributions = require('./lib/distributions.js')
 const Querify = require('./lib/querify.js')
-const query = new Querify(['b', 'z'])
+const getJSON = require('./lib/getJSON.js')
+
+const query = new Querify(['b', 'z', 'm'])
 
 // Access global objects
 const FileReader = window['FileReader']
@@ -233,6 +235,18 @@ const params = {
             app[zMap[zKey]] = queryObj.z[zKey]
           })
         }
+        if (queryObj.m && (typeof queryObj.m === 'string')) {
+          getJSON(
+            `models/${queryObj.m}.json`,
+            (d) => {
+              console.log('Readed data:', d)
+              Object.assign(app, d)
+            },
+            (e) => {
+              app.error = `Loading model error: ${e}`
+            }
+          )
+        }
       }, 300)
     }
   },
@@ -256,6 +270,14 @@ const params = {
           s: this.samples
         }
       })
+    },
+    generateJSON () {
+      this.link = JSON.stringify({
+        blocks: this.blocks,
+        method: this.method,
+        steps: this.steps,
+        samples: this.samples
+      }, null, 2)
     },
     lcb (link) {
       link._svgAttrs = { 'marker-end': 'url(#m-end)' }

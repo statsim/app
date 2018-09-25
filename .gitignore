@@ -1,5 +1,5 @@
 *.swp
-tmp
+models
 node_modules
 npm-debug.log
-
+tmp
