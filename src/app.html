@@ -207,17 +207,20 @@
 
   <!-- CONTENT -->
   <div class="content">
-    <md-toolbar :class="'md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
+    <md-toolbar :class="'message-bar md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
       <h3 style="flex: 1">{{ (error.length) ? 'Error: ' + error : ''}}</h3>
 
       <md-button v-on:click.native="generateJSON">
-        Generate JSON
+        <span class="desktop">Generate </span>JSON
       </md-button>
       <md-button v-on:click.native="generateLink">
-        Generate link
+        <span class="desktop">Generate </span>Link
       </md-button>
-      <md-button href="https://github.com/statsim/app/issues">
+      <md-button class="desktop" href="https://github.com/statsim/app/issues">
         Feedback
+      </md-button>
+      <md-button class="md-icon-button" @click="toggleRightSidenav">
+        <md-icon>tune</md-icon>
       </md-button>
 
     </md-toolbar>
@@ -241,14 +244,88 @@
     <pre v-if="code.length">{{ code }}</pre>
   </div>
 
+  <!-- PARAMETERS BAR -->
+  <md-sidenav class="param-bar md-right" ref="rightSidenav">
+    <md-toolbar class="md-dense">
+      <div class="md-toolbar-container">
+        <h3 class="md-title" style="flex: 1">Simulation parameters</h3>
+        <md-button class="md-icon-button" @click="closeRightSidenav">
+          <md-icon>close</md-icon>
+        </md-button>
+      </div>
+    </md-toolbar>
+    <div style="padding: 10px">
+
+      <!-- Simulation method -->
+      <md-input-container class="simulation-method-container">
+        <label for="simulation-method">Simulation method:</label>
+        <md-select name="simulation-method" id="simulation-method" v-model="method">
+          <md-option
+            v-for="(methodObj, method) in simulationMethods" 
+            :value="method">{{ methodObj.name }}</md-option>
+        </md-select>
+      </md-input-container>
+
+      <!-- Time steps-->
+      <md-input-container class="simulation-param">
+        <label for="time-steps">Time steps (intervals):</label>
+        <md-input
+          name="time-steps"
+          type="number"
+          min="1"
+          step="1"
+          v-model="steps"
+        >
+        </md-input>
+      </md-input-container>
+
+      <!-- Method parameters -->
+      <div
+        class="method-param"
+        v-for="(paramOptions, param) in simulationMethods[method].params"
+      >
+
+      <!-- Boolean -->
+      <md-checkbox 
+        :name="param"
+        v-model="methodParams[param]"
+        v-if="paramOptions.type === 'boolean'"
+        class="md-primary"
+      >{{ param }}</md-checkbox>
+
+      <!-- Select / Number-->
+      <md-input-container v-else>
+          <label :for="param">{{ param }}</label>
+          <md-input
+            v-if="(paramOptions.type === 'int') || (paramOptions.type === 'real')"
+            type="number"
+            v-model="methodParams[param]"
+          ></md-input>
+          <md-select
+            :name="param"
+            v-if="paramOptions.type === 'select'"
+            v-model="methodParams[param]"
+          >
+            <md-option
+              v-for="paramSelectValue in paramOptions.values"
+              :value="paramSelectValue"
+            >{{ paramSelectValue}}</md-option>
+          </md-select>
+        </md-input-container>
+
+      </div>
+      <!-- Run -->
+      <md-button class="md-raised md-primary" v-on:click.native="run()"><span class="desktop">Compile & </span>Run</md-button>
+    </div>
+  </md-sidenav>
+
   <!-- BOTTOM BAR-->
   <md-bottom-bar class="bottom-bar">
     <!-- Time steps-->
-    <md-input-container class="simulation-param">
+    <md-input-container class="simulation-param desktop">
       <label for="time-steps">Time steps:</label>
       <md-input
         name="time-steps"
-        id="time-steps"
         type="number"
         min="1"
         step="1"
@@ -257,32 +334,23 @@
       </md-input>
     </md-input-container>
 
-    <md-input-container class="simulation-param">
+    <!-- Simulation method -->
+    <md-input-container class="simulation-method-container simulation-param desktop">
       <label for="simulation-method">Simulation method:</label>
       <md-select name="simulation-method" id="simulation-method" v-model="method">
-        <md-option value="deterministic">Deterministic</md-option>
-        <md-option value="enumerate">Enumeration</md-option>
-        <md-option value="rejection">Rejection sampling</md-option>
-        <md-option value="MCMC">MCMC</md-option>
-        <md-option value="HMC">HMC</md-option>
-        <md-option value="incrementalMH">Incremental MH</md-option>
-        <md-option value="SMC">Sequential Monte Carlo</md-option>
+        <md-option
+          v-for="(methodObj, method) in simulationMethods" 
+          :value="method">{{ methodObj.name }}</md-option>
       </md-select>
     </md-input-container>
-    <md-input-container class="simulation-param">
-      <label for="simulation-samples">Number of samples:</label>
-      <md-input
-        name="simulation-samples"
-        id="simulation-samples"
-        type="number"
-        min="1"
-        step="1"
-        :disabled="['deterministic', 'enumerate', 'SMC'].indexOf(method) >= 0"
-        v-model="samples"
-      >
-      </md-input>
-    </md-input-container>
-    <md-button class="md-raised md-primary" v-on:click.native="run()">Compile & Run</md-button>
+
+    <div class="summary mobile">
+      <p>Method: {{ method }}</p>
+      <p>Time steps: {{ steps }}</p>
+      <p v-if="methodParams.samples">Samples: {{ methodParams.samples }}</p>
+    </div>
+    <md-button class="md-raised md-accent" @click="toggleRightSidenav">Params</md-button>
+    <md-button class="md-raised md-primary" v-on:click.native="run()"><span class="desktop">Compile & </span>Run</md-button>
   </md-bottom-bar>
 
 </div>

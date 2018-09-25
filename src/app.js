@@ -3,10 +3,11 @@ const Dygraphs = require('dygraphs')
 const d3 = require('d3-array')
 const D3Network = require('vue-d3-network')
 const distributions = require('./lib/distributions.js')
+const simulationMethods = require('./lib/methods.js')
 const Querify = require('./lib/querify.js')
 const getJSON = require('./lib/getJSON.js')
 
-const query = new Querify(['b', 'z', 'm'])
+const query = new Querify(['s', 'm', 'b', 'p', 'e']) // Possible query variables
 
 // Access global objects
 const FileReader = window['FileReader']
@@ -131,15 +132,19 @@ const params = {
       nodeLabels: true,
       linkWidth: 2
     },
-    method: 'MCMC',
     link: '',
     error: '',
     variableCounter: 0,
     steps: 1,
-    samples: 1000,
+    // samples: 1000,
     distributions,
     code: '', // compiled webppl code
-    blocks: []
+    blocks: [],
+    simulationMethods,
+    method: 'MCMC',
+    methodParams: {
+      samples: 1000
+    }
   }),
   computed: {
     graphNodes: function () {
@@ -205,10 +210,11 @@ const params = {
       s: 'show',
       v: 'value'
     }
-    const zMap = {
-      m: 'method',
-      i: 'steps',
-      s: 'samples'
+    const pMap = {
+      s: 'samples',
+      l: 'lag',
+      b: 'burn',
+      o: 'onlyMAP'
     }
     if (window.location.search) {
       var queryObj = query.getQueryObject(window.location.search)
@@ -229,13 +235,21 @@ const params = {
             app.blocks.push(newb)
           })
         }
-        // Read simulation params
-        if (queryObj.z && (typeof queryObj.z === 'object')) {
-          Object.keys(queryObj.z).forEach(zKey => {
-            app[zMap[zKey]] = queryObj.z[zKey]
+        // Read method params
+        if (queryObj.p && (typeof queryObj.p === 'object')) {
+          Object.keys(queryObj.p).forEach(paramKey => {
+            // Get fullkey if exist
+            const fullKey = (pMap[paramKey] && pMap[paramKey].length > 0) ? pMap[paramKey] : paramKey
+            app.methodParams[fullKey] = queryObj.p[paramKey]
           })
         }
-        if (queryObj.m && (typeof queryObj.m === 'string')) {
+        if (queryObj.s) {
+          app.steps = +queryObj.s
+        }
+        if (queryObj.e) {
+          app.method = queryObj.e
+        }
+        if (queryObj.m) {
           getJSON(
             `/models/${queryObj.m}.json`,
             (d) => {
@@ -251,6 +265,12 @@ const params = {
     }
   },
   methods: {
+    toggleRightSidenav () {
+      this.$refs.rightSidenav.toggle()
+    },
+    closeRightSidenav () {
+      this.$refs.rightSidenav.close()
+    },
     generateLink () {
       const bl = this.blocks.map(b => {
         const o = {}
@@ -263,21 +283,19 @@ const params = {
         return o
       })
       this.link = 'https://statsim.com/app/' + query.getQueryString({
+        s: this.steps,
+        e: this.method,
         b: bl,
-        z: {
-          m: this.method,
-          i: this.steps,
-          s: this.samples
-        }
+        p: this.methodParams
       })
     },
     generateJSON () {
       this.link = JSON.stringify({
         blocks: this.blocks,
-        method: this.method,
         steps: this.steps,
-        samples: this.samples
-      }, null, 2)
+        method: this.method,
+        methodParams: this.methodParams
+      }, null, 2) // indent with 2 spaces
     },
     lcb (link) {
       link._svgAttrs = { 'marker-end': 'url(#m-end)' }
@@ -457,20 +475,26 @@ var {${step.list}} = step(${Math.round(this.steps)})
 
       // Inference
       let inf = ''
-      switch (this.method) {
-        case 'deterministic':
-          inf = `model()\n`
-          break
-        case 'MCMC':
-        case 'rejection':
-        case 'incrementalMH':
-          inf = `Infer({model, method: '${this.method}', samples: ${this.samples}})\n`
-          break
-        case 'HMC':
-          inf = `Infer({model, method: 'MCMC', kernel: 'HMC', samples: ${this.samples}})\n`
-          break
-        default:
-          inf = `Infer({model, method: '${this.method}'})\n`
+      if (this.method === 'deterministic') {
+        inf = `model()\n`
+      } else {
+        let paramStr = ''
+        let kernelStr = ''
+        let kernelParamStr = ''
+        let realMethod = this.method
+        Object.keys(this.methodParams).forEach(key => {
+          if (key === 'steps' || key === 'stepSize') {
+            kernelParamStr += (kernelParamStr.length) ? ', ' : ''
+            kernelParamStr += `${key}: ${this.methodParams[key]}`
+          } else {
+            paramStr += `, ${key}: ${this.methodParams[key]}`
+          }
+        })
+        if (this.method === 'HMC') {
+          realMethod = 'MCMC'
+          kernelStr = (kernelParamStr.length) ? `, kernel: {HMC: {${kernelParamStr}}}` : `, kernel: 'HMC'`
+        }
+        inf = `Infer({model, method: '${realMethod}'${kernelStr + paramStr}})\n`
       }
       c += inf
 
