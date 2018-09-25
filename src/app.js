@@ -133,10 +133,10 @@ const params = {
       linkWidth: 2
     },
     link: '',
+    loading: false, // show loading indicator
     error: '',
     variableCounter: 0,
     steps: 1,
-    // samples: 1000,
     distributions,
     code: '', // compiled webppl code
     blocks: [],
@@ -270,6 +270,14 @@ const params = {
     },
     closeRightSidenav () {
       this.$refs.rightSidenav.close()
+    },
+    generateWebPPL () {
+      this.loading = true
+      setTimeout(() => {
+        this.loading = false
+        this.compile()
+        this.link = this.code
+      }, 500)
     },
     generateLink () {
       const bl = this.blocks.map(b => {
@@ -501,136 +509,143 @@ var {${step.list}} = step(${Math.round(this.steps)})
       this.code = c
     },
     run () {
+      this.loading = true
+      document.getElementById('loader').className = ''
       this.icon = icons[Math.floor(Math.random() * 6)]
       this.error = ''
       this.compile()
-      try {
-        webppl.run(this.code, (s, v) => {
-          document.querySelector('.charts').innerHTML = ''
-          if (this.method === 'deterministic') {
-            // deterministic
-            let vectors = []
-            Object.keys(v).forEach(key => {
-              const value = v[key]
-              if (Array.isArray(value)) {
-                vectors.push(key)
+      // Add some delay to finish display update
+      setTimeout(() => {
+        try {
+          webppl.run(this.code, (s, v) => {
+            document.getElementById('loader').className = 'hidden'
+            this.loading = false
+            document.querySelector('.charts').innerHTML = ''
+            if (this.method === 'deterministic') {
+              // deterministic
+              let vectors = []
+              Object.keys(v).forEach(key => {
+                const value = v[key]
+                if (Array.isArray(value)) {
+                  vectors.push(key)
+                  const chartContainer = document.createElement('div')
+                  chartContainer.className = 'chart'
+                  // const chartCanvas = document.createElement('canvas')
+                  // chartCanvas.id = 'chart-' + key
+                  // chartContainer.appendChild(chartCanvas)
+                  document.querySelector('.charts').appendChild(chartContainer)
+                  const d = new Dygraphs(
+                    chartContainer,
+                    value.map((v, i) => [i, v]),
+                    {
+                      labels: ['Step', key]
+                    }
+                  )
+                  console.log('Created chart:', d)
+                } else {
+                  const chartContainer = document.createElement('div')
+                  chartContainer.className = 'chart'
+                  chartContainer.innerHTML = `
+                    <h1>${value.toFixed(4)}</h1>
+                    <p>${key}</p>
+                  `
+                  document.querySelector('.charts').appendChild(chartContainer)
+                }
+              }) // *Object.keys
+              // All lines on one chart
+              if (vectors.length > 1) {
                 const chartContainer = document.createElement('div')
                 chartContainer.className = 'chart'
-                // const chartCanvas = document.createElement('canvas')
-                // chartCanvas.id = 'chart-' + key
-                // chartContainer.appendChild(chartCanvas)
                 document.querySelector('.charts').appendChild(chartContainer)
                 const d = new Dygraphs(
                   chartContainer,
-                  value.map((v, i) => [i, v]),
+                  v[vectors[0]].map((_, i) => [i].concat(vectors.map(k => v[k][i]))),
                   {
-                    labels: ['Step', key]
+                    labels: ['Step'].concat(vectors)
                   }
                 )
                 console.log('Created chart:', d)
-              } else {
-                const chartContainer = document.createElement('div')
-                chartContainer.className = 'chart'
-                chartContainer.innerHTML = `
-                  <h1>${value.toFixed(4)}</h1>
-                  <p>${key}</p>
-                `
-                document.querySelector('.charts').appendChild(chartContainer)
               }
-            }) // *Object.keys
-            // All lines on one chart
-            if (vectors.length > 1) {
-              const chartContainer = document.createElement('div')
-              chartContainer.className = 'chart'
-              document.querySelector('.charts').appendChild(chartContainer)
-              const d = new Dygraphs(
-                chartContainer,
-                v[vectors[0]].map((_, i) => [i].concat(vectors.map(k => v[k][i]))),
-                {
-                  labels: ['Step'].concat(vectors)
-                }
-              )
-              console.log('Created chart:', d)
-            }
-          } else {
-            // stochastic viz
-            console.log('WebPPL output: ', v)
-            const samples = {}
-            v.samples.forEach(s => {
-              Object.keys(s.value).forEach(k => {
-                if (!samples.hasOwnProperty(k)) {
-                  samples[k] = []
-                }
-                samples[k].push(s.value[k])
-              })
-            })
-            console.log('Samples: ', samples)
-            Object.keys(samples).forEach(k => {
-              if (Array.isArray(samples[k][0])) {
-                // Array sample
-                const data = []
-                const labels = ['Step']
-                samples[k].forEach((s, si) => {
-                  labels.push(k + ` (v${si})`)
-                  s.forEach((sv, i) => {
-                    if (!data[i]) data[i] = [i]
-                    data[i].push(sv)
-                  })
+            } else {
+              // stochastic viz
+              console.log('WebPPL output: ', v)
+              const samples = {}
+              v.samples.forEach(s => {
+                Object.keys(s.value).forEach(k => {
+                  if (!samples.hasOwnProperty(k)) {
+                    samples[k] = []
+                  }
+                  samples[k].push(s.value[k])
                 })
-                console.log(data, labels)
-                createChart(`${k} ${this.samples} Samples`, data, labels)
-                createChart(
-                  k + ' Average',
-                  data.map(
-                    d => [d[0], [d3.min(d.slice(1)), d3.mean(d.slice(1)), d3.max(d.slice(1))]]
-                  ),
-                  ['Step', k],
-                  {
-                    customBars: true
+              })
+              console.log('Samples: ', samples)
+              Object.keys(samples).forEach(k => {
+                if (Array.isArray(samples[k][0])) {
+                  // Array sample
+                  const data = []
+                  const labels = ['Step']
+                  samples[k].forEach((s, si) => {
+                    labels.push(k + ` (v${si})`)
+                    s.forEach((sv, i) => {
+                      if (!data[i]) data[i] = [i]
+                      data[i].push(sv)
+                    })
+                  })
+                  console.log(data, labels)
+                  createChart(`${k} ${this.samples} Samples`, data, labels)
+                  createChart(
+                    k + ' Average',
+                    data.map(
+                      d => [d[0], [d3.min(d.slice(1)), d3.mean(d.slice(1)), d3.max(d.slice(1))]]
+                    ),
+                    ['Step', k],
+                    {
+                      customBars: true
+                    }
+                  )
+                } else if (this.blocks.find(bl => bl.name === k).typeCode === 2) {
+                  // Scalar data
+                  const chartContainer = document.createElement('div')
+                  chartContainer.className = 'chart'
+                  chartContainer.innerHTML = `
+                    <h1>${samples[k][0].toFixed(4)}</h1>
+                    <p>${k}</p>
+                  `
+                  document.querySelector('.charts').appendChild(chartContainer)
+                } else {
+                  // Scalar random variable
+                  createChart(k + ' Trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
+                  // Distribution
+                  const unique = Array.from(new Set(samples[k])).length
+                  const t = (unique <= 30) ? unique : 30
+                  const hist = d3.histogram().thresholds(t)
+                  const h = hist(samples[k])
+                  createChart(
+                    k + ' Distribution',
+                    h.map(v => [v.x0, v.length / samples[k].length]),
+                    ['Sample', k],
+                    {
+                      stepPlot: true,
+                      fillGraph: true
+                    }
+                  )
+                  const sMin = d3.min(samples[k])
+                  const sMax = d3.max(samples[k])
+                  const sStep = (sMax - sMin) / 200
+                  const cdf = []
+                  for (let i = sMin; i <= sMax; i += sStep) {
+                    cdf.push([i, samples[k].filter(s => s < i).length / samples[k].length])
                   }
-                )
-              } else if (this.blocks.find(bl => bl.name === k).typeCode === 2) {
-                // Scalar data
-                const chartContainer = document.createElement('div')
-                chartContainer.className = 'chart'
-                chartContainer.innerHTML = `
-                  <h1>${samples[k][0].toFixed(4)}</h1>
-                  <p>${k}</p>
-                `
-                document.querySelector('.charts').appendChild(chartContainer)
-              } else {
-                // Scalar random variable
-                createChart(k + ' Trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
-                // Distribution
-                const unique = Array.from(new Set(samples[k])).length
-                const t = (unique <= 30) ? unique : 30
-                const hist = d3.histogram().thresholds(t)
-                const h = hist(samples[k])
-                createChart(
-                  k + ' Distribution',
-                  h.map(v => [v.x0, v.length / samples[k].length]),
-                  ['Sample', k],
-                  {
-                    stepPlot: true,
-                    fillGraph: true
-                  }
-                )
-                const sMin = d3.min(samples[k])
-                const sMax = d3.max(samples[k])
-                const sStep = (sMax - sMin) / 200
-                const cdf = []
-                for (let i = sMin; i <= sMax; i += sStep) {
-                  cdf.push([i, samples[k].filter(s => s < i).length / samples[k].length])
+                  createChart(k + ' CDF', cdf, [k, 'p'])
                 }
-                createChart(k + ' CDF', cdf, [k, 'p'])
-              }
-            })
-          } // *stochastic visualization
-        })
-      } catch (err) {
-        console.log(err)
-        this.error = err.message
-      }
+              })
+            } // *stochastic visualization
+          })
+        } catch (err) {
+          console.log(err)
+          this.error = err.message
+        }
+      }, 500)
     }
   }
 }

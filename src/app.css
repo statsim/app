@@ -11,6 +11,10 @@
   font-size: 10px;
 }
 
+.hidden {
+  display: none;
+}
+
 .logo {
   font-weight: bold !important;
 }
@@ -151,6 +155,25 @@
 .content .chart p {
   text-align: center;
   font-weight: bold;
+}
+
+.progress {
+  position: fixed;
+  bottom: 56px;
+  left: 0;
+  right: 0;
+}
+
+#loader {
+  position: fixed;
+  top: 45%;
+  width: 100%;
+  text-align: center;
+  z-index: 200;
+}
+
+#loader span {
+  background-color: rgba(240, 240, 240, 0.4)
 }
 
 .bottom-bar {

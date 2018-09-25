@@ -209,22 +209,22 @@
   <div class="content">
     <md-toolbar :class="'message-bar md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
       <h3 style="flex: 1">{{ (error.length) ? 'Error: ' + error : ''}}</h3>
-
-      <md-button v-on:click.native="generateJSON">
-        <span class="desktop">Generate </span>JSON
+      <md-button disabled class="desktop">Generate: </md-button>
+      <md-button v-on:click.native="generateWebPPL">
+        WPPL
+      </md-button>
+      <md-button class="desktop" v-on:click.native="generateJSON">
+        JSON
       </md-button>
       <md-button v-on:click.native="generateLink">
-        <span class="desktop">Generate </span>Link
-      </md-button>
-      <md-button class="desktop" href="https://github.com/statsim/app/issues">
-        Feedback
+        Link
       </md-button>
       <md-button class="md-icon-button" @click="toggleRightSidenav">
         <md-icon>tune</md-icon>
       </md-button>
 
     </md-toolbar>
-    <pre v-if="link.length">{{ link }}</pre>
+    <pre id="link" v-if="link.length">{{ link }}</pre>
     <svg style="position: absolute">
       <defs>
         <marker id="m-end" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth" >
@@ -241,7 +241,6 @@
       v-if="graphNodes.length"
     ></d3-network>
     <div class="charts"></div>
-    <pre v-if="code.length">{{ code }}</pre>
   </div>
 
   <!-- PARAMETERS BAR -->
@@ -320,6 +319,7 @@
   </md-sidenav>
 
   <!-- BOTTOM BAR-->
+  <md-progress class="progress" v-if="loading" md-indeterminate></md-progress>
   <md-bottom-bar class="bottom-bar">
     <!-- Time steps-->
     <md-input-container class="simulation-param desktop">
@@ -352,5 +352,5 @@
     <md-button class="md-raised md-accent" @click="toggleRightSidenav">Params</md-button>
     <md-button class="md-raised md-primary" v-on:click.native="run()"><span class="desktop">Compile & </span>Run</md-button>
   </md-bottom-bar>
-
+  <div id="loader" class="hidden"><span>Loading..</span></div>
 </div>
