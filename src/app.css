@@ -100,9 +100,6 @@
   border: 1px solid #CCC;
 }
 
-.content .charts {
-  margin: 20px;
-}
 
 .content .net {
   background-color: #F2F2F2;
@@ -112,18 +109,17 @@
   fill: rgba(200, 200, 200, 0.8);
 }
 
-.content .charts {
+.content .charts, .content .charts-2d {
+  margin: 20px;
   display: flex;
-  justify-content: space-between;
+  justify-content: left;
   flex-direction: row;
   flex-wrap: wrap;
   align-content: flex-start;
   align-items: flex-start;
 }
 
-.content .chart {
-  width: 48%;
-  height: 300px;
+.content .chart, .content .chart-2d {
   border: 1px solid #EEE;
   margin: 0 1% 1% 0;
   display:flex;
@@ -132,6 +128,11 @@
   justify-content: center;
   align-content: center;
   align-items: center;
+}
+
+.content .chart {
+  width: 48%;
+  height: 300px;
 }
 
 .content .dygraph-legend {
@@ -213,6 +214,31 @@
 .mobile {
   display: none;
 }
+
+/* 2D Plots */
+tile {
+  shape-rendering: crispEdges;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+/*https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas/11751817#answer-7665647*/
+.plot>canvas {
+  margin: 0;
+  z-index: 2;
+  image-rendering: optimizeSpeed;             /* Older versions of FF          */
+  image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+  image-rendering: -webkit-optimize-contrast; /* Safari                        */
+  image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+  image-rendering: pixelated;                 /* Awesome future-browsers       */
+  -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
+}
+
 
 @media only screen and (max-width: 860px) {
   .mobile {

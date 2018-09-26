@@ -2,6 +2,7 @@
 const Dygraphs = require('dygraphs')
 const d3 = require('d3-array')
 const D3Network = require('vue-d3-network')
+const hist2d = require('d3-hist2d').hist2d
 const distributions = require('./lib/distributions.js')
 const simulationMethods = require('./lib/methods.js')
 const Querify = require('./lib/querify.js')
@@ -12,6 +13,7 @@ const query = new Querify(['s', 'm', 'b', 'p', 'e']) // Possible query variables
 // Access global objects
 const FileReader = window['FileReader']
 const webppl = window['webppl']
+const plot2d = window['densityPlot'] // ESM WTF!!!
 
 const colors = [
   '#fab85a',
@@ -621,6 +623,7 @@ var {${step.list}} = step(${Math.round(this.steps)})
               // Collect samples in a useful object:
               // { variable_name: [sample_1, sample_2, ...] }
               const samples = {}
+              const rvs = [] // Collect random variables to draw 2d plot later
               // Detect repeating samples
               const repeatingSamples = {}
               v.samples.forEach(s => {
@@ -672,6 +675,7 @@ var {${step.list}} = step(${Math.round(this.steps)})
                     drawScalar(samples[k][0], k)
                   } else {
                     // -- Draw random variable
+                    rvs.push(k)
                     createChart(k + ' Trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
                     // ---- Distribution
                     const unique = Array.from(new Set(samples[k])).length
@@ -699,8 +703,55 @@ var {${step.list}} = step(${Math.round(this.steps)})
                       createChart(k + ' CDF', cdf, [k, 'p'])
                     }
                   } // -- *draw random variable
-                }
-              })
+                } // *scalars samples
+              }) // *iterate over all sample keys (k)
+              // Draw 2d plot
+              if (rvs.length >= 2) {
+                document.querySelector('.charts-2d').innerHTML = ''
+                for (let r1 = 0; r1 < rvs.length - 1; r1++) {
+                  for (let r2 = r1 + 1; r2 < rvs.length; r2++) {
+                    const samples2d = samples[rvs[r1]].map((v, i) => [v, samples[rvs[r2]][i]])
+                    console.log(samples2d)
+                    const r1min = d3.min(samples[rvs[r1]])
+                    const r1max = d3.max(samples[rvs[r1]])
+                    const r2min = d3.min(samples[rvs[r2]])
+                    const r2max = d3.max(samples[rvs[r2]])
+                    hist2d().bins(100).domain([[r1min, r1max], [r2min, r2max]])(
+                      samples2d,
+                      h => {
+                        console.log(h)
+                        const plotData = []
+                        for (let i = 0; i < 100; i++) {
+                          if (!Array.isArray(plotData[i])) {
+                            plotData[i] = []
+                          }
+                          for (let j = 0; j < 100; j++) {
+                            plotData[i][j] = 0
+                          }
+                        }
+
+                        h.forEach(bin => { plotData[bin.x][bin.y] = bin.length })
+                        const chartContainer = document.createElement('div')
+                        chartContainer.className = 'chart-2d'
+                        chartContainer.innerHTML = `<p>${rvs[r1]},${rvs[r2]}</p>`
+                        const chartCanvasContainer = document.createElement('div')
+                        chartContainer.appendChild(chartCanvasContainer)
+                        document.querySelector('.charts-2d').appendChild(chartContainer)
+                        plot2d(plotData, {
+                          simple: true,
+                          target: chartCanvasContainer,
+                          noXAxes: true,
+                          noYAxes: true,
+                          noLegend: true,
+                          width: 300,
+                          height: 300,
+                          color: 'Blues'
+                        })
+                      }
+                    )
+                  }// *for
+                }// *for
+              }
             } // *stochastic visualization
           }) // *webppl.run()
         } catch (err) {

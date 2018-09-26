@@ -13,6 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "d3-array": "^1.2.4",
+    "d3-hist2d": "^1.0.6",
+    "density-plot": "^1.0.4",
     "dygraphs": "^2.1.0",
     "html-escape": "^2.0.0",
     "is": "^3.2.1",
