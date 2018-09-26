@@ -1,36 +1,45 @@
 <div>
   <md-toolbar class="tool-bar md-dense">
     <p class="logo-icon">{{ icon }}</p>
-    <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.1.1</sup></h2>
+    <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.1.2</sup></h2>
     <md-menu md-size="4">
       <md-button class="md-raised md-primary" md-menu-trigger>
         + Add element
       </md-button>
       <md-menu-content>
+        <md-menu-item v-on:click.native="addBlock(2)">
+          <md-icon :style="'color: ' + colors[2]">view_headline</md-icon>
+          <span>Data</span>
+        </md-menu-item>
         <md-menu-item v-on:click.native="addBlock(0)">
-          <md-icon>graphic_eq</md-icon>
+          <md-icon :style="'color: ' + colors[0]">graphic_eq</md-icon>
           <span>Random Variable</span>
         </md-menu-item>
         <md-menu-item v-on:click.native="addBlock(1)">
-          <md-icon>functions</md-icon>
+          <md-icon :style="'color: ' + colors[1]">functions</md-icon>
           <span>Expression</span>
         </md-menu-item>
-        <md-menu-item v-on:click.native="addBlock(2)">
-          <md-icon>view_headline</md-icon>
-          <span>Data</span>
-        </md-menu-item>
         <md-menu-item v-on:click.native="addBlock(3)">
-          <md-icon>exposure_plus_1</md-icon>
+          <md-icon :style="'color: ' + colors[3]">exposure_plus_1</md-icon>
           <span>Accumulator</span>
         </md-menu-item>
+        <md-menu-item disabled>
+          <small>Inference operators:</small>
+        </md-menu-item>
         <md-menu-item v-on:click.native="addBlock(4)">
-          <md-icon>visibility</md-icon>
+          <md-icon :style="'color: ' + colors[4]">album</md-icon>
           <span>Observer</span>
         </md-menu-item>
         <md-menu-item v-on:click.native="addBlock(5)">
-          <md-icon>offline_pin</md-icon>
+          <md-icon :style="'color: ' + colors[5]">offline_pin</md-icon>
           <span>Condition</span>
         </md-menu-item>
+        <!--
+        <md-menu-item v-on:click.native="addBlock(6)">
+          <md-icon :style="'color: ' + colors[5]">offline_bolt</md-icon>
+          <span>Factor</span>
+        </md-menu-item>
+        -->
       </md-menu-content>
     </md-menu>
   </md-toolbar>
