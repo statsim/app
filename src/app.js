@@ -16,12 +16,13 @@ const webppl = window['webppl']
 const plot2d = window['densityPlot'] // ESM WTF!!!
 
 const colors = [
-  '#fab85a',
+  '#eaac0c',
   '#0097cc',
-  '#84c161',
-  '#c44a78',
-  '#3a3bb6',
-  '#000f64'
+  '#61c900',
+  '#d51558',
+  '#ababab',
+  '#ababab',
+  '#ababab'
 ]
 
 const icons = [
@@ -164,6 +165,7 @@ const params = {
   },
   data: () => ({
     icon,
+    colors,
     graphOptions:
     {
       force: 5000,
