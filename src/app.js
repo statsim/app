@@ -134,7 +134,7 @@ function drawScalar (scalar, name) {
   const chartContainer = document.createElement('div')
   chartContainer.className = 'chart'
   chartContainer.innerHTML = `
-    <h1>${+scalar.toFixed(6)}</h1>
+    <h1>${(!isNaN(parseFloat(scalar)) && isFinite(scalar)) ? +scalar.toFixed(6) : scalar}</h1>
     <p>${name}</p>
   `
   document.querySelector('.charts').appendChild(chartContainer)
@@ -641,7 +641,20 @@ var {${step.list}} = step(${Math.round(this.steps)})
               })
               console.log('Repeating samples: ', repeatingSamples)
               Object.keys(samples).forEach(k => {
-                if (Array.isArray(samples[k][0])) {
+                if (typeof samples[k][0] === 'boolean') {
+                  // Boolean samples
+                  const countTrue = samples[k].reduce((acc, val) => (val ? acc + 1 : acc), 0)
+                  const countFalse = samples[k].length - countTrue
+                  createChart(
+                    `${k} Truth/False rate`,
+                    [[1, countTrue, countFalse]],
+                    ['', 'True', 'False'],
+                    {
+                      drawPoints: true,
+                      pointSize: 10
+                    }
+                  )
+                } else if (Array.isArray(samples[k][0])) {
                   // Array sample
                   if (repeatingSamples[k]) {
                     // -- All samples are same
