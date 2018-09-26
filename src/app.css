@@ -76,6 +76,11 @@
   border-top: 4px solid #3a3bb6;
 }
 
+/* Condition */
+.side-bar .block-5 {
+  border-top: 4px solid #000f64;
+}
+
 .side-bar .block-name {
   width: 100%;
   padding-left: 10px;

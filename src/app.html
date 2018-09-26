@@ -27,6 +27,10 @@
           <md-icon>visibility</md-icon>
           <span>Observer</span>
         </md-menu-item>
+        <md-menu-item v-on:click.native="addBlock(5)">
+          <md-icon>offline_pin</md-icon>
+          <span>Condition</span>
+        </md-menu-item>
       </md-menu-content>
     </md-menu>
   </md-toolbar>
@@ -115,6 +119,14 @@
         >
           Show in results
         </md-checkbox>
+        <md-checkbox 
+          v-model="block.history"
+          class="md-primary"
+          :disabled="steps < 1.5"
+        >
+          Track history
+        </md-checkbox>
+
       </md-card-content>
 
       <!-- Data -->
@@ -200,6 +212,17 @@
           ></md-input>
         </md-input-container>
       </md-card-content>
+
+      <!-- Condition -->
+      <md-card-content v-if="block.typeCode === 5">
+        <md-input-container>
+          <label>Proposition expression (boolean)</label>
+          <md-input
+            v-model="block.value"
+          ></md-input>
+        </md-input-container>
+      </md-card-content>
+
 
 
     </md-card>
