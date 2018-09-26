@@ -87,6 +87,124 @@ module.exports = {
       max: Infinity
     }
   },
+  'KDE': {
+    data: {
+      type: 'vector'
+    },
+    width: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    }
+  },
+  'Laplace': {
+    location: {
+      type: 'real'
+    },
+    scale: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    }
+  },
+  'LogisticNormal': {
+    mu: {
+      type: 'vector'
+    },
+    sigma: {
+      type: 'vector'
+    }
+  },
+  'LogitNormal': {
+    mu: {
+      type: 'real'
+    },
+    scale: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    },
+    a: {
+      type: 'real'
+    },
+    b: {
+      type: 'real'
+    }
+  },
+  'Mixture': {
+    dists: {
+      type: 'vector'
+    },
+    ps: {
+      type: 'vector'
+    }
+  },
+  'Multinomial': {
+    ps: {
+      type: 'vector'
+    },
+    n: {
+      type: 'int',
+      min: 1
+    }
+  },
+  'MultivariateBernoulli': {
+    ps: {
+      type: 'vector'
+    }
+  },
+  'MultivariateGaussian': {
+    mu: {
+      type: 'vector'
+    },
+    cov: {
+      type: 'vector'
+    }
+  },
+  'Poisson': {
+    mu: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    }
+  },
+  'RandomInteger': {
+    n: {
+      type: 'int',
+      min: 0,
+      max: Infinity
+    }
+  },
+  'TensorGaussian': {
+    mu: {
+      type: 'real'
+    },
+    sigma: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    },
+    dims: {
+      type: 'vector',
+      min: 0,
+      max: Infinity
+    }
+  },
+  'TensorLaplace': {
+    location: {
+      type: 'vector'
+    },
+    scale: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    },
+    dims: {
+      type: 'vector',
+      min: 0,
+      max: Infinity
+    }
+  },
   'Uniform': {
     a: {
       type: 'real'
