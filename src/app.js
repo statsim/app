@@ -419,13 +419,14 @@ const params = {
           // --> Expression
           // Check if we are inside the loop
           if (this.steps > 1.5) {
-            step.body += `var ${b.name} = ${b.value}\n`
             // Generate a list of accumulators
             step.list += (step.list.length) ? ', ' : ''
             step.list += b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
+            // Caclulate expression in the body
+            step.body += `var _${b.name} = ${b.value}\n`
             // Generate accumulator expressions
-            step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: ${b.value}`
-            step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(${b.value})` : ''
+            step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: _${b.name}`
+            step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''
             // Generate initial values
             step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: 0`
             step.initial += (b.history) ? `,\n${b.name}_hist: [0]` : ''
@@ -444,9 +445,11 @@ const params = {
             // Generate a list of accumulators
             step.list += (step.list.length) ? ', ' : ''
             step.list += b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
+            // Accumulate value in the step body
+            step.body += `var _${b.name} = ${b.name} + ${b.value}\n`
             // Generate accumulator expressions
-            step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: ${b.name} + ${b.value}`
-            step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(${b.name} + ${b.value})` : ''
+            step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: _${b.name}`
+            step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''
             // Generate initial values
             step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: ${b.initialValue}`
             step.initial += (b.history) ? `,\n${b.name}_hist: [${b.initialValue}]` : ''
