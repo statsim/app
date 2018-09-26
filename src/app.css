@@ -51,6 +51,11 @@
   margin: 10px;
 }
 
+.md-card .md-card-content:last-child {
+  padding-bottom: 3px;
+}
+
+
 /* Random variable */
 .side-bar .block-0 {
   border-top: 4px solid #fab85a;
@@ -84,7 +89,14 @@
 .side-bar .block-name {
   width: 100%;
   padding-left: 10px;
+  padding-top: 7px;
   font-size: 20px;
+}
+.side-bar .block-type {
+  font-size: 11px;
+  line-height: 0px;
+  color: #888;
+  font-weight: bold;
 }
 
 .content {
@@ -227,9 +239,11 @@ tile {
   shape-rendering: crispEdges;
 }
 
-/*https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas/11751817#answer-7665647*/
-.plot>canvas {
-  margin: 0;
+.plot {
+  text-align: center;
+}
+.plot > canvas {
+  margin: 0 !important;
   z-index: 2;
   image-rendering: optimizeSpeed;             /* Older versions of FF          */
   image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */

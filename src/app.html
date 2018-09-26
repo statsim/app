@@ -43,7 +43,10 @@
     >
       <!-- Block actions bar-->
       <md-card-actions :class="'block-header-' + block.typeCode">
-        <div class="block-name"><strong>{{ block.name }}</strong> <span style="color: #777">{{ block.type }}</span></div>
+        <div class="block-name">
+          <strong>{{ block.name }}</strong>
+          <p class="block-type">{{ block.type }}</p>
+        </div>
         <md-button class="md-icon-button" v-on:click.native="moveBlockToTop(blockIndex)">
           <md-icon>keyboard_capslock</md-icon>
         </md-button>
@@ -54,13 +57,13 @@
           <md-icon>expand_more</md-icon>
         </md-button>
         <md-button class="md-icon-button" v-on:click.native="removeBlock(blockIndex)">
-          <md-icon>close</md-icon>
+          <md-icon>delete</md-icon>
         </md-button>
       </md-card-actions>
 
       <!-- Random Variable -->
       <md-card-content v-if="block.typeCode === 0">
-        <md-input-container>
+        <md-input-container md-clearable>
           <label>Name</label>
           <md-input
             v-model="block.name"
@@ -101,7 +104,7 @@
 
       <!-- Expression -->
       <md-card-content v-if="block.typeCode === 1">
-        <md-input-container>
+        <md-input-container md-clearable>
           <label>Name</label>
           <md-input
             v-model="block.name"
@@ -136,7 +139,7 @@
 
       <!-- Data -->
       <md-card-content v-if="block.typeCode === 2">
-        <md-input-container>
+        <md-input-container md-clearable>
           <label>Name</label>
           <md-input
             v-model="block.name"
@@ -160,7 +163,7 @@
 
       <!-- Accumulator -->
       <md-card-content v-if="block.typeCode === 3">
-        <md-input-container>
+        <md-input-container md-clearable>
           <label>Name</label>
           <md-input
             v-model="block.name"
