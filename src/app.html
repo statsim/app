@@ -109,9 +109,14 @@
         </md-input-container>
         <md-input-container>
           <label>Value</label>
-          <md-input
+          <md-autocomplete
             v-model="block.value"
-          ></md-input>
+            :list="blocks"
+            :filter-list="blockFilter"
+            :min-chars="0"
+            :debounce="300"
+            print-attribute="name"
+          ></md-autocomplete>
         </md-input-container>
         <md-checkbox
           v-model="block.show"
@@ -163,15 +168,27 @@
         </md-input-container>
         <md-input-container>
           <label>Change value/expression</label>
-          <md-input
+          <md-autocomplete
             v-model="block.value"
-          ></md-input>
+            :list="blocks"
+            :filter-list="blockFilter"
+            :min-chars="0"
+            :debounce="300"
+            print-attribute="name"
+            required
+          ></md-autocomplete>
         </md-input-container>
         <md-input-container>
           <label>Initial value</label>
-          <md-input
+          <md-autocomplete
             v-model="block.initialValue"
-          ></md-input>
+            :list="blocks"
+            :filter-list="blockFilter"
+            :min-chars="0"
+            :debounce="300"
+            print-attribute="name"
+            required
+          ></md-autocomplete>
         </md-input-container>
 
         <md-checkbox v-model="block.show" class="md-primary">

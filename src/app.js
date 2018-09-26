@@ -306,6 +306,18 @@ const params = {
     }
   },
   methods: {
+    blockFilter (list, query) {
+      const arr = []
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].name.indexOf(query) !== -1) {
+          arr.push(list[i])
+        }
+        if (arr.length > 5) {
+          break
+        }
+      }
+      return arr
+    },
     toggleRightSidenav () {
       this.$refs.rightSidenav.toggle()
     },
