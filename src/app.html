@@ -1,10 +1,21 @@
 <div>
+  <!-- Confirm model removal-->
+  <md-dialog-confirm
+    md-title="Remove model?"
+    md-content-html="To delete current model with all its elements select <b>REMOVE</b><br>To cancel click anywhere outside of this white block or choose CANCEL"
+    md-ok-text="Remove"
+    md-cancel-text="Cancel"
+    @close="removeModel"
+    ref="remove-dialog">
+  </md-dialog-confirm>
+
   <md-toolbar class="tool-bar md-dense">
     <p class="logo-icon">{{ icon }}</p>
-    <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.1.2</sup></h2>
+    <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.2.1</sup></h2>
     <md-menu md-size="4">
       <md-button class="md-raised md-primary" md-menu-trigger>
-        + Add element
+        Add Block
+        <md-tooltip md-direction="bottom">Add new element to the model</md-tooltip>
       </md-button>
       <md-menu-content>
         <md-menu-item v-on:click.native="addBlock(2)">
@@ -42,8 +53,48 @@
         -->
       </md-menu-content>
     </md-menu>
+
+
   </md-toolbar>
   <div id="side-bar" class="side-bar">
+    <!-- MODELS -->
+    <!--
+    <md-tabs class="md-transparent" @change="switchModel">
+      <md-tab
+        v-for="(model, modelId) in models"
+        :md-label="model.modelParams.name"
+      >
+      </md-tab>
+    </md-tabs>
+    -->
+    <div class="model-selector">
+      <md-button
+        v-for="(model, modelId) in models"
+        :class="{'md-dense': true, 'md-raised': (modelId === activeModel)}"
+        v-on:click.native="switchModel(modelId)"
+      >{{ model.modelParams.name }}
+      </md-button>
+      <md-button
+        class="md-dense md-icon-button"
+        v-on:click.native="createModel()"
+      >
+        <md-icon>add</md-icon>
+        <md-tooltip md-direction="bottom">Add new model or distribution</md-tooltip>
+      </md-button>
+    </div>
+    <!-- MODEL INFO -->
+    <div style="padding: 10px;">
+    <md-input-container md-clearable>
+      <label>Name</label>
+      <md-input
+        v-model="modelParams.name"
+      ></md-input>
+    </md-input-container>
+    <md-input-container>
+      <label>Description</label>
+      <md-textarea maxlength="70" v-model="modelParams.description"></md-textarea>
+    </md-input-container>
+    </div>
     <!-- BLOCKS -->
     <md-card 
       v-for="(block, blockIndex) in blocks"
@@ -58,15 +109,19 @@
         </div>
         <md-button class="md-icon-button" v-on:click.native="moveBlockToTop(blockIndex)">
           <md-icon>keyboard_capslock</md-icon>
+          <md-tooltip md-direction="bottom">Move to top</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-on:click.native="moveBlockUp(blockIndex)">
           <md-icon>expand_less</md-icon>
+          <md-tooltip md-direction="bottom">Move up</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-on:click.native="moveBlockDown(blockIndex)">
           <md-icon>expand_more</md-icon>
+          <md-tooltip md-direction="bottom">Move down</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-on:click.native="removeBlock(blockIndex)">
           <md-icon>delete</md-icon>
+          <md-tooltip md-direction="bottom">Remove curent block</md-tooltip>
         </md-button>
       </md-card-actions>
 
@@ -80,8 +135,18 @@
         </md-input-container>
         <md-input-container>
           <label for="distributionType">Distribution type:</label>
-          <md-select name="distributionType" id="distributionType" v-model="block.distribution">
-            <md-option v-for="(params, distributionType) in distributions" :value="distributionType">{{ distributionType }}</md-option>
+          <!-- @change: reset distribution paramaters when distribution changed -->
+          <md-select
+            name="distributionType"
+            id="distributionType"
+            v-model="block.distribution"
+          >
+            <md-option
+              v-for="(params, distributionType) in distributions"
+              v-if="distributionType !== modelParams.name" 
+              :value="distributionType"
+              @selected="block.params = {}"
+            >{{ distributionType }}</md-option>
           </md-select>
         </md-input-container>
         <md-input-container
@@ -97,18 +162,19 @@
         <!-- Sample once per cycle-->
         <md-checkbox
           v-model="block.once"
-          :disabled="steps < 1.5"
+          :disabled="modelParams.steps < 1.5"
           class="md-primary"
         >
           Sampled once
         </md-checkbox>
         <md-checkbox
-          :disabled="(steps > 1.5) && !block.once"
+          :disabled="(modelParams.steps > 1.5) && !block.once"
           v-model="block.show"
           class="md-primary"
         >
           Show in results
         </md-checkbox>
+        <pre>{{ block }}</pre>
       </md-card-content>
 
       <!-- Expression -->
@@ -139,7 +205,7 @@
         <md-checkbox 
           v-model="block.history"
           class="md-primary"
-          :disabled="steps < 1.5"
+          :disabled="modelParams.steps < 1.5"
         >
           Track history
         </md-checkbox>
@@ -209,7 +275,7 @@
         <md-checkbox 
           v-model="block.history"
           class="md-primary"
-          :disabled="steps < 1.5"
+          :disabled="modelParams.steps < 1.5"
         >
           Track history
         </md-checkbox>
@@ -220,8 +286,16 @@
       <md-card-content v-if="block.typeCode === 4">
         <md-input-container>
           <label for="distributionType">Distribution:</label>
-          <md-select name="distributionType" id="distributionType" v-model="block.distribution">
-            <md-option v-for="(params, distributionType) in distributions" :value="distributionType">{{ distributionType }}</md-option>
+          <md-select
+            name="distributionType"
+            id="distributionType"
+            v-model="block.distribution"
+          >
+            <md-option
+              v-for="(params, distributionType) in distributions"
+              :value="distributionType"
+              @selected="block.params = {}"
+            >{{ distributionType }}</md-option>
           </md-select>
         </md-input-container>
         <md-input-container
@@ -240,6 +314,7 @@
             v-model="block.value"
           ></md-input>
         </md-input-container>
+        <pre>{{ block }}</pre>
       </md-card-content>
 
       <!-- Condition -->
@@ -251,10 +326,11 @@
           ></md-input>
         </md-input-container>
       </md-card-content>
-
-
-
     </md-card>
+
+    <!-- Model control -->
+    <md-button v-on:click.native="duplicateModel()">Duplicate model</md-button>
+    <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">Remove model</md-button>
   </div>
 
   <!-- CONTENT -->
@@ -262,7 +338,7 @@
     <md-toolbar :class="'message-bar md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
       <h3 style="flex: 1">{{ (error.length) ? 'Error: ' + error : ''}}</h3>
       <md-button disabled class="desktop">Generate: </md-button>
-      <md-button v-on:click.native="generateWebPPL">
+      <md-button class="desktop" v-on:click.native="generateWebPPL">
         WPPL
       </md-button>
       <md-button class="desktop" v-on:click.native="generateJSON">
@@ -311,7 +387,7 @@
       <!-- Simulation method -->
       <md-input-container class="simulation-method-container">
         <label for="simulation-method">Simulation method:</label>
-        <md-select name="simulation-method" id="simulation-method" v-model="method">
+        <md-select name="simulation-method" id="simulation-method" v-model="modelParams.method">
           <md-option
             v-for="(methodObj, method) in simulationMethods" 
             :value="method">{{ methodObj.name }}</md-option>
@@ -326,7 +402,7 @@
           type="number"
           min="1"
           step="1"
-          v-model="steps"
+          v-model="modelParams.steps"
         >
         </md-input>
       </md-input-container>
@@ -334,7 +410,7 @@
       <!-- Method parameters -->
       <div
         class="method-param"
-        v-for="(paramOptions, param) in simulationMethods[method].params"
+        v-for="(paramOptions, param) in simulationMethods[modelParams.method].params"
       >
 
       <!-- Boolean -->
@@ -382,7 +458,7 @@
         type="number"
         min="1"
         step="1"
-        v-model="steps"
+        v-model="modelParams.steps"
       >
       </md-input>
     </md-input-container>
@@ -390,7 +466,7 @@
     <!-- Simulation method -->
     <md-input-container class="simulation-method-container simulation-param desktop">
       <label for="simulation-method">Simulation method:</label>
-      <md-select name="simulation-method" id="simulation-method" v-model="method">
+      <md-select name="simulation-method" id="simulation-method" v-model="modelParams.method">
         <md-option
           v-for="(methodObj, method) in simulationMethods" 
           :value="method">{{ methodObj.name }}</md-option>
@@ -398,12 +474,12 @@
     </md-input-container>
 
     <div class="summary mobile">
-      <p>Method: {{ method }}</p>
-      <p>Time steps: {{ steps }}</p>
-      <p v-if="methodParams.samples">Samples: {{ methodParams.samples }}</p>
+      <p>Method: {{ modelParams.method }}</p>
+      <p>Time steps: {{ modelParams.steps }}</p>
+      <p v-if="(['MCMC','rejection', 'HMC'].indexOf(modelParams.method) >= 0) && methodParams.samples">Samples: {{ methodParams.samples }}</p>
     </div>
     <md-button class="md-raised md-accent" @click="toggleRightSidenav">Params</md-button>
     <md-button class="md-raised md-primary" v-on:click.native="run()"><span class="desktop">Compile & </span>Run</md-button>
   </md-bottom-bar>
-  <div id="loader" class="hidden"><span>Loading..</span></div>
+  <div id="loader" class="hidden"><span>Processing..</span></div>
 </div>

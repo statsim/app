@@ -3,12 +3,14 @@ const Dygraphs = require('dygraphs')
 const d3 = require('d3-array')
 const D3Network = require('vue-d3-network')
 const hist2d = require('d3-hist2d').hist2d
-const distributions = require('./lib/distributions.js')
-const simulationMethods = require('./lib/methods.js')
-const Querify = require('./lib/querify.js')
-const getJSON = require('./lib/getJSON.js')
-
-const query = new Querify(['s', 'm', 'b', 'p', 'e']) // Possible query variables
+const distributions = require('./lib/distributions')
+const simulationMethods = require('./lib/methods')
+const compileModels = require('./lib/compileModels')
+const createLink = require('./lib/createLink')
+const parseLink = require('./lib/parseLink')
+// const Querify = require('./lib/querify')
+// const getJSON = require('./lib/getJSON')
+// const query = new Querify(['m', 'a']) // Possible query variables
 
 // Access global objects
 const FileReader = window['FileReader']
@@ -30,14 +32,6 @@ const icons = [
 ]
 
 const icon = icons[Math.floor(Math.random() * 6)]
-
-const blockTypes = [
-  'Random Variable',
-  'Expression',
-  'Data',
-  'Accumulator',
-  'Observer'
-]
 
 const BlockClasses = [
   class RandomVariable {
@@ -84,7 +78,7 @@ const BlockClasses = [
   },
   class Observer {
     constructor (counter) {
-      this.distribution = 'Uniform'
+      this.distribution = 'Gaussian'
       this.params = {}
       this.type = 'Observer'
       this.typeCode = 4
@@ -159,6 +153,15 @@ function drawVectors (vectors, names) {
   console.log('drawVectors()')
 }
 
+function delay (time, cb) {
+  this.loading = true
+  console.log(this)
+  setTimeout(() => {
+    this.loading = false
+    cb()
+  }, time)
+}
+
 const params = {
   components: {
     D3Network
@@ -177,24 +180,71 @@ const params = {
     link: '',
     loading: false, // show loading indicator
     error: '',
-    variableCounter: 0,
-    steps: 1,
-    distributions,
+    // distributions,
     code: '', // compiled webppl code
-    blocks: [],
     simulationMethods,
-    method: 'MCMC',
-    methodParams: {
-      samples: 1000
-    }
+    /*
+      SWITCHING BETWEEN MODELS
+      In JS when you assign (o1 = o2) arrays or objects you actually just create a link
+      So changing o1 keys automatically changes o2
+      We'll use that feature to switch
+      There're active model param objects: modelParams, methodParams, blocks
+      But they always link to one of the models objects
+    */
+    activeModel: 0,
+    models: [
+      {
+        modelParams:
+        {
+          name: 'Main',
+          description: '',
+          steps: 1,
+          method: 'MCMC'
+        },
+        blocks: [],
+        methodParams:
+        {
+          samples: 1000
+        }
+      }
+    ],
+    // method: 'MCMC',
+    // steps: 1,
+    blocks: [], // link - set automatically from models[]
+    modelParams: {}, // link
+    methodParams: {} // link
   }),
   computed: {
+    distributions () {
+      const newDistrs = {}
+      this.models.forEach(m => {
+        const distr = {}
+        m.blocks.filter(b => (b.typeCode === 2)).forEach(b => {
+          distr[b.name] = {
+            type: 'real'
+          }
+        })
+        console.log('Distr:', distr)
+        newDistrs[m.modelParams.name] = distr
+      })
+      const finDistrs = Object.assign({}, newDistrs, distributions)
+      console.log(finDistrs)
+      return finDistrs
+    },
     graphNodes: function () {
-      return this.blocks.map((b, i) => ({
-        id: i,
-        name: (b.name && b.name.length) ? `${b.name} (${b.type})` : b.type,
-        _color: colors[b.typeCode]
-      }))
+      console.log('Active: ', this.activeModel)
+      return this.blocks
+        .map((b, i) => ({
+          id: i,
+          name: (b.name && b.name.length) ? `${b.name} (${b.type})` : b.type,
+          _color: colors[b.typeCode]
+        }))
+        .concat(this.models.filter((_, i) => i !== this.activeModel).map((m, i) => ({
+          id: this.blocks.lenght + i,
+          name: m.modelParams.name,
+          _color: '#FFF',
+          _size: 35
+        })))
     },
     graphLinks: function () {
       const check = (str, baseBlockIndex) => {
@@ -216,9 +266,16 @@ const params = {
       this.blocks.forEach((b, i) => {
         switch (b.typeCode) {
           case 0: // RV
-            Object.keys(distributions[b.distribution]).forEach(k => {
-              links = links.concat(check(b.params[k], i))
-            })
+            // Load selected distribution / model
+            const distr = this.distributions[b.distribution]
+            if (distr) {
+              // Iterate over its keys
+              Object.keys(distr).forEach(k => {
+                // Check params=keys of the block
+                // Add result to links array
+                links = links.concat(check(b.params[k], i))
+              })
+            }
             break
           case 1: // Expression
             links = links.concat(check(b.value, i))
@@ -228,7 +285,7 @@ const params = {
             links = links.concat(check(b.initialValue, i))
             break
           case 4: // Observer
-            Object.keys(distributions[b.distribution]).forEach(k => {
+            Object.keys(this.distributions[b.distribution]).forEach(k => {
               links = links.concat(check(b.params[k], i))
             })
             links = links.concat(check(b.value, i))
@@ -241,75 +298,80 @@ const params = {
       return links
     }
   },
+  created () {
+    // Before mounting
+    // Initialize main model
+    this.switchModel(0)
+  },
   mounted () {
-    const app = this
-    const kMap = {
-      d: 'distribution',
-      f: 'file',
-      h: 'history',
-      i: 'initialValue',
-      t: 'typeCode',
-      n: 'name',
-      o: 'once',
-      p: 'params',
-      s: 'show',
-      v: 'value'
-    }
-    const pMap = {
-      s: 'samples',
-      l: 'lag',
-      b: 'burn',
-      o: 'onlyMAP'
-    }
+    // After mounting
+    // Check if window.location contain any param
+    // m: short name for example model saved in JSON format
+    // a: array of models embedded in the link
     if (window.location.search) {
-      var queryObj = query.getQueryObject(window.location.search)
-      setTimeout(() => {
-        console.log('Got input params', queryObj)
-        // Read blocks
-        if (queryObj.b && Array.isArray(queryObj.b)) {
-          queryObj.b.forEach(b => {
-            const newb = {}
-            Object.keys(b).forEach(k => {
-              if (k === 'o' || k === 's' || k === 'h') {
-                b[k] = b[k] === 1
-              }
-              newb[kMap[k]] = ((k !== 't') && (typeof b[k] === 'number')) ? b[k] + '' : b[k]
-            })
-            newb.type = blockTypes[b.t]
-            console.log(newb.type)
-            app.blocks.push(newb)
-          })
+      parseLink(
+        window.location.search,
+        (models) => {
+          console.log('Got models', models)
+          setTimeout(() => {
+            this.models = models
+            this.switchModel(0)
+          }, 200)
+        },
+        (err) => {
+          this.error = err
         }
-        // Read method params
-        if (queryObj.p && (typeof queryObj.p === 'object')) {
-          Object.keys(queryObj.p).forEach(paramKey => {
-            // Get fullkey if exist
-            const fullKey = (pMap[paramKey] && pMap[paramKey].length > 0) ? pMap[paramKey] : paramKey
-            app.methodParams[fullKey] = queryObj.p[paramKey]
-          })
-        }
-        if (queryObj.s) {
-          app.steps = +queryObj.s
-        }
-        if (queryObj.e) {
-          app.method = queryObj.e
-        }
-        if (queryObj.m) {
-          getJSON(
-            `/models/${queryObj.m}.json`,
-            (d) => {
-              console.log('Readed data:', d)
-              Object.assign(app, d)
-            },
-            (e) => {
-              app.error = `Loading model error: ${e}`
-            }
-          )
-        }
-      }, 300)
-    }
+      )
+    } // *if window.location.search is not empty
   },
   methods: {
+    // Open remove model dialog
+    openDialog (ref) {
+      this.$refs[ref].open()
+    },
+    createModel () {
+      const m = {
+        modelParams: {
+          name: 'Model' + this.models.length,
+          description: '',
+          method: 'MCMC',
+          steps: 1
+        },
+        methodParams: {
+          samples: 1000
+        },
+        blocks: []
+      }
+      this.models.push(m)
+      this.switchModel(this.models.length - 1)
+    },
+    switchModel (modelId) {
+      const m = this.models[modelId]
+      console.log('Switching to ', modelId, m)
+      this.link = '' // clean code
+      const chartContainer = document.querySelector('.charts')
+      if (chartContainer) {
+        chartContainer.innerHTML = ''
+      }
+      this.activeModel = modelId
+      this.blocks = m.blocks
+      this.modelParams = m.modelParams
+      this.methodParams = m.methodParams
+    },
+    duplicateModel () {
+      let newModel = JSON.parse(JSON.stringify(this.models[this.activeModel]))
+      newModel.modelParams.name += 'Copy'
+      this.models.push(newModel)
+    },
+    removeModel (confirm) {
+      if (confirm === 'ok') {
+        this.models.splice(this.activeModel, 1)
+        this.switchModel(0)
+      }
+    },
+    // Callback for autocomplete element
+    // Filter the blocks list to match query string (using a block's name)
+    // Returns filtered array of blocks
     blockFilter (list, query) {
       const arr = []
       for (let i = 0; i < list.length; i++) {
@@ -329,38 +391,20 @@ const params = {
       this.$refs.rightSidenav.close()
     },
     generateWebPPL () {
-      this.loading = true
-      setTimeout(() => {
-        this.loading = false
+      delay.call(this, 1000, () => {
         this.compile()
         this.link = this.code
-      }, 500)
+      })
     },
     generateLink () {
-      const bl = this.blocks.map(b => {
-        const o = {}
-        Object.keys(b).forEach(k => {
-          // TODO: Possible error if multiple keys start with the same char
-          if (k !== 'type') {
-            o[k[0]] = (typeof b[k] === 'boolean') ? +b[k] : b[k]
-          }
-        })
-        return o
-      })
-      this.link = 'https://statsim.com/app/' + query.getQueryString({
-        s: this.steps,
-        e: this.method,
-        b: bl,
-        p: this.methodParams
+      delay.call(this, 400, () => {
+        this.link = createLink(this.models)
       })
     },
     generateJSON () {
-      this.link = JSON.stringify({
-        blocks: this.blocks,
-        steps: this.steps,
-        method: this.method,
-        methodParams: this.methodParams
-      }, null, 2) // indent with 2 spaces
+      delay.call(this, 600, () => {
+        this.link = JSON.stringify(this.models, null, 2) // indent with 2 spaces
+      })
     },
     lcb (link) {
       link._svgAttrs = { 'marker-end': 'url(#m-end)' }
@@ -380,8 +424,7 @@ const params = {
       }
     },
     addBlock (blockClassNumber) {
-      this.variableCounter++
-      this.blocks.push(new BlockClasses[blockClassNumber](this.variableCounter))
+      this.blocks.push(new BlockClasses[blockClassNumber](this.blocks.length))
     },
     moveBlockToTop (blockIndex) {
       if (blockIndex > 0) {
@@ -402,188 +445,8 @@ const params = {
       this.blocks.splice(blockIndex, 1)
     },
     compile () {
-      let c = ''
-
-      // Model generation
-      let model = 'var model = function () {\n'
-      let step = {
-        body: '',
-        list: '_i',
-        accum: '_i: _i + 1',
-        initial: '_i: 1'
-      }
-      let modelOutput = ''
-      let observers = ''
-
-      this.blocks.forEach(b => {
-        if (b.typeCode === 0) {
-          // --> Random variable
-          let params = ''
-          let distParams = Object.keys(distributions[b.distribution])
-          distParams.forEach((key, i) => {
-            if (b.params.hasOwnProperty(key)) {
-              params += `${key}: ${b.params[key]}${(i < distParams.length - 1) ? ', ' : ''}`
-            }
-          })
-          // Check if we are inside the loop
-          if ((this.steps > 1.5) && (!b.once)) {
-            step.body += `var ${b.name} = sample(${b.distribution}({${params}}))\n`
-          } else {
-            model += `var ${b.name} = sample(${b.distribution}({${params}}))\n`
-          }
-        } else if (b.typeCode === 1) {
-          // --> Expression
-          // Check if we are inside the loop
-          if (this.steps > 1.5) {
-            // Generate a list of accumulators
-            step.list += (step.list.length) ? ', ' : ''
-            step.list += b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
-            // Caclulate expression in the body
-            step.body += `var _${b.name} = ${b.value}\n`
-            // Generate accumulator expressions
-            step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: _${b.name}`
-            step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''
-            // Generate initial values
-            step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: 0`
-            step.initial += (b.history) ? `,\n${b.name}_hist: [0]` : ''
-          } else {
-            model += `var ${b.name} = ${b.value}\n`
-          }
-        } else if (b.typeCode === 2) {
-          // --> Data
-          model = (b.value.indexOf(',') >= 0)
-            ? `var ${b.name} = [${b.value}]\n` + model
-            : `var ${b.name} = ${b.value}\n` + model
-        } else if (b.typeCode === 3) {
-          // --> Accumulator
-          // Check if we are inside the loop
-          if (this.steps > 1.5) {
-            // Generate a list of accumulators
-            step.list += (step.list.length) ? ', ' : ''
-            step.list += b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
-            // Accumulate value in the step body
-            step.body += `var _${b.name} = ${b.name} + ${b.value}\n`
-            // Generate accumulator expressions
-            step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: _${b.name}`
-            step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''
-            // Generate initial values
-            step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: ${b.initialValue}`
-            step.initial += (b.history) ? `,\n${b.name}_hist: [${b.initialValue}]` : ''
-          } else {
-            model += `var ${b.name} = ${b.initialValue} + ${b.value}\n`
-          }
-        } else if (b.typeCode === 4) {
-          // --> Observer
-          const findDataVectors = str => {
-            const dataVectors = []
-            this.blocks.forEach(b => {
-              if ((b.typeCode === 2) && b.value.indexOf(',') && (str.indexOf(b.name) >= 0)) {
-                dataVectors.push(b.name)
-              }
-            })
-            console.log('String: ', str, dataVectors)
-            return dataVectors
-          }
-          const distParams = Object.keys(distributions[b.distribution])
-          let vectors = []
-          let params = ''
-          let observer = ''
-          // Check distribution parameters
-          distParams.forEach((key, i) => {
-            if (b.params.hasOwnProperty(key)) {
-              vectors = vectors.concat(findDataVectors(b.params[key]))
-              params += `${key}: ${b.params[key]}${(i < distParams.length - 1) ? ', ' : ''}`
-            }
-          })
-          // Check observed value
-          vectors = vectors.concat(findDataVectors(b.value))
-          // Generate observer
-          observer += (vectors.length > 0)
-            ? (vectors.length === 1) ? `map(function (${vectors[0]}) {\n` : `map(function (${vectors.join(',')}) {\n`
-            : ''
-          observer += `observe(${b.distribution}({${params}}), ${b.value})\n`
-          observer += (vectors.length > 0)
-            ? `}, ${vectors.join(',')})\n`
-            : '\n'
-          if (this.steps > 1.5) {
-            observers += observer
-          } else {
-            model += observer
-          }
-        } else if (b.typeCode === 5) {
-          // --> Condition
-          const cond = `condition(${b.value})\n`
-          if (this.steps > 1.5) {
-            observers += cond
-          } else {
-            model += cond
-          }
-        }
-        if (
-          b.name && b.show && (
-            // Multi step simulation - output only what we can
-            ((this.steps > 1.5) && (((b.typeCode === 0) && b.once) || (b.typeCode === 1) || (b.typeCode === 2) || (b.typeCode === 3))) ||
-            // One step - output all we want
-            (this.steps < 1.5)
-          )
-        ) { // Return variables
-          modelOutput += b.name + ', ' + ((b.history && this.steps > 1.5) ? b.name + '_hist, ' : '')
-        }
-      })
-      // Generate steps
-      if (this.steps > 1.5) {
-        model += `
-var step = function (n) {
-if (n > 0) {
-var {${step.list}} = step(n - 1)
-${step.body}
-return {
-${step.accum}
-}
-} else {
-return {
-${step.initial}
-}
-}
-}
-var {${step.list}} = step(${Math.round(this.steps)})
-`
-        model += observers
-      }
-      // Remove last comma from return object
-      if (modelOutput.length > 0) {
-        modelOutput = modelOutput.slice(0, -2)
-        model += `return {${modelOutput}}\n`
-      }
-      model += '}\n'
-      c += model
-
-      // Inference
-      let inf = ''
-      if (this.method === 'deterministic') {
-        inf = `model()\n`
-      } else {
-        let paramStr = ''
-        let kernelStr = ''
-        let kernelParamStr = ''
-        let realMethod = this.method
-        Object.keys(this.methodParams).forEach(key => {
-          if (key === 'steps' || key === 'stepSize') {
-            kernelParamStr += (kernelParamStr.length) ? ', ' : ''
-            kernelParamStr += `${key}: ${this.methodParams[key]}`
-          } else {
-            paramStr += `, ${key}: ${this.methodParams[key]}`
-          }
-        })
-        if (this.method === 'HMC') {
-          realMethod = 'MCMC'
-          kernelStr = (kernelParamStr.length) ? `, kernel: {HMC: {${kernelParamStr}}}` : `, kernel: 'HMC'`
-        }
-        inf = `Infer({model, method: '${realMethod}'${kernelStr + paramStr}})\n`
-      }
-      c += inf
-
-      this.code = c
+      // Convert available models (this.models) to the probabilistic lang
+      this.code = compileModels(this.models, this.activeModel)
     },
     run () {
       this.loading = true
@@ -599,7 +462,7 @@ var {${step.list}} = step(${Math.round(this.steps)})
             document.getElementById('loader').className = 'hidden'
             this.loading = false
             document.querySelector('.charts').innerHTML = ''
-            if (this.method === 'deterministic') {
+            if (this.modelParams.method === 'deterministic') {
               // deterministic
               let vectors = []
               let names = []

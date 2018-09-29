@@ -47,6 +47,29 @@
   width: 27%;
 }
 
+.side-bar .md-tabs-content {
+  display: none;
+}
+
+.side-bar .model-selector {
+  background-color: #C0C0C0;
+  background: -moz-linear-gradient(top, #c0c0c0 1%, #adadad 100%);
+  background: -webkit-linear-gradient(top, #c0c0c0 1%,#adadad 100%);
+  background: linear-gradient(to bottom, #c0c0c0 1%,#adadad 100%);
+  margin: -5px;
+  padding: 0 16px;
+}
+
+.side-bar .model-selector button {
+  margin: 24px 0 0 0;
+  box-shadow: none !important;
+  border-radius: 0;
+}
+
+.side-bar .model-selector button.md-raised {
+  background-color: #ddd !important;
+}
+
 .side-bar .block {
   margin: 10px;
 }
@@ -105,6 +128,8 @@
 }
 
 .content pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
   overflow-x: auto;
   margin: 20px;
   padding: 10px;
@@ -267,16 +292,11 @@ tile {
   .side-bar {
     position: relative;
     width: 100%;
-    top: 110px;
+    top: 55px;
   }
   .content {
     padding-left: 0;
-    padding-top: 110px;
-  }
-  .content .message-bar {
-    position: absolute;
-    top: 55px;
-    width: 100%;
+    padding-top: 55px;
   }
   .content .chart {
     width: 98%;
