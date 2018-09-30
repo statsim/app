@@ -13,6 +13,7 @@ function getParams (paramObj) {
 module.exports = function (models, activeModel) {
   let finalCode = ''
   let modelCodes = []
+  console.log('Compiling models: ', models)
 
   models.forEach((m, mi) => {
     // Check if the model is main or loaded as a function
@@ -23,10 +24,10 @@ module.exports = function (models, activeModel) {
     if (mi !== activeModel) {
       code += `var ${m.modelParams.name} = function (params) {\n`
       m.blocks
-        .filter(b => ((b.typeCode === 2) && (!b.value.length)))
+        .filter(b => ((b.typeCode === 2) && (b.useAsParameter)))
         .forEach((b, bi) => {
           // Make using model as a function easier parsing arguments as object and as usual coma-separated
-          code += `var ${b.name} = (params.${b.name} != undefined) ? params.${b.name} : arguments[${bi}]\n`
+          code += `var ${b.name} = ((typeof params !== 'undefined') && (typeof params.${b.name} !== 'undefined')) ? params.${b.name} : arguments[${bi}]\n`
         })
     }
 
@@ -78,9 +79,17 @@ module.exports = function (models, activeModel) {
       } else if ((b.typeCode === 2) && b.value.length) {
         // --> DATA
 
-        model = (b.value.indexOf(',') >= 0)
-          ? `var ${b.name} = [${b.value}]\n` + model
-          : `var ${b.name} = ${b.value}\n` + model
+        // If value is comma-separated list, add array brackets
+        const valueStr = (b.value.indexOf(',') >= 0) ? `[${b.value}]` : b.value
+        // Check if it's an external model
+        if ((mi !== activeModel) && (b.useAsParameter)) {
+          // In external model check if data value is already defined as a parameter
+          // Use inner model value as default value in case parameter is missing
+          model = `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n` + model
+        } else {
+          // Active model: place data on top of model
+          model = `var ${b.name} = ${valueStr}\n` + model
+        }
       } else if ((b.typeCode === 3) && b.value.length) {
         // --> ACCUMULATOR
 
@@ -229,13 +238,15 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
     }
   }) // *models.forEach
 
+  console.log('Compiled models array: ', modelCodes)
   // Now we have an array of compiled models
   // Iteratively add only needed models to the code
   // We already have the main model added to the 'finalCode' text
   // We append only models used inside finalCode
   // Then check more to find 2nd, 3rd... level models
-  let iter = (modelCodes.length > 0)
-  let added = []
+  let iter = (modelCodes.length > 1)
+  // Models already added to the final code
+  let added = [activeModel]
   while (iter) {
     iter = false
     modelCodes.forEach((mc, mci) => {

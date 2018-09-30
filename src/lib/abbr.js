@@ -14,5 +14,6 @@ module.exports = {
   sm: 'samples',
   p: 'params',
   t: 'typeCode',
+  u: 'useAsParameter',
   v: 'value'
 }
