@@ -20,7 +20,7 @@
       <md-menu-content>
         <md-menu-item v-on:click.native="addBlock(2)">
           <md-icon :style="'color: ' + colors[2]">view_headline</md-icon>
-          <span>Data</span>
+          <span>Data (Input)</span>
         </md-menu-item>
         <md-menu-item v-on:click.native="addBlock(0)">
           <md-icon :style="'color: ' + colors[0]">graphic_eq</md-icon>
@@ -78,7 +78,7 @@
         class="md-dense md-icon-button"
         v-on:click.native="createModel()"
       >
-        <md-icon>add</md-icon>
+        <md-icon style="opacity: 0.3">add</md-icon>
         <md-tooltip md-direction="bottom">Add new model or distribution</md-tooltip>
       </md-button>
     </div>
@@ -161,20 +161,20 @@
         </md-input-container>
         <!-- Sample once per cycle-->
         <md-checkbox
-          v-model="block.once"
-          :disabled="modelParams.steps < 1.5"
-          class="md-primary"
-        >
-          Sampled once
-        </md-checkbox>
-        <md-checkbox
           :disabled="(modelParams.steps > 1.5) && !block.once"
           v-model="block.show"
           class="md-primary"
         >
           Show in results
         </md-checkbox>
-        <pre>{{ block }}</pre>
+        <md-checkbox
+          v-model="block.once"
+          :disabled="modelParams.steps < 1.5"
+          class="md-primary"
+        >
+          Sampled once
+        </md-checkbox>
+        <!-- <pre>{{ block }}</pre> -->
       </md-card-content>
 
       <!-- Expression -->
@@ -221,7 +221,7 @@
           ></md-input>
         </md-input-container>
         <md-input-container>
-          <label>Comma-separated values</label>
+          <label>One or many comma-separated values</label>
           <md-textarea v-model="block.value" height="5"></md-textarea>
         </md-input-container>
         <md-input-container>
@@ -234,7 +234,14 @@
         >
           Show in results
         </md-checkbox>
-      </md-card-content>
+        <md-checkbox
+          v-model="block.useAsParameter"
+          class="md-primary"
+        >
+          Use as parameter
+          <md-tooltip md-direction="bottom">Pass data to current model using this parameter</md-tooltip>
+        </md-checkbox>
+              </md-card-content>
 
       <!-- Accumulator -->
       <md-card-content v-if="block.typeCode === 3">
@@ -314,7 +321,22 @@
             v-model="block.value"
           ></md-input>
         </md-input-container>
-        <pre>{{ block }}</pre>
+
+        <!--
+        <md-card-expand>
+          <md-card-actions>
+            <span style="flex: 1"></span>
+            <md-button class="md-icon-button" md-expand-trigger>
+              <md-icon>help</md-icon>
+            </md-button>
+          </md-card-actions>
+
+          <md-card-content>
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Optio itaque ea, nostrum odio. Dolores, sed accusantium quasi non, voluptas eius illo quas, saepe voluptate pariatur in deleniti minus sint. Excepturi.
+          </md-card-content>
+        </md-card-expand>
+        -->
+        <!-- <pre>{{ block }}</pre> -->
       </md-card-content>
 
       <!-- Condition -->
@@ -328,6 +350,14 @@
       </md-card-content>
     </md-card>
 
+    <!-- Model output -->
+    <div class="block">
+      <h3 v-if="blocks.length > 0" style="margin: 35px 0 0 0">Model output:</h3>
+      <md-checkbox v-for="block in blocks" v-if="block.hasOwnProperty('show')" v-model="block.show" class="md-primary" style="width: 100%; margin: 10px 0 5px 0;">
+        <strong>{{ block.name }}</strong> ({{ block.type }})
+      </md-checkbox>
+    </div>
+
     <!-- Model control -->
     <md-button v-on:click.native="duplicateModel()">Duplicate model</md-button>
     <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">Remove model</md-button>
@@ -336,7 +366,10 @@
   <!-- CONTENT -->
   <div class="content">
     <md-toolbar :class="'message-bar md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
-      <h3 style="flex: 1">{{ (error.length) ? 'Error: ' + error : ''}}</h3>
+      <h3 style="flex: 1">
+        {{ (error.length) ? 'Error: ' + error : '' }}
+        {{ (message.length && !error.length) ? message : '' }}
+      </h3>
       <md-button disabled class="desktop">Generate: </md-button>
       <md-button class="desktop" v-on:click.native="generateWebPPL">
         WPPL
