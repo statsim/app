@@ -25,14 +25,13 @@
     "vue-material": "^0.8.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.1.0",
+    "@babel/core": "^7.1.2",
     "@babel/preset-env": "^7.1.0",
     "babelify": "^10.0.0",
     "browserify": "^16.2.2",
     "envify": "^4.1.0",
     "nodemon": "^1.18.4",
     "uglify-es": "^3.3.9",
-    "uglify-js": "^3.4.9",
     "vueify": "^9.4.1"
   }
 }
