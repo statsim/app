@@ -40,7 +40,7 @@ const BlockClasses = [
       this.name = 'R' + counter
       this.once = false
       this.params = {}
-      this.show = true
+      this.show = false
       this.type = 'Random Variable'
       this.typeCode = 0
     }
@@ -59,9 +59,10 @@ const BlockClasses = [
     constructor (counter) {
       this.file = null
       this.name = 'D' + counter
-      this.show = true
+      this.show = false
       this.type = 'Data'
       this.typeCode = 2
+      this.useAsParameter = false
       this.value = ''
     }
   },
@@ -179,6 +180,7 @@ const params = {
     },
     link: '',
     loading: false, // show loading indicator
+    message: '',
     error: '',
     // distributions,
     code: '', // compiled webppl code
@@ -215,20 +217,23 @@ const params = {
     methodParams: {} // link
   }),
   computed: {
+    // Calculated list of distributions
+    // Based on predefined distributions from lib/distributions.js
+    // Also new user-defined models added
     distributions () {
       const newDistrs = {}
+      // Iterate over all models
       this.models.forEach(m => {
         const distr = {}
-        m.blocks.filter(b => (b.typeCode === 2)).forEach(b => {
+        // Collect all data fields with useAsParameter attributes
+        m.blocks.filter(b => ((b.typeCode === 2) && (b.useAsParameter))).forEach(b => {
           distr[b.name] = {
-            type: 'real'
+            type: 'any'
           }
         })
-        console.log('Distr:', distr)
         newDistrs[m.modelParams.name] = distr
       })
       const finDistrs = Object.assign({}, newDistrs, distributions)
-      console.log(finDistrs)
       return finDistrs
     },
     graphNodes: function () {
@@ -334,7 +339,7 @@ const params = {
         modelParams: {
           name: 'Model' + this.models.length,
           description: '',
-          method: 'MCMC',
+          method: 'deterministic',
           steps: 1
         },
         methodParams: {
@@ -349,9 +354,12 @@ const params = {
       const m = this.models[modelId]
       console.log('Switching to ', modelId, m)
       this.link = '' // clean code
+      this.error = ''
+      this.message = ''
       const chartContainer = document.querySelector('.charts')
       if (chartContainer) {
         chartContainer.innerHTML = ''
+        document.querySelector('.charts-2d').innerHTML = ''
       }
       this.activeModel = modelId
       this.blocks = m.blocks
@@ -366,7 +374,7 @@ const params = {
     removeModel (confirm) {
       if (confirm === 'ok') {
         this.models.splice(this.activeModel, 1)
-        this.switchModel(0)
+        this.switchModel(this.models.length - 1)
       }
     },
     // Callback for autocomplete element
@@ -453,6 +461,7 @@ const params = {
       this.link = ''
       document.getElementById('loader').className = ''
       this.icon = icons[Math.floor(Math.random() * 6)]
+      this.message = ''
       this.error = ''
       this.compile()
       // Add some delay to finish display update
@@ -461,6 +470,7 @@ const params = {
           webppl.run(this.code, (s, v) => {
             document.getElementById('loader').className = 'hidden'
             this.loading = false
+            this.message = 'Done!'
             document.querySelector('.charts').innerHTML = ''
             if (this.modelParams.method === 'deterministic') {
               // deterministic
@@ -485,6 +495,7 @@ const params = {
             } else {
               // Stochastic viz
               console.log('WebPPL output: ', v)
+              this.message += (v.samples) ? ` Generated ${v.samples.length} samples` : ''
               // Collect samples in a useful object:
               // { variable_name: [sample_1, sample_2, ...] }
               const samples = {}
