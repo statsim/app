@@ -101,12 +101,12 @@
 
 /* Observer */
 .side-bar .block-4 {
-  border-top: 4px solid #3a3bb6;
+  border-top: 4px solid #ababab;
 }
 
 /* Condition */
 .side-bar .block-5 {
-  border-top: 4px solid #000f64;
+  border-top: 4px solid #ababab;
 }
 
 .side-bar .block-name {
@@ -282,6 +282,9 @@ tile {
 @media only screen and (max-width: 860px) {
   .mobile {
     display: initial;
+  }
+  .md-tooltip {
+    display: none;
   }
   .desktop {
     display: none;
