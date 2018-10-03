@@ -3,19 +3,41 @@ const Dygraphs = require('dygraphs')
 const d3 = require('d3-array')
 const D3Network = require('vue-d3-network')
 const hist2d = require('d3-hist2d').hist2d
+const parseCSV = require('csv-parse')
+const fileSaver = require('file-saver')
+
 const distributions = require('./lib/distributions')
 const simulationMethods = require('./lib/methods')
 const compileModels = require('./lib/compileModels')
 const createLink = require('./lib/createLink')
 const parseLink = require('./lib/parseLink')
+
 // const Querify = require('./lib/querify')
 // const getJSON = require('./lib/getJSON')
 // const query = new Querify(['m', 'a']) // Possible query variables
 
 // Access global objects
 const FileReader = window['FileReader']
+const Blob = window['Blob']
 const webppl = window['webppl']
 const plot2d = window['densityPlot'] // ESM WTF!!!
+
+const baseModel = [
+  {
+    modelParams:
+    {
+      name: 'Main',
+      description: '',
+      steps: 1,
+      method: 'MCMC'
+    },
+    blocks: [],
+    methodParams:
+    {
+      samples: 1000
+    }
+  }
+]
 
 const colors = [
   '#eaac0c',
@@ -56,14 +78,20 @@ const BlockClasses = [
     }
   },
   class Data {
-    constructor (counter) {
+    constructor (counter, data) {
       this.file = null
-      this.name = 'D' + counter
+      this.name = (typeof counter === 'string') ? counter : 'D' + counter
       this.show = false
       this.type = 'Data'
       this.typeCode = 2
       this.useAsParameter = false
-      this.value = ''
+      if (data && Array.isArray(data)) {
+        this.value = data.join()
+      } else if (data && (typeof data === 'string')) {
+        this.value = data
+      } else {
+        this.value = ''
+      }
     }
   },
   class Accumulator {
@@ -194,25 +222,8 @@ const params = {
       But they always link to one of the models objects
     */
     activeModel: 0,
-    models: [
-      {
-        modelParams:
-        {
-          name: 'Main',
-          description: '',
-          steps: 1,
-          method: 'MCMC'
-        },
-        blocks: [],
-        methodParams:
-        {
-          samples: 1000
-        }
-      }
-    ],
-    // method: 'MCMC',
-    // steps: 1,
-    blocks: [], // link - set automatically from models[]
+    models: [],
+    blocks: [], // actually link to the 'blocks' array of one of the models[] object
     modelParams: {}, // link
     methodParams: {} // link
   }),
@@ -306,6 +317,7 @@ const params = {
   created () {
     // Before mounting
     // Initialize main model
+    this.models = JSON.parse(JSON.stringify(baseModel))
     this.switchModel(0)
   },
   mounted () {
@@ -330,6 +342,64 @@ const params = {
     } // *if window.location.search is not empty
   },
   methods: {
+    newProject () {
+      delay.call(this, 500, () => {
+        window.history.replaceState({}, 'New project', '.')
+        // Clean models
+        this.models = JSON.parse(JSON.stringify(baseModel))
+        // Switch to base model
+        this.switchModel(0)
+      })
+    },
+    openFile (fileType) {
+      document.getElementById(`open${fileType}File`).click()
+    },
+    openDataFile (e) {
+      const reader = new FileReader()
+      const file = e.target.files[0]
+      console.log(file)
+      reader.readAsText(file)
+      reader.onload = () => {
+        const data = reader.result
+        parseCSV(data, {}, (err, output) => {
+          if (!err) {
+            console.log(output)
+            if (output.length > 1) {
+              // CSV
+              output[0].forEach((h, hi) => {
+                this.blocks.push(new BlockClasses[2](
+                  h,
+                  // Filter out the first line
+                  output.filter((_, i) => i > 0).map(v => v[hi])
+                ))
+              })
+            } else {
+              // Comma-separated line
+              this.blocks.push(new BlockClasses[2](file.name.split('.')[0], output))
+            }
+          } else {
+            console.log(err)
+          }
+        })
+      }
+    },
+    openProjectFile (e) {
+      const reader = new FileReader()
+      const file = e.target.files[0]
+      reader.readAsText(file)
+      reader.onload = () => {
+        const models = JSON.parse(reader.result)
+        delay.call(this, 500, () => {
+          window.history.replaceState({}, 'New project', '.')
+          this.models = Array.isArray(models) ? models : [models]
+          this.switchModel(0)
+        })
+      }
+    },
+    saveProject () {
+      const blob = new Blob([JSON.stringify(this.models, null, 2)], {type: 'text/plain;charset=utf-8'})
+      fileSaver.saveAs(blob, this.models[0].modelParams.name + '.json')
+    },
     // Open remove model dialog
     openDialog (ref) {
       this.$refs[ref].open()

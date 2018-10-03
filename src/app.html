@@ -10,9 +10,34 @@
   </md-dialog-confirm>
 
   <md-toolbar class="tool-bar md-dense">
-    <p class="logo-icon">{{ icon }}</p>
+    <input type="file" accept=".csv, .tsv, .txt" id="openDataFile" v-on:change="openDataFile" style="display: none;" />
+    <input type="file" accept=".json, .ssp" id="openProjectFile" v-on:change="openProjectFile" style="display: none;" />
+    <md-menu md-align-trigger md-size="4">
+      <md-button md-menu-trigger class="md-icon-button md-raised">
+        <md-icon>more_vert</md-icon>
+      </md-button>
+      <md-menu-content>
+        <md-menu-item v-on:selected="newProject">
+          <md-icon style="">insert_drive_file</md-icon>
+          <span>New project</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="openFile('Project')">
+        <md-icon style="">unarchive</md-icon>
+          <span>Open project</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="saveProject">
+          <md-icon style="">archive</md-icon>
+          <span>Save project</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="openFile('Data')">
+          <md-icon style="">border_outer</md-icon>
+          <span>Import data</span>
+        </md-menu-item>
+      </md-menu-content>
+    </md-menu>
+    <!-- <p class="logo-icon">{{ icon }}</p> -->
     <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.2.1</sup></h2>
-    <md-menu md-size="4">
+    <md-menu md-align-trigger md-size="4">
       <md-button class="md-raised md-primary" md-menu-trigger>
         Add Block
         <md-tooltip md-direction="bottom">Add new element to the model</md-tooltip>
