@@ -80,7 +80,11 @@ module.exports = function (models, activeModel) {
         // --> DATA
 
         // If value is comma-separated list, add array brackets
-        const valueStr = (b.value.indexOf(',') >= 0) ? `[${b.value}]` : b.value
+        // Upd: check if NaN add brackets
+        // Upd: if empty string between ,, - undefined
+        const valueStr = (b.value.indexOf(',') >= 0)
+          ? `[${b.value.split(',').map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
+          : !isNaN(b.value) ? b.value : `'${b.value}'`
         // Check if it's an external model
         if ((mi !== activeModel) && (b.useAsParameter)) {
           // In external model check if data value is already defined as a parameter
