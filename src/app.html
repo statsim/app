@@ -300,7 +300,20 @@
             required
           ></md-autocomplete>
         </md-input-container>
-
+        <div style="display: flex">
+          <md-input-container style="width: 40%; margin-right: 5%;">
+            <label>Min</label>
+            <md-input
+              v-model="block.min"
+            ></md-input>
+          </md-input-container>
+          <md-input-container style="width: 40%">
+            <label>Max</label>
+            <md-input
+              v-model="block.max"
+            ></md-input>
+          </md-input-container>
+        </div>
         <md-checkbox v-model="block.show" class="md-primary">
           Show in results
         </md-checkbox>

@@ -103,7 +103,21 @@ module.exports = function (models, activeModel) {
           step.list += (step.list.length) ? ', ' : ''
           step.list += b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
           // Accumulate value in the step body
-          step.body += `var _${b.name} = ${b.name} + ${b.value}\n`
+          if ((b.max && b.max.length) || (b.min && b.min.length)) {
+            step.body += `var __${b.name} = ${b.name} + ${b.value}\n`
+            step.body += `var _${b.name} = `
+
+            // Check max/min limits
+            if (b.max && b.max.length) {
+              step.body += `(__${b.name} > ${b.max}) ? ${b.max} : `
+            }
+            if (b.min && b.min.length) {
+              step.body += `(__${b.name} < ${b.min}) ? ${b.min} : `
+            }
+            step.body += `__${b.name}\n`
+          } else {
+            step.body += `var _${b.name} = ${b.name} + ${b.value}\n`
+          }
           // Generate accumulator expressions
           step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: _${b.name}`
           step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''

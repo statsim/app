@@ -103,6 +103,8 @@ const BlockClasses = [
       this.type = 'Accumulator'
       this.typeCode = 3
       this.value = ''
+      this.min = ''
+      this.max = ''
     }
   },
   class Observer {
