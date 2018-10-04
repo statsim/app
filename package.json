@@ -1,6 +1,6 @@
 {
   "name": "statsim",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Web app for statistical simulations and bayesian inference",
   "main": "src/main.js",
   "scripts": {
@@ -12,10 +12,12 @@
   "author": "Anton Zemlyansky",
   "license": "ISC",
   "dependencies": {
+    "csv-parse": "^3.1.2",
     "d3-array": "^1.2.4",
     "d3-hist2d": "^1.0.6",
     "density-plot": "^1.0.4",
     "dygraphs": "^2.1.0",
+    "file-saver": "^2.0.0-rc.3",
     "html-escape": "^2.0.0",
     "is": "^3.2.1",
     "is-json": "^2.0.1",
