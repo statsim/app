@@ -146,6 +146,11 @@
   fill: rgba(200, 200, 200, 0.8);
 }
 
+.content .node-label {
+  font-weight: 200;
+  font-style: normal;
+}
+
 .content .charts, .content .charts-2d {
   margin: 20px;
   display: flex;

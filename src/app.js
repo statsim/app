@@ -11,6 +11,7 @@ const simulationMethods = require('./lib/methods')
 const compileModels = require('./lib/compileModels')
 const createLink = require('./lib/createLink')
 const parseLink = require('./lib/parseLink')
+const graphIcons = require('./lib/graphIcons')
 
 // const Querify = require('./lib/querify')
 // const getJSON = require('./lib/getJSON')
@@ -47,6 +48,15 @@ const colors = [
   '#ababab',
   '#ababab',
   '#ababab'
+]
+
+const sizes = [
+  21,
+  21,
+  21,
+  27,
+  25,
+  25
 ]
 
 const icons = [
@@ -203,10 +213,10 @@ const params = {
     graphOptions:
     {
       force: 5000,
-      nodeSize: 20,
-      fontSize: 15,
+      nodeSize: 35,
+      fontSize: 14,
       nodeLabels: true,
-      linkWidth: 2
+      linkWidth: 2.3
     },
     link: '',
     loading: false, // show loading indicator
@@ -254,8 +264,10 @@ const params = {
       return this.blocks
         .map((b, i) => ({
           id: i,
-          name: (b.name && b.name.length) ? `${b.name} (${b.type})` : b.type,
-          _color: colors[b.typeCode]
+          name: (b.name && b.name.length) ? `${b.name}` : b.type,
+          _color: colors[b.typeCode],
+          _size: sizes[b.typeCode],
+          svgSym: graphIcons[b.typeCode]
         }))
         .concat(this.models.filter((_, i) => i !== this.activeModel).map((m, i) => ({
           id: this.blocks.lenght + i,
