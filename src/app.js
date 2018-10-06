@@ -210,6 +210,7 @@ const params = {
   data: () => ({
     icon,
     colors,
+    theme: 'light',
     graphOptions:
     {
       force: 5000,
@@ -285,7 +286,7 @@ const params = {
               l.push({
                 tid: baseBlockIndex,
                 sid: i,
-                _color: '#DDD'
+                _color: (this.theme === 'dark') ? '#444' : '#DDD'
               })
             }
           })
@@ -333,6 +334,8 @@ const params = {
     // Initialize main model
     this.models = JSON.parse(JSON.stringify(baseModel))
     this.switchModel(0)
+    // Check theme
+    this.theme = (document.cookie.indexOf('dark') > 0) ? 'dark' : 'light'
   },
   mounted () {
     // After mounting
@@ -356,6 +359,10 @@ const params = {
     } // *if window.location.search is not empty
   },
   methods: {
+    setTheme (theme) {
+      this.theme = theme
+      document.cookie = 'theme=' + theme
+    },
     newProject () {
       delay.call(this, 500, () => {
         window.history.replaceState({}, 'New project', '.')

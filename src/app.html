@@ -1,4 +1,4 @@
-<div>
+<div :class="{dark: theme === 'dark'}">
   <!-- Confirm model removal-->
   <md-dialog-confirm
     md-title="Remove model?"
@@ -29,9 +29,17 @@
           <md-icon style="">archive</md-icon>
           <span>Save project</span>
         </md-menu-item>
-        <md-menu-item v-on:selected="openFile('Data')">
+        <md-menu-item v-on:selected="openFile('Data')" style="border-bottom: 1px solid #DDD">
           <md-icon style="">border_outer</md-icon>
           <span>Import data</span>
+        </md-menu-item>
+        <md-menu-item v-if="theme === 'dark'" v-on:selected="setTheme('light')">
+          <md-icon style="">brightness_5</md-icon>
+          <span>Light theme</span>
+        </md-menu-item>
+        <md-menu-item v-else="theme === 'light'" v-on:selected="setTheme('dark')">
+          <md-icon style="">brightness_2</md-icon>
+          <span>Dark theme</span>
         </md-menu-item>
       </md-menu-content>
     </md-menu>
@@ -110,15 +118,14 @@
     <!-- MODEL INFO -->
     <div style="padding: 10px;">
     <md-input-container md-clearable>
-      <label>Name</label>
+      <label>Model name</label>
       <md-input
         v-model="modelParams.name"
       ></md-input>
     </md-input-container>
-    <md-input-container>
-      <label>Description</label>
-      <md-textarea maxlength="70" v-model="modelParams.description"></md-textarea>
-    </md-input-container>
+    <div>
+      <textarea v-model="modelParams.description"></textarea>
+    </div>
     </div>
     <!-- BLOCKS -->
     <md-card 
