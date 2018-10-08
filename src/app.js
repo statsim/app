@@ -89,12 +89,12 @@ const BlockClasses = [
   },
   class Data {
     constructor (counter, data) {
-      this.file = null
       this.name = (typeof counter === 'string') ? counter : 'D' + counter
       this.show = false
       this.type = 'Data'
       this.typeCode = 2
-      this.useAsParameter = false
+      this.useAsParameter = false // Name is a parameter for the model when called externally
+      this.dims = '' // Tensor dimensions
       if (data && Array.isArray(data)) {
         this.value = data.join()
       } else if (data && (typeof data === 'string')) {
@@ -474,7 +474,7 @@ const params = {
     blockFilter (list, query) {
       const arr = []
       for (let i = 0; i < list.length; i++) {
-        if (list[i].name.indexOf(query) !== -1) {
+        if (list[i].hasOwnProperty('name') && (list[i].name.indexOf(query) !== -1)) {
           arr.push(list[i])
         }
         if (arr.length > 5) {
@@ -513,14 +513,6 @@ const params = {
       const block = document.getElementById('block-id-' + node.index)
       const offset = block.offsetTop
       document.getElementById('side-bar').scrollTop = offset - 20
-    },
-    loadFiles (files, blockIndex) {
-      const reader = new FileReader()
-      reader.readAsText(files[0])
-      reader.onload = () => {
-        const dataText = reader.result
-        this.blocks[blockIndex].value = dataText
-      }
     },
     addBlock (blockClassNumber) {
       this.blocks.push(new BlockClasses[blockClassNumber](this.blocks.length))
@@ -637,7 +629,7 @@ const params = {
                         data[i].push(sv)
                       })
                     })
-                    createChart(`${k} ${this.samples} Samples`, data, labels)
+                    createChart(`${k} ${this.methodParams.samples} Samples`, data, labels)
                     createChart(
                       k + ' Average',
                       data.map(

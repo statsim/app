@@ -13,6 +13,8 @@ function getParams (paramObj) {
 module.exports = function (models, activeModel) {
   let finalCode = ''
   let modelCodes = []
+  let indexFunctionDeclared = false // true if we already declared index function in the observer block
+
   console.log('Compiling models: ', models)
 
   models.forEach((m, mi) => {
@@ -82,9 +84,13 @@ module.exports = function (models, activeModel) {
         // If value is comma-separated list, add array brackets
         // Upd: check if NaN add brackets
         // Upd: if empty string between ,, - undefined
-        const valueStr = (b.value.indexOf(',') >= 0)
+        let valueStr = (b.value.indexOf(',') >= 0)
           ? `[${b.value.split(',').map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
           : !isNaN(b.value) ? b.value : `'${b.value}'`
+        // Check if it's a Tensor
+        if (b.dims && b.dims.length && !isNaN(parseInt(b.dims))) {
+          valueStr = `Tensor([${b.dims}], ${valueStr})`
+        }
         // Check if it's an external model
         if ((mi !== activeModel) && (b.useAsParameter)) {
           // In external model check if data value is already defined as a parameter
@@ -129,7 +135,7 @@ module.exports = function (models, activeModel) {
         }
       } else if (b.typeCode === 4) {
         // --> OBSERVER BLOCK
-
+        /*
         const findDataVectors = str => {
           const dataVectors = []
           m.blocks.forEach(b => {
@@ -139,27 +145,99 @@ module.exports = function (models, activeModel) {
           })
           return dataVectors
         }
+        */
+        const isNumber = (str) => {
+          if (typeof str !== 'string') {
+            return false
+          }
+          return !isNaN(str) && !isNaN(parseFloat(str))
+        }
+
+        const isVector = (str) => {
+          if (typeof str !== 'string') {
+            return false
+          }
+          return ((str.indexOf(',') >= 0) && (str.indexOf('(') < 0))
+        }
+
+        const isScalarData = (str) => {
+          let is = false
+          m.blocks.forEach(b => {
+            if ((b.typeCode === 2) && (b.name === str) && isNumber(b.value)) {
+              is = true
+            }
+          })
+          return is
+        }
+
+        const isVectorData = (str) => {
+          let is = false
+          m.blocks.forEach(b => {
+            if ((b.typeCode === 2) && (b.name === str) && isVector(b.value) && (!b.hasOwnProperty('dims') || (b.dims.trim().length === 0))) {
+              is = true
+            }
+          })
+          return is
+        }
 
         let observer = ''
+
+        // Convert observer distribution params to string
         let params = getParams(b.params)
 
-        // Find all vectors inside the params
-        let vectors = []
-        if (params.length) {
-          Object.keys(b.params).forEach((key, i) => {
-            vectors = vectors.concat(findDataVectors(b.params[key]))
-          })
-        }
-        vectors = vectors.concat(findDataVectors(b.value))
+        // Remove white spaces
+        let value = b.value.trim()
 
-        // Generate observer
-        observer += (vectors.length > 0)
-          ? (vectors.length === 1) ? `map(function (${vectors[0]}) {\n` : `map2(function (${vectors.join(',')}) {\n`
-          : ''
-        observer += `observe(${b.distribution}(${params}), ${b.value})\n`
-        observer += (vectors.length > 0)
-          ? `}, ${vectors.join(',')})\n`
-          : '\n'
+        // Check if the value is scalar or vector
+        if (isNumber(value) || isScalarData(value)) {
+          observer += `observe(${b.distribution}(${params}), ${b.value})\n`
+        } else if (isVector(value) || isVectorData(value)) {
+          if (isVector(value) && (value.indexOf('[') < 0)) {
+            value = `[${value.trim()}]`
+          }
+          observer += `
+mapIndexed(function (_j, _v) { 
+  observe(${b.distribution}(${params}), _v)
+}, ${value})\n`
+        } else {
+          // Here we actually not sure about what inside the Observer value
+          // It could be inner expression or expression block or data-tensor
+          // Make webppl check
+
+          // Add function that generates tensor multi-dimensional indexes using the base index and dimensions
+          observer += (indexFunctionDeclared) ? '' : `
+var _ind = function (i, d) {
+  if (d.length > 1) {
+    var nd = d.slice(1)
+    var np = product(nd)
+    var nrem = i % np
+    var ni = (i - nrem) / np
+    return [ni].concat(_ind(nrem, d.slice(1)))
+  }
+  return [i]
+}\n`
+          // Flag that we already declared the _ind function
+          indexFunctionDeclared = true
+
+          // Check the evaluated value in webppl
+          // TODO: fix _j[0] indexes
+          observer += `
+if (typeof (${value}) === 'number') {
+  observe(${b.distribution}(${params}), ${b.value})
+} else if (Array.isArray(${value})) {
+  mapIndexed(function (_j, _v) {
+    observe(${b.distribution}(${params}), _v)
+  }, ${value})
+} else if (typeof (${value}) === 'object') {
+  var _dims = dims(${value})
+  mapIndexed(function (__j, _v) {
+    var _j = _ind(__j, _dims)
+    observe(${b.distribution}(${params}), _v)
+  }, T.toScalars(${value}))
+}\n`
+        } // *else - tensor or else
+
+        // Add observer code later, if in the loop
         if (m.modelParams.steps > 1.5) {
           observers += observer
         } else {

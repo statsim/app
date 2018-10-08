@@ -253,13 +253,14 @@
           ></md-input>
         </md-input-container>
         <md-input-container>
-          <label>One or many comma-separated values</label>
+          <label>Comma-separated values</label>
           <md-textarea v-model="block.value" height="5"></md-textarea>
         </md-input-container>
-        <md-input-container>
-          <label>Load from file</label>
-          <md-file @change.native="loadFiles($event.target.files, blockIndex)"></md-file>
+        <md-input-container v-if="block.value.indexOf(',') >= 0">
+          <label>Dimensions (Tensor)</label>
+          <md-input v-model="block.dims"></md-input>
         </md-input-container>
+
         <md-checkbox
           v-model="block.show"
           class="md-primary"
@@ -337,36 +338,47 @@
       <!-- Observer -->
       <md-card-content v-if="block.typeCode === 4">
         <md-input-container>
-          <label for="distributionType">Distribution:</label>
-          <md-select
-            name="distributionType"
-            id="distributionType"
-            v-model="block.distribution"
-          >
-            <md-option
-              v-for="(params, distributionType) in distributions"
-              :value="distributionType"
-              @selected="block.params = {}"
-            >{{ distributionType }}</md-option>
-          </md-select>
-        </md-input-container>
-        <md-input-container
-          v-if="block.distribution.length" 
-          v-for="(paramOptions, param) in distributions[block.distribution]"
-          md-clearable
-        >
-          <label>{{ param }}</label>
-          <md-input
-            v-model="block.params[param]"
-          ></md-input>
-        </md-input-container>
-        <md-input-container>
-          <label>Observed value(s)</label>
-          <md-input
+          <label>Observed data (scalar, vector or tensor)</label>
+          <md-autocomplete
             v-model="block.value"
-          ></md-input>
+            :list="blocks"
+            :filter-list="blockFilter"
+            :min-chars="0"
+            :debounce="300"
+            print-attribute="name"
+            required
+          ></md-autocomplete>
         </md-input-container>
-
+        <md-whiteframe
+          md-elevation="11"
+          style="padding: 15px; margin: 5px 0 15px"
+          v-if="block.value.length"
+        >
+          <md-input-container>
+            <label for="distributionType">Distribution:</label>
+            <md-select
+              name="distributionType"
+              id="distributionType"
+              v-model="block.distribution"
+            >
+              <md-option
+                v-for="(params, distributionType) in distributions"
+                :value="distributionType"
+                @selected="block.params = {}"
+              >{{ distributionType }}</md-option>
+            </md-select>
+          </md-input-container>
+          <md-input-container
+            v-if="block.distribution.length" 
+            v-for="(paramOptions, param) in distributions[block.distribution]"
+            md-clearable
+          >
+            <label>{{ param }}</label>
+            <md-input
+              v-model="block.params[param]"
+            ></md-input>
+          </md-input-container>
+        </md-whiteframe>
         <!--
         <md-card-expand>
           <md-card-actions>
