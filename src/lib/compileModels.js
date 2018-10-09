@@ -13,14 +13,17 @@ function getParams (paramObj) {
 module.exports = function (models, activeModel) {
   let finalCode = ''
   let modelCodes = []
-  let indexFunctionDeclared = false // true if we already declared index function in the observer block
 
   console.log('Compiling models: ', models)
 
+  /*
+    ITERATING OVER ALL PROJECT MODELS
+  */
   models.forEach((m, mi) => {
-    // Check if the model is main or loaded as a function
     let code = ''
+    let indexFunctionDeclared = false // true if we already declared index function in the observer block
 
+    // Check if the model is main or loaded as a function
     // Compile external models as functions
     // Use DATA blocks as input variables
     if (mi !== activeModel) {
@@ -47,6 +50,9 @@ module.exports = function (models, activeModel) {
     let modelOutput = ''
     let observers = ''
 
+    /*
+      ITERATING OVER ALL BLOCKS OF THE MODEL
+    */
     m.blocks.forEach(b => {
       if (b.typeCode === 0) {
         // --> RANDOM VARIABLE
@@ -135,17 +141,6 @@ module.exports = function (models, activeModel) {
         }
       } else if (b.typeCode === 4) {
         // --> OBSERVER BLOCK
-        /*
-        const findDataVectors = str => {
-          const dataVectors = []
-          m.blocks.forEach(b => {
-            if ((b.typeCode === 2) && b.value.indexOf(',') && (str.indexOf(b.name) >= 0)) {
-              dataVectors.push(b.name)
-            }
-          })
-          return dataVectors
-        }
-        */
         const isNumber = (str) => {
           if (typeof str !== 'string') {
             return false
@@ -190,9 +185,13 @@ module.exports = function (models, activeModel) {
 
         // Check if the value is scalar or vector
         if (isNumber(value) || isScalarData(value)) {
+          // Scalar
           observer += `observe(${b.distribution}(${params}), ${b.value})\n`
         } else if (isVector(value) || isVectorData(value)) {
+          // Vector
           if (isVector(value) && (value.indexOf('[') < 0)) {
+            // Inline vector without brackets:
+            // Add brackets
             value = `[${value.trim()}]`
           }
           observer += `
@@ -204,7 +203,7 @@ mapIndexed(function (_j, _v) {
           // It could be inner expression or expression block or data-tensor
           // Make webppl check
 
-          // Add function that generates tensor multi-dimensional indexes using the base index and dimensions
+          // Add function that generates multi-dimensional tensor indexes using the base index and tensor dimensions
           observer += (indexFunctionDeclared) ? '' : `
 var _ind = function (i, d) {
   if (d.length > 1) {
@@ -220,7 +219,6 @@ var _ind = function (i, d) {
           indexFunctionDeclared = true
 
           // Check the evaluated value in webppl
-          // TODO: fix _j[0] indexes
           observer += `
 if (typeof (${value}) === 'number') {
   observe(${b.distribution}(${params}), ${b.value})
@@ -230,8 +228,11 @@ if (typeof (${value}) === 'number') {
   }, ${value})
 } else if (typeof (${value}) === 'object') {
   var _dims = dims(${value})
-  mapIndexed(function (__j, _v) {
-    var _j = _ind(__j, _dims)
+  mapIndexed(function (_j, _v) {
+    var __j = _ind(_j, _dims)
+    var _j0 = (__j[0] !== undefined) ? __j[0] : undefined
+    var _j1 = (__j[1] !== undefined) ? __j[1] : undefined
+    var _j2 = (__j[2] !== undefined) ? __j[2] : undefined
     observe(${b.distribution}(${params}), _v)
   }, T.toScalars(${value}))
 }\n`
