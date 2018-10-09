@@ -4,7 +4,12 @@ function getParams (paramObj) {
   if (paramObj) {
     const paramKeys = Object.keys(paramObj).filter(k => (paramObj[k] !== ''))
     paramKeys.forEach((key, i) => {
-      paramStr += `${key}: ${paramObj[key]}${(i < paramKeys.length - 1) ? ', ' : ''}`
+      // Detect csv with commas and no brackets: add brackets
+      const value = ((paramObj[key].indexOf(',') >= 0) && (paramObj[key].indexOf('(') < 0) && (paramObj[key].indexOf('[') < 0))
+        ? `[${paramObj[key]}]`
+        : paramObj[key]
+      paramStr += `${key}: ${value}`
+      paramStr += `${(i < paramKeys.length - 1) ? ', ' : ''}`
     })
   }
   return (paramStr.length) ? `{${paramStr}}` : ''
