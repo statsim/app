@@ -75,6 +75,7 @@ const BlockClasses = [
       this.show = false
       this.type = 'Random Variable'
       this.typeCode = 0
+      this.dims = '1'
     }
   },
   class Expression {

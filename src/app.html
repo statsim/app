@@ -156,32 +156,43 @@
             v-model="block.name"
           ></md-input>
         </md-input-container>
-        <md-input-container>
-          <label for="distributionType">Distribution type:</label>
-          <!-- @change: reset distribution paramaters when distribution changed -->
-          <md-select
-            name="distributionType"
-            id="distributionType"
-            v-model="block.distribution"
-          >
-            <md-option
-              v-for="(params, distributionType) in distributions"
-              v-if="distributionType !== modelParams.name" 
-              :value="distributionType"
-              @selected="block.params = {}"
-            >{{ distributionType }}</md-option>
-          </md-select>
-        </md-input-container>
-        <md-input-container
-          v-if="block.distribution.length" 
-          v-for="(paramOptions, param) in distributions[block.distribution]"
-          md-clearable
-        >
-          <label>{{ param }}</label>
+        <md-input-container md-clearable>
+          <label>Size / Dimensions</label>
           <md-input
-            v-model="block.params[param]"
+            v-model="block.dims"
           ></md-input>
         </md-input-container>
+        <md-whiteframe
+          md-elevation="11"
+          style="padding: 15px; margin: 5px 0 15px"
+        >
+          <md-input-container>
+            <label for="distributionType">Distribution type:</label>
+            <!-- @change: reset distribution paramaters when distribution changed -->
+            <md-select
+              name="distributionType"
+              id="distributionType"
+              v-model="block.distribution"
+            >
+              <md-option
+                v-for="(params, distributionType) in distributions"
+                v-if="distributionType !== modelParams.name" 
+                :value="distributionType"
+                @selected="block.params = {}"
+              >{{ distributionType }}</md-option>
+            </md-select>
+          </md-input-container>
+          <md-input-container
+            v-if="block.distribution.length" 
+            v-for="(paramOptions, param) in distributions[block.distribution]"
+            md-clearable
+          >
+            <label>{{ param }}</label>
+            <md-input
+              v-model="block.params[param]"
+            ></md-input>
+          </md-input-container>
+        </md-whiteframe>
         <!-- Sample once per cycle-->
         <md-checkbox
           :disabled="(modelParams.steps > 1.5) && !block.once"
@@ -239,6 +250,23 @@
             <md-button @click.native="addExpression('Math.pow(,)', blockIndex, -2)">x<sup>y</sup></md-button>
             <md-button @click.native="addExpression('Math.PI', blockIndex, 1)">&#960;</md-button>
             <md-button @click.native="addExpression('Math.E', blockIndex, 1)">e</md-button>
+          </md-tab>
+          <md-tab md-label="Arrays">
+            <md-button @click.native="addExpression('sum()', blockIndex, -1)">sum</md-button>
+            <md-button @click.native="addExpression('product()', blockIndex, -1)">product</md-button>
+            <md-button @click.native="addExpression('listMean()', blockIndex, -1)">mean</md-button>
+            <md-button @click.native="addExpression('listVar()', blockIndex, -1)">var</md-button>
+            <md-button @click.native="addExpression('listStdev()', blockIndex, -1)">std</md-button>
+            <md-button @click.native="addExpression('all()', blockIndex, -1)">all</md-button>
+            <md-button @click.native="addExpression('any()', blockIndex, -1)">any</md-button>
+            <md-button @click.native="addExpression('filter(function(x) {},)', blockIndex, -2)">filter</md-button>
+            <md-button @click.native="addExpression('find(function(x) {},)', blockIndex, -2)">find</md-button>
+            <md-button @click.native="addExpression('remove(,)', blockIndex, -2)">remove</md-button>
+            <md-button @click.native="addExpression('sort()', blockIndex, -1)">sort</md-button>
+            <md-button @click.native="addExpression('map(function(x) {},)', blockIndex, -2)">map</md-button>
+            <md-button @click.native="addExpression('map2(function(x,y) {},,)', blockIndex, -3)">map2</md-button>
+            <md-button @click.native="addExpression('mapN(function(x) {},)', blockIndex, -3)">mapN</md-button>
+            <md-button @click.native="addExpression('reduce(function(x, acc) {},,)', blockIndex, -3)">reduce</md-button>
           </md-tab>
           <md-tab md-label="Tensors">
             <md-button @click.native="addExpression('T.sumreduce()', blockIndex, -1)">sum</md-button>

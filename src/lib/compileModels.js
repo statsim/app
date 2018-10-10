@@ -62,13 +62,32 @@ module.exports = function (models, activeModel) {
       if (b.typeCode === 0) {
         // --> RANDOM VARIABLE
 
-        let params = getParams(b.params)
-        let varDeclaration = `var ${b.name} = sample(${b.distribution}(${params}))\n`
+        const params = getParams(b.params)
+        let dims = b.hasOwnProperty('dims') ? b.dims.trim() : '1'
+        const isMultiDim = dims.indexOf(',') >= 0
+        const sampleStr = `sample(${b.distribution}(${params}))`
+        let rvStr = ''
+        if (isMultiDim || ((!isMultiDim && (parseInt(dims) > 1)))) {
+          // Tensor or vector
+          const size = isMultiDim
+            ? dims.split(',').reduce((a, v) => a * parseInt(v), 1) // Multiplied dimensions
+            : parseInt(dims) // Original dim
+          const arrayStr = `mapN(function () { return ${sampleStr}}, ${size})`
+          if (isMultiDim) {
+            dims = (dims.indexOf('[') < 0) ? `[${dims}]` : dims
+            rvStr = `var ${b.name} = Tensor(${dims}, ${arrayStr})\n`
+          } else {
+            rvStr = `var ${b.name} = ${arrayStr}\n`
+          }
+        } else {
+          // Scalar
+          rvStr = `var ${b.name} = ${sampleStr}\n`
+        }
         // Check if we are inside the loop
         if ((m.modelParams.steps > 1.5) && (!b.once)) {
-          step.body += varDeclaration
+          step.body += rvStr
         } else {
-          model += varDeclaration
+          model += rvStr
         }
       } else if ((b.typeCode === 1) && b.value.length) {
         // --> EXPRESSION
