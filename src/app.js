@@ -359,6 +359,18 @@ const params = {
     } // *if window.location.search is not empty
   },
   methods: {
+    addExpression (str, i, sh) {
+      const shift = (typeof sh === 'undefined') ? 0 : sh
+      const input = document.querySelector(`#input-${i}`)
+      const pos = input.selectionStart
+      const value = this.blocks[i].value
+      this.blocks[i].value = value.slice(0, pos) + str + value.slice(pos)
+      const newPos = pos + str.length + shift
+      setTimeout(() => {
+        input.focus()
+        input.setSelectionRange(newPos, newPos)
+      }, 100)
+    },
     setTheme (theme) {
       this.theme = theme
       document.cookie = 'theme=' + theme

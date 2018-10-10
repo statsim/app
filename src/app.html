@@ -91,15 +91,6 @@
   </md-toolbar>
   <div id="side-bar" class="side-bar">
     <!-- MODELS -->
-    <!--
-    <md-tabs class="md-transparent" @change="switchModel">
-      <md-tab
-        v-for="(model, modelId) in models"
-        :md-label="model.modelParams.name"
-      >
-      </md-tab>
-    </md-tabs>
-    -->
     <div class="model-selector">
       <md-button
         v-for="(model, modelId) in models"
@@ -219,15 +210,50 @@
         </md-input-container>
         <md-input-container>
           <label>Value</label>
-          <md-autocomplete
+          <md-input
             v-model="block.value"
-            :list="blocks"
-            :filter-list="blockFilter"
-            :min-chars="0"
-            :debounce="300"
-            print-attribute="name"
-          ></md-autocomplete>
+            :id="'input-' + blockIndex"
+          ></md-input>
         </md-input-container>
+        <!-- exp -->
+        <md-tabs class="md-transparent">
+          <md-tab md-label="Base">
+            <md-button
+              v-for="b, bi in blocks"
+              v-if="([0, 1, 2].indexOf(b.typeCode) >= 0) && (bi !== blockIndex)"
+              @click.native="addExpression(b.name, blockIndex, 1)"
+            >{{ b.name }}</md-button>
+            <hr>
+            <md-button
+              v-for="n in [0,1,2,3,4,5,6,7,8,9]"
+              @click.native="addExpression(n + '', blockIndex, 0)"
+            >{{ n }}</md-button>
+            <md-button @click.native="addExpression('.', blockIndex, 0)">.</md-button>
+          </md-tab>
+          <md-tab md-label="Math">
+            <md-button @click.native="addExpression('+', blockIndex, 0)">+</md-button>
+            <md-button @click.native="addExpression('-', blockIndex, 0)">-</md-button>
+            <md-button @click.native="addExpression('*', blockIndex, 0)">*</md-button>
+            <md-button @click.native="addExpression('/', blockIndex, 0)">/</md-button>
+            <md-button @click.native="addExpression('Math.sqrt()', blockIndex, -1)">x<sup>2</sup></md-button>
+            <md-button @click.native="addExpression('Math.pow(,)', blockIndex, -2)">x<sup>y</sup></md-button>
+            <md-button @click.native="addExpression('Math.PI', blockIndex, 1)">&#960;</md-button>
+            <md-button @click.native="addExpression('Math.E', blockIndex, 1)">e</md-button>
+          </md-tab>
+          <md-tab md-label="Tensors">
+            <md-button @click.native="addExpression('T.sumreduce()', blockIndex, -1)">sum</md-button>
+            <md-button @click.native="addExpression('T.get(,)', blockIndex, -2)">get</md-button>
+            <md-button @click.native="addExpression('T.toScalars()', blockIndex, -1)">toScalars</md-button>
+            <md-button @click.native="addExpression('T.fromScalars()', blockIndex, -1)">fromScalars</md-button>
+            <md-button @click.native="addExpression('T.transpose()', blockIndex, -1)">transpose</md-button>
+            <md-button @click.native="addExpression('T.diagonal()', blockIndex, -1)">diagonal</md-button>
+            <md-button @click.native="addExpression('T.inverse()', blockIndex, -1)">inverse</md-button>
+            <md-button @click.native="addExpression('T.determinant()', blockIndex, -1)">determinant</md-button>
+            <md-button @click.native="addExpression('T.dot(,)', blockIndex, -2)">dot</md-button>
+            <md-button @click.native="addExpression('T.cholesky()', blockIndex, -1)">cholesky</md-button>
+          </md-tab>
+        </md-tabs>
+	<!-- *exp -->
         <md-checkbox
           v-model="block.show"
           class="md-primary"

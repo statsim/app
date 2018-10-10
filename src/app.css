@@ -3,6 +3,10 @@ body {
   height: 100%;
 }
 
+hr {
+  opacity: 0.3;
+}
+
 textarea {
   width: 100%;
   border: 0;
@@ -59,8 +63,24 @@ textarea {
   width: 27%;
 }
 
-.side-bar .md-tabs-content {
-  display: none;
+.side-bar .block .md-tab-header.md-active {
+  color: #0097cc !important;
+}
+.side-bar .block .md-tab-indicator {
+  background-color: #0097cc !important;
+}
+.side-bar .block .md-tabs-content {
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3)
+}
+
+
+.side-bar .block .md-tabs-content .md-button {
+  padding: 1px 10px;
+  margin: 4px;
+  font-size: 12px;
+  min-height: 10px;
+  min-width: 10px;
+  text-transform: none;
 }
 
 .side-bar .model-selector {
@@ -334,6 +354,9 @@ tile {
 }
 .dark .side-bar .block-type {
   color: rgba(166, 176, 209, 0.51)
+}
+.dark .side-bar .block .md-theme-default.md-tabs.md-transparent > .md-tabs-navigation .md-tab-header {
+  color: rgb(98, 102, 124)
 }
 .dark .md-button {
   color: rgba(166, 176, 209, 0.51)
