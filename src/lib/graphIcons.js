@@ -38,12 +38,11 @@ module.exports = [
       version="1.1"
    >
      <g>
-       <rect
+       <circle
           style="fill:#d51558;stroke:none;"
-          width="100"
-          height="100"
-          x="0"
-          y="0" />
+          cx="50"
+          cy="50"
+          r="48" />
        <rect
           style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;"
           width="8"
