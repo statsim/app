@@ -69,8 +69,8 @@ module.exports = {
     name: 'MCMC',
     params: {
       samples,
-      lag,
       burn,
+      lag,
       onlyMAP
     }
   },
@@ -78,7 +78,6 @@ module.exports = {
     name: 'HMC',
     params: {
       samples,
-      lag,
       burn,
       steps: {
         type: 'int',
@@ -92,6 +91,7 @@ module.exports = {
         default: 0.1,
         description: 'The size of each HMC step'
       },
+      lag,
       onlyMAP
     }
   },
@@ -99,8 +99,8 @@ module.exports = {
     name: 'Incremental MH',
     params: {
       samples,
-      lag,
       burn,
+      lag,
       onlyMAP
     }
   },

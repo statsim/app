@@ -5,6 +5,7 @@ const D3Network = require('vue-d3-network')
 const hist2d = require('d3-hist2d').hist2d
 const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
+const cookie = require('cookie')
 
 const distributions = require('./lib/distributions')
 const simulationMethods = require('./lib/methods')
@@ -21,6 +22,7 @@ const graphIcons = require('./lib/graphIcons')
 const FileReader = window['FileReader']
 const Blob = window['Blob']
 const webppl = window['webppl']
+const fetch = window['fetch']
 const plot2d = window['densityPlot'] // ESM WTF!!!
 
 const baseModel = [
@@ -224,6 +226,9 @@ const params = {
     loading: false, // show loading indicator
     message: '',
     error: '',
+    server: false,
+    serverURL: '',
+    serverAPI: '',
     // distributions,
     code: '', // compiled webppl code
     simulationMethods,
@@ -337,6 +342,10 @@ const params = {
     this.switchModel(0)
     // Check theme
     this.theme = (document.cookie.indexOf('dark') > 0) ? 'dark' : 'light'
+    const c = cookie.parse(document.cookie)
+    this.server = (c.server === 'true')
+    this.serverURL = c.url ? c.url : ''
+    this.serverAPI = c.api ? c.api : ''
   },
   mounted () {
     // After mounting
@@ -552,7 +561,190 @@ const params = {
       // Convert available models (this.models) to the probabilistic lang
       this.code = compileModels(this.models, this.activeModel)
     },
+    processResults (v) {
+      document.getElementById('loader').className = 'hidden'
+      this.loading = false
+      this.message = 'Done!'
+      document.querySelector('.charts').innerHTML = ''
+      if (this.modelParams.method === 'deterministic') {
+        // deterministic
+        let vectors = []
+        let names = []
+        Object.keys(v).forEach(key => {
+          const value = v[key]
+          if (Array.isArray(value)) {
+            // Vector
+            vectors.push(value)
+            names.push(key)
+            drawVector(value, key)
+          } else {
+            // Scalar value
+            drawScalar(value, key)
+          }
+        }) // *Object.keys
+        // All lines on one chart
+        if (names.length > 1) {
+          drawVectors(vectors, names)
+        }
+      } else {
+        // Stochastic viz
+        console.log('WebPPL output: ', v)
+        this.message += (v.samples) ? ` Generated ${v.samples.length} samples` : ''
+        // Collect samples in a useful object:
+        // { variable_name: [sample_1, sample_2, ...] }
+        const samples = {}
+        const rvs = [] // Collect random variables to draw 2d plot later
+        // Detect repeating samples
+        const repeatingSamples = {}
+        v.samples.forEach(s => {
+          Object.keys(s.value).forEach(k => {
+            const sampleValue = s.value[k]
+            if (!samples.hasOwnProperty(k)) {
+              samples[k] = []
+              repeatingSamples[k] = true
+            }
+            if ((samples[k].length) && (JSON.stringify(sampleValue) !== JSON.stringify(samples[k][0]))) {
+              repeatingSamples[k] = false
+            }
+            samples[k].push(s.value[k])
+          })
+        })
+        console.log('Repeating samples: ', repeatingSamples)
+        Object.keys(samples).forEach(k => {
+          if (typeof samples[k][0] === 'boolean') {
+            // Boolean samples
+            const countTrue = samples[k].reduce((acc, val) => (val ? acc + 1 : acc), 0)
+            const countFalse = samples[k].length - countTrue
+            createChart(
+              `${k} Truth/False rate`,
+              [[1, countTrue, countFalse]],
+              ['', 'True', 'False'],
+              {
+                drawPoints: true,
+                pointSize: 10
+              }
+            )
+          } else if (Array.isArray(samples[k][0])) {
+            // Array sample
+            if (repeatingSamples[k]) {
+              // -- All samples are same
+              drawVector(samples[k][0], k)
+            } else {
+              // -- Random array samples
+              const data = []
+              const labels = ['Step']
+              samples[k].forEach((s, si) => {
+                labels.push(k + ` (v${si})`)
+                s.forEach((sv, i) => {
+                  if (!data[i]) data[i] = [i]
+                  data[i].push(sv)
+                })
+              })
+              createChart(`${k} ${this.methodParams.samples} Samples`, data, labels)
+              createChart(
+                k + ' Average',
+                data.map(
+                  d => [d[0], [d3.min(d.slice(1)), d3.mean(d.slice(1)), d3.max(d.slice(1))]]
+                ),
+                ['Step', k],
+                {
+                  customBars: true
+                }
+              )
+            } // -- *random array samples
+          } else {
+            if (repeatingSamples[k]) {
+              // -- Draw scalar value
+              drawScalar(samples[k][0], k)
+            } else {
+              // -- Draw random variable
+              rvs.push(k)
+              createChart(k + ' Trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
+              // ---- Distribution
+              const unique = Array.from(new Set(samples[k])).length
+              const t = (unique <= 30) ? unique : 30
+              const hist = d3.histogram().thresholds(t)
+              const h = hist(samples[k])
+              createChart(
+                k + ' Distribution',
+                h.map(v => [v.x0, v.length / samples[k].length]),
+                ['Sample', k],
+                {
+                  stepPlot: true,
+                  fillGraph: true
+                }
+              )
+              // ---- CDF
+              const sMin = d3.min(samples[k])
+              const sMax = d3.max(samples[k])
+              if (sMin < sMax) {
+                const sStep = (sMax - sMin) / 200
+                const cdf = []
+                for (let i = sMin; i <= sMax; i += sStep) {
+                  cdf.push([i, samples[k].filter(s => s < i).length / samples[k].length])
+                }
+                createChart(k + ' CDF', cdf, [k, 'p'])
+              }
+            } // -- *draw random variable
+          } // *scalars samples
+        }) // *iterate over all sample keys (k)
+        // Draw 2d plot
+        if (rvs.length >= 2) {
+          document.querySelector('.charts-2d').innerHTML = ''
+          for (let r1 = 0; r1 < rvs.length - 1; r1++) {
+            for (let r2 = r1 + 1; r2 < rvs.length; r2++) {
+              const samples2d = samples[rvs[r1]].map((v, i) => [v, samples[rvs[r2]][i]])
+              console.log(samples2d)
+              const r1min = d3.min(samples[rvs[r1]])
+              const r1max = d3.max(samples[rvs[r1]])
+              const r2min = d3.min(samples[rvs[r2]])
+              const r2max = d3.max(samples[rvs[r2]])
+              hist2d().bins(100).domain([[r1min, r1max], [r2min, r2max]])(
+                samples2d,
+                h => {
+                  console.log(h)
+                  const plotData = []
+                  for (let i = 0; i < 100; i++) {
+                    if (!Array.isArray(plotData[i])) {
+                      plotData[i] = []
+                    }
+                    for (let j = 0; j < 100; j++) {
+                      plotData[i][j] = 0
+                    }
+                  }
+
+                  h.forEach(bin => { plotData[bin.x][bin.y] = bin.length })
+                  const chartContainer = document.createElement('div')
+                  chartContainer.className = 'chart-2d'
+                  chartContainer.innerHTML = `<p>${rvs[r1]},${rvs[r2]}</p>`
+                  const chartCanvasContainer = document.createElement('div')
+                  chartContainer.appendChild(chartCanvasContainer)
+                  document.querySelector('.charts-2d').appendChild(chartContainer)
+                  plot2d(plotData, {
+                    simple: true,
+                    target: chartCanvasContainer,
+                    noXAxes: true,
+                    noYAxes: true,
+                    noLegend: true,
+                    width: 300,
+                    height: 300,
+                    color: 'Blues'
+                  })
+                }
+              )
+            }// *for
+          }// *for
+        }
+      } // *stochastic visualization
+    },
     run () {
+      const errorHandler = (err) => {
+        this.loading = false
+        document.getElementById('loader').className = 'hidden'
+        console.log(err)
+        this.error = err.message
+      }
+
       this.loading = true
       this.link = ''
       document.getElementById('loader').className = ''
@@ -560,190 +752,52 @@ const params = {
       this.message = ''
       this.error = ''
       this.compile()
+      document.cookie = 'url=' + this.serverURL
+      document.cookie = 'api=' + this.serverAPI
+      document.cookie = 'server=' + this.server
+
       // Add some delay to finish display update
       setTimeout(() => {
         try {
-          webppl.run(this.code, (s, v) => {
-            document.getElementById('loader').className = 'hidden'
-            this.loading = false
-            this.message = 'Done!'
-            document.querySelector('.charts').innerHTML = ''
-            if (this.modelParams.method === 'deterministic') {
-              // deterministic
-              let vectors = []
-              let names = []
-              Object.keys(v).forEach(key => {
-                const value = v[key]
-                if (Array.isArray(value)) {
-                  // Vector
-                  vectors.push(value)
-                  names.push(key)
-                  drawVector(value, key)
-                } else {
-                  // Scalar value
-                  drawScalar(value, key)
-                }
-              }) // *Object.keys
-              // All lines on one chart
-              if (names.length > 1) {
-                drawVectors(vectors, names)
-              }
-            } else {
-              // Stochastic viz
-              console.log('WebPPL output: ', v)
-              this.message += (v.samples) ? ` Generated ${v.samples.length} samples` : ''
-              // Collect samples in a useful object:
-              // { variable_name: [sample_1, sample_2, ...] }
-              const samples = {}
-              const rvs = [] // Collect random variables to draw 2d plot later
-              // Detect repeating samples
-              const repeatingSamples = {}
-              v.samples.forEach(s => {
-                Object.keys(s.value).forEach(k => {
-                  const sampleValue = s.value[k]
-                  if (!samples.hasOwnProperty(k)) {
-                    samples[k] = []
-                    repeatingSamples[k] = true
-                  }
-                  if ((samples[k].length) && (JSON.stringify(sampleValue) !== JSON.stringify(samples[k][0]))) {
-                    repeatingSamples[k] = false
-                  }
-                  samples[k].push(s.value[k])
-                })
+          if (this.server && this.serverURL.length) {
+            // Server-side simulation
+            // Store server url in cookies
+            console.log('Server-side simulation: ', this.serverURL)
+            fetch(this.serverURL, {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({code: this.code, api: this.serverAPI})
+            })
+              .then((r) => {
+                return r.json()
               })
-              console.log('Repeating samples: ', repeatingSamples)
-              Object.keys(samples).forEach(k => {
-                if (typeof samples[k][0] === 'boolean') {
-                  // Boolean samples
-                  const countTrue = samples[k].reduce((acc, val) => (val ? acc + 1 : acc), 0)
-                  const countFalse = samples[k].length - countTrue
-                  createChart(
-                    `${k} Truth/False rate`,
-                    [[1, countTrue, countFalse]],
-                    ['', 'True', 'False'],
-                    {
-                      drawPoints: true,
-                      pointSize: 10
-                    }
-                  )
-                } else if (Array.isArray(samples[k][0])) {
-                  // Array sample
-                  if (repeatingSamples[k]) {
-                    // -- All samples are same
-                    drawVector(samples[k][0], k)
-                  } else {
-                    // -- Random array samples
-                    const data = []
-                    const labels = ['Step']
-                    samples[k].forEach((s, si) => {
-                      labels.push(k + ` (v${si})`)
-                      s.forEach((sv, i) => {
-                        if (!data[i]) data[i] = [i]
-                        data[i].push(sv)
-                      })
-                    })
-                    createChart(`${k} ${this.methodParams.samples} Samples`, data, labels)
-                    createChart(
-                      k + ' Average',
-                      data.map(
-                        d => [d[0], [d3.min(d.slice(1)), d3.mean(d.slice(1)), d3.max(d.slice(1))]]
-                      ),
-                      ['Step', k],
-                      {
-                        customBars: true
-                      }
-                    )
-                  } // -- *random array samples
+              .then((data) => {
+                console.log(data)
+                if (data.error) {
+                  console.log(data)
+                  errorHandler(new Error(data.error))
                 } else {
-                  if (repeatingSamples[k]) {
-                    // -- Draw scalar value
-                    drawScalar(samples[k][0], k)
-                  } else {
-                    // -- Draw random variable
-                    rvs.push(k)
-                    createChart(k + ' Trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
-                    // ---- Distribution
-                    const unique = Array.from(new Set(samples[k])).length
-                    const t = (unique <= 30) ? unique : 30
-                    const hist = d3.histogram().thresholds(t)
-                    const h = hist(samples[k])
-                    createChart(
-                      k + ' Distribution',
-                      h.map(v => [v.x0, v.length / samples[k].length]),
-                      ['Sample', k],
-                      {
-                        stepPlot: true,
-                        fillGraph: true
-                      }
-                    )
-                    // ---- CDF
-                    const sMin = d3.min(samples[k])
-                    const sMax = d3.max(samples[k])
-                    if (sMin < sMax) {
-                      const sStep = (sMax - sMin) / 200
-                      const cdf = []
-                      for (let i = sMin; i <= sMax; i += sStep) {
-                        cdf.push([i, samples[k].filter(s => s < i).length / samples[k].length])
-                      }
-                      createChart(k + ' CDF', cdf, [k, 'p'])
-                    }
-                  } // -- *draw random variable
-                } // *scalars samples
-              }) // *iterate over all sample keys (k)
-              // Draw 2d plot
-              if (rvs.length >= 2) {
-                document.querySelector('.charts-2d').innerHTML = ''
-                for (let r1 = 0; r1 < rvs.length - 1; r1++) {
-                  for (let r2 = r1 + 1; r2 < rvs.length; r2++) {
-                    const samples2d = samples[rvs[r1]].map((v, i) => [v, samples[rvs[r2]][i]])
-                    console.log(samples2d)
-                    const r1min = d3.min(samples[rvs[r1]])
-                    const r1max = d3.max(samples[rvs[r1]])
-                    const r2min = d3.min(samples[rvs[r2]])
-                    const r2max = d3.max(samples[rvs[r2]])
-                    hist2d().bins(100).domain([[r1min, r1max], [r2min, r2max]])(
-                      samples2d,
-                      h => {
-                        console.log(h)
-                        const plotData = []
-                        for (let i = 0; i < 100; i++) {
-                          if (!Array.isArray(plotData[i])) {
-                            plotData[i] = []
-                          }
-                          for (let j = 0; j < 100; j++) {
-                            plotData[i][j] = 0
-                          }
-                        }
-
-                        h.forEach(bin => { plotData[bin.x][bin.y] = bin.length })
-                        const chartContainer = document.createElement('div')
-                        chartContainer.className = 'chart-2d'
-                        chartContainer.innerHTML = `<p>${rvs[r1]},${rvs[r2]}</p>`
-                        const chartCanvasContainer = document.createElement('div')
-                        chartContainer.appendChild(chartCanvasContainer)
-                        document.querySelector('.charts-2d').appendChild(chartContainer)
-                        plot2d(plotData, {
-                          simple: true,
-                          target: chartCanvasContainer,
-                          noXAxes: true,
-                          noYAxes: true,
-                          noLegend: true,
-                          width: 300,
-                          height: 300,
-                          color: 'Blues'
-                        })
-                      }
-                    )
-                  }// *for
-                }// *for
-              }
-            } // *stochastic visualization
-          }) // *webppl.run()
+                  if (data.charts && data.charts.length) {
+                    data.charts.forEach(chart => {
+                      const ch = document.createElement('img')
+                      ch.src = chart
+                      document.querySelector('.charts-2d').appendChild(ch)
+                    })
+                  }
+                  this.processResults(data.v)
+                }
+              })
+          } else {
+            webppl.run(this.code, (s, v) => {
+              console.log(v)
+              this.processResults(v)
+            }) // *webppl.run()
+          }
         } catch (err) {
-          this.loading = false
-          document.getElementById('loader').className = 'hidden'
-          console.log(err)
-          this.error = err.message
+          errorHandler(err)
         }
       }, 500)
     }

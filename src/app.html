@@ -591,8 +591,37 @@
         </md-input-container>
 
       </div>
-      <!-- Run -->
+
+      <md-checkbox 
+        name="server"
+        v-model="server"
+        class="md-primary"
+      >Server-side simulation</md-checkbox>
+
+      <!-- Server URL -->
+      <md-input-container class="simulation-param">
+        <label for="serverURL">URL</label>
+        <md-input
+          name="serverUrl"
+          v-model="serverURL"
+          :disabled="!server"
+        >
+        </md-input>
+      </md-input-container>
+
+      <!-- Server API -->
+      <md-input-container class="simulation-param">
+        <label for="serverAPI">API Key</label>
+        <md-input
+          name="serverAPI"
+          v-model="serverAPI"
+          :disabled="!server"
+        >
+        </md-input>
+      </md-input-container>
+      <!--
       <md-button class="md-raised md-primary" v-on:click.native="run()"><span class="desktop">Compile & </span>Run</md-button>
+      -->
     </div>
   </md-sidenav>
 
