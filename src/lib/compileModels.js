@@ -1,25 +1,6 @@
-// Convert RV distribution parameters object to string
-function getParams (paramObj) {
-  let paramStr = ''
-  if (paramObj) {
-    const paramKeys = Object.keys(paramObj).filter(k => (paramObj[k] !== ''))
-    paramKeys.forEach((key, i) => {
-      // Detect csv with commas and no brackets: add brackets
-      const value = ((paramObj[key].indexOf(',') >= 0) && (paramObj[key].indexOf('(') < 0) && (paramObj[key].indexOf('[') < 0))
-        ? `[${paramObj[key]}]`
-        : paramObj[key]
-      paramStr += `${key}: ${value}`
-      paramStr += `${(i < paramKeys.length - 1) ? ', ' : ''}`
-    })
-  }
-  return (paramStr.length) ? `{${paramStr}}` : ''
-}
-
 module.exports = function (models, activeModel) {
   let finalCode = ''
   let modelCodes = []
-
-  console.log('Compiling models: ', models)
 
   /*
     ITERATING OVER ALL PROJECT MODELS
@@ -27,6 +8,70 @@ module.exports = function (models, activeModel) {
   models.forEach((m, mi) => {
     let code = ''
     let indexFunctionDeclared = false // true if we already declared index function in the observer block
+
+    // Prepare lists of arrays...
+    const dataArrays = []
+    const dataTensors = []
+    const randomArrays = []
+    const randomTensors = []
+
+    m.blocks.forEach(b => {
+      if ((b.typeCode === 2) && (b.value.indexOf(',') >= 0)) {
+        // Multiple data values:
+        if ((!b.dims || (b.dims.indexOf(',') < 0))) {
+          // Data arrays
+          dataArrays.push(b.name)
+        } else {
+          // Data tensors
+          dataTensors.push(b.name)
+        }
+      } else if ((b.typeCode === 0) && b.dims && (b.dims.trim() !== '1')) {
+        // Multiple random variables:
+        if ((b.dims.indexOf(',') < 0) && (parseInt(b.dims) > 1)) {
+          // Random array
+          randomArrays.push(b.name)
+        } else {
+          // Random tensor
+          randomTensors.push(b.name)
+        }
+      }
+    })
+
+    const allArrays = dataArrays.concat(randomArrays)
+    const allTensors = dataTensors.concat(randomTensors)
+
+    // Convert RV distribution parameters object to string
+    function getParams (paramObj) {
+      let paramStr = ''
+      if (paramObj) {
+        const paramKeys = Object.keys(paramObj).filter(k => (paramObj[k] !== ''))
+        paramKeys.forEach((key, i) => {
+          // Detect csv with commas and no brackets: add brackets
+          let value = ((paramObj[key].indexOf(',') >= 0) && (paramObj[key].indexOf('(') < 0) && (paramObj[key].indexOf('[') < 0))
+            ? `[${paramObj[key]}]`
+            : paramObj[key]
+
+          // Add indexes to array names
+          allArrays.forEach((name) => {
+            // Check the name is word and next symbol is not
+            const r = new RegExp(`\\b${name}\\b(?!\\[)`, 'g')
+            value = value.replace(r, name + '[_j]')
+          })
+
+          // Add T.get() to read tensor values
+          if (value.indexOf('.get(') < 0) {
+            allTensors.forEach((name) => {
+              const r = new RegExp(`\\b${name}\\b`)
+              value = value.replace(r, `T.get(${name}, _j)`)
+            })
+          }
+
+          paramStr += `${key}: ${value}`
+          paramStr += `${(i < paramKeys.length - 1) ? ', ' : ''}`
+        })
+      }
+      return (paramStr.length) ? `{${paramStr}}` : ''
+    }
 
     // Check if the model is main or loaded as a function
     // Compile external models as functions
@@ -72,7 +117,7 @@ module.exports = function (models, activeModel) {
           const size = isMultiDim
             ? dims.split(',').reduce((a, v) => a * parseInt(v), 1) // Multiplied dimensions
             : parseInt(dims) // Original dim
-          const arrayStr = `mapN(function () { return ${sampleStr}}, ${size})`
+          const arrayStr = `mapN(function (_j) { return ${sampleStr}}, ${size})`
           if (isMultiDim) {
             dims = (dims.indexOf('[') < 0) ? `[${dims}]` : dims
             rvStr = `var ${b.name} = Tensor(${dims}, ${arrayStr})\n`
@@ -218,6 +263,7 @@ module.exports = function (models, activeModel) {
             // Add brackets
             value = `[${value.trim()}]`
           }
+
           observer += `
 mapIndexed(function (_j, _v) { 
   observe(${b.distribution}(${params}), _v)
