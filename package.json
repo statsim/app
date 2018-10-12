@@ -12,6 +12,7 @@
   "author": "Anton Zemlyansky",
   "license": "ISC",
   "dependencies": {
+    "cookie": "^0.3.1",
     "csv-parse": "^3.1.2",
     "d3-array": "^1.2.4",
     "d3-hist2d": "^1.0.6",
