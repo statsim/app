@@ -58,9 +58,15 @@ textarea {
   top: 47px;
   left: 0;
   bottom: 55px;
-  overflow-y: scroll;
+  overflow-y: hidden;
+  overflow-x: hidden;
   background-color: #DDD;
   width: 27%;
+  box-shadow: 0 0 30px rgba(0, 0, 0, .2);
+}
+
+.side-bar:hover {
+  overflow-y: auto;
 }
 
 .side-bar .block .md-tab-header.md-active {
