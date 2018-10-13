@@ -368,6 +368,9 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
       } else {
         model += `return {${modelOutput}}\n`
       }
+    } else {
+      // Model returns nothing
+      model += `return 0\n`
     }
     model += '}\n'
     code += model

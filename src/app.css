@@ -183,7 +183,7 @@ textarea {
   font-style: normal;
 }
 
-.content .charts, .content .charts-2d {
+.content .charts, .content .charts-2d, .content .charts-extra {
   margin: 20px;
   display: flex;
   justify-content: left;
@@ -193,7 +193,7 @@ textarea {
   align-items: flex-start;
 }
 
-.content .chart, .content .chart-2d {
+.content .chart, .content .chart-2d, .content .charts-extra img {
   border: 1px solid #EEE;
   margin: 0 1% 1% 0;
   display:flex;
@@ -207,6 +207,11 @@ textarea {
 .content .chart {
   width: 48%;
   height: 300px;
+}
+
+.content .charts-extra img {
+  width: 48%;
+  height: auto;
 }
 
 .content .dygraph-legend {

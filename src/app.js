@@ -565,7 +565,6 @@ const params = {
       document.getElementById('loader').className = 'hidden'
       this.loading = false
       this.message = 'Done!'
-      document.querySelector('.charts').innerHTML = ''
       if (this.modelParams.method === 'deterministic') {
         // deterministic
         let vectors = []
@@ -745,6 +744,10 @@ const params = {
         this.error = err.message
       }
 
+      document.querySelector('.charts').innerHTML = ''
+      document.querySelector('.charts-2d').innerHTML = ''
+      document.querySelector('.charts-extra').innerHTML = ''
+
       this.loading = true
       this.link = ''
       document.getElementById('loader').className = ''
@@ -759,6 +762,19 @@ const params = {
       // Add some delay to finish display update
       setTimeout(() => {
         try {
+          // Precheck models
+          if (!this.blocks.length) {
+            throw new Error('Empty model! Click ADD BLOCK to start designing the model!')
+          }
+          if (!this.blocks.reduce((acc, b) => acc || b.show, false)) {
+            throw new Error('No output! Choose blocks to show in results')
+          }
+          if (this.modelParams.steps > 100000) {
+            throw new Error('Interval overflow! Max number of time steps is 100,000')
+          }
+          if (this.methodParams.samples > 10000000) {
+            throw new Error('Samples overflow! Max number of samples is 10,000,000')
+          }
           if (this.server && this.serverURL.length) {
             // Server-side simulation
             // Store server url in cookies
@@ -784,7 +800,7 @@ const params = {
                     data.charts.forEach(chart => {
                       const ch = document.createElement('img')
                       ch.src = chart
-                      document.querySelector('.charts-2d').appendChild(ch)
+                      document.querySelector('.charts-extra').appendChild(ch)
                     })
                   }
                   this.processResults(data.v)
