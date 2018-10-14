@@ -4,12 +4,13 @@
   "description": "Web app for statistical simulations and bayesian inference",
   "main": "electron.js",
   "scripts": {
-    "build": "browserify src/main.js -t [ vueify ] -t [ babelify ] -g [ envify --NODE_ENV production ] | uglifyjs -cm > dist/bundle.js",
+    "build": "npm run build-web && npm run build-bin",
+    "build-web": "browserify src/main.js -t [ vueify ] -t [ babelify ] -g [ envify --NODE_ENV production ] | uglifyjs -cm > dist/bundle.js",
+    "build-bin": "rm -r bin && mkdir bin && electron-packager . --ignore=\"(node_modules|src)\"  --platform linux,win32 --out bin && cd ./bin && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "build-dev": "browserify src/main.js -t [ vueify ] -o dist/bundle.js --debug",
     "watch": "nodemon --watch src --ext vue,js,css,html --exec 'npm run build-dev'",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "electron": "electron .",
-    "pack": "electron-packager . --platform linux,win32 --out bin"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Anton Zemlyansky",
   "license": "ISC",
