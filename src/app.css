@@ -248,6 +248,23 @@ textarea {
   font-weight: bold;
 }
 
+.content .summary {
+  text-align: left;
+}
+
+.content .summary h3 {
+  margin: 2px 0;
+}
+
+.content .summary table td{
+  border-top: 1px solid rgba(120, 120, 120, 0.4);
+  min-width: 100px;
+}
+
+.content .summary table td b{
+  color: #3f51b5;
+}
+
 .progress {
   position: fixed;
   bottom: 56px;

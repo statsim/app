@@ -6,6 +6,7 @@ const hist2d = require('d3-hist2d').hist2d
 const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
 const cookie = require('cookie')
+const Stats = require('online-stats')
 
 const distributions = require('./lib/distributions')
 const simulationMethods = require('./lib/methods')
@@ -176,6 +177,21 @@ function drawScalar (scalar, name) {
     <h1>${(!isNaN(parseFloat(scalar)) && isFinite(scalar)) ? +scalar.toFixed(6) : scalar}</h1>
     <p>${name}</p>
   `
+  document.querySelector('.charts').appendChild(chartContainer)
+}
+
+function drawObject (obj, name) {
+  const chartContainer = document.createElement('div')
+  chartContainer.className = 'chart'
+  let cont = `<div class="summary"><h3>${name}</h3><table>`
+  Object.keys(obj).forEach(key => {
+    const val = obj[key]
+    cont += `<tr><td><b>${key}<b></td>`
+    cont += `<td>${(val % 1 === 0) ? val : val.toFixed(6)}</td></tr>`
+  })
+  cont += `</table></div>`
+  console.log(cont)
+  chartContainer.innerHTML = cont
   document.querySelector('.charts').appendChild(chartContainer)
 }
 
@@ -684,6 +700,10 @@ const params = {
                 }
                 createChart(k + ' CDF', cdf, [k, 'p'])
               }
+              // ---- Statistics
+              const stats = Stats.Series(Stats.Mean(), Stats.Variance({ddof: 1}), Stats.Std(), Stats.Median(), Stats.Min(), Stats.Max())
+              samples[k].forEach(s => stats(s))
+              drawObject(stats.values, k + ' summary')
             } // -- *draw random variable
           } // *scalars samples
         }) // *iterate over all sample keys (k)
