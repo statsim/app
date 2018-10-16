@@ -9,4 +9,4 @@ const vm = new Vue({
   render: f => f(app)
 })
 
-console.log('Vue app created: ', vm)
+console.log('Vue app:', typeof vm)

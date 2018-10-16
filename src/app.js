@@ -167,7 +167,7 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
     chartData,
     options
   )
-  console.log('Created chart:', d)
+  console.log('Dygraph chart:', typeof d)
 }
 
 function drawScalar (scalar, name) {
@@ -187,16 +187,18 @@ function drawObject (obj, name) {
   Object.keys(obj).forEach(key => {
     const val = obj[key]
     cont += `<tr><td><b>${key}<b></td>`
-    cont += `<td>${(val % 1 === 0) ? val : val.toFixed(6)}</td></tr>`
+    if (Array.isArray(val)) {
+      cont += `<td>${val.toString().slice(0, 30)}</td></tr>`
+    } else {
+      cont += `<td>${(val % 1 === 0) ? val : val.toFixed(6)}</td></tr>`
+    }
   })
   cont += `</table></div>`
-  console.log(cont)
   chartContainer.innerHTML = cont
   document.querySelector('.charts').appendChild(chartContainer)
 }
 
 function drawVector (vector, name) {
-  console.log('drawVector()')
   createChart(
     name,
     vector.map((v, i) => [i, v]),
@@ -210,12 +212,10 @@ function drawVectors (vectors, names) {
     vectors[0].map((_, i) => [i].concat(vectors.map(vector => vector[i]))),
     ['Step'].concat(names)
   )
-  console.log('drawVectors()')
 }
 
 function delay (time, cb) {
   this.loading = true
-  console.log(this)
   setTimeout(() => {
     this.loading = false
     cb()
@@ -372,7 +372,6 @@ const params = {
       parseLink(
         window.location.search,
         (models) => {
-          console.log('Got models', models)
           setTimeout(() => {
             this.models = models
             this.switchModel(0)
@@ -416,13 +415,11 @@ const params = {
     openDataFile (e) {
       const reader = new FileReader()
       const file = e.target.files[0]
-      console.log(file)
       reader.readAsText(file)
       reader.onload = () => {
         const data = reader.result
         parseCSV(data, {}, (err, output) => {
           if (!err) {
-            console.log(output)
             if (output.length > 1) {
               // CSV
               output[0].forEach((h, hi) => {
@@ -481,7 +478,6 @@ const params = {
     },
     switchModel (modelId) {
       const m = this.models[modelId]
-      console.log('Switching to ', modelId, m)
       this.link = '' // clean code
       this.error = ''
       this.message = ''
@@ -608,10 +604,19 @@ const params = {
         // Collect samples in a useful object:
         // { variable_name: [sample_1, sample_2, ...] }
         const samples = {}
-        const rvs = [] // Collect random variables to draw 2d plot later
+        // Maximum a posteriori
+        let map
+        let mapScore = Number.NEGATIVE_INFINITY
+        // Collect random variables in rvs array to draw 2d plot later
+        const rvs = []
         // Detect repeating samples
         const repeatingSamples = {}
-        v.samples.forEach(s => {
+        v.samples.forEach((s, si) => {
+          // Check sample score. Max score shows map estimate
+          if (s.hasOwnProperty('score') && (s.score > mapScore)) {
+            map = s.value
+            mapScore = s.score
+          }
           Object.keys(s.value).forEach(k => {
             const sampleValue = s.value[k]
             if (!samples.hasOwnProperty(k)) {
@@ -624,7 +629,10 @@ const params = {
             samples[k].push(s.value[k])
           })
         })
-        console.log('Repeating samples: ', repeatingSamples)
+        // Show MAP estimates
+        console.log('MAP:', map, mapScore)
+        drawObject(map, 'MAP estimates')
+
         Object.keys(samples).forEach(k => {
           if (typeof samples[k][0] === 'boolean') {
             // Boolean samples
@@ -713,7 +721,6 @@ const params = {
           for (let r1 = 0; r1 < rvs.length - 1; r1++) {
             for (let r2 = r1 + 1; r2 < rvs.length; r2++) {
               const samples2d = samples[rvs[r1]].map((v, i) => [v, samples[rvs[r2]][i]])
-              console.log(samples2d)
               const r1min = d3.min(samples[rvs[r1]])
               const r1max = d3.max(samples[rvs[r1]])
               const r2min = d3.min(samples[rvs[r2]])
@@ -721,7 +728,6 @@ const params = {
               hist2d().bins(100).domain([[r1min, r1max], [r2min, r2max]])(
                 samples2d,
                 h => {
-                  console.log(h)
                   const plotData = []
                   for (let i = 0; i < 100; i++) {
                     if (!Array.isArray(plotData[i])) {
@@ -813,7 +819,6 @@ const params = {
               .then((data) => {
                 console.log(data)
                 if (data.error) {
-                  console.log(data)
                   errorHandler(new Error(data.error))
                 } else {
                   if (data.charts && data.charts.length) {
@@ -828,7 +833,6 @@ const params = {
               })
           } else {
             webppl.run(this.code, (s, v) => {
-              console.log(v)
               this.processResults(v)
             }) // *webppl.run()
           }
