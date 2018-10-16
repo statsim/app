@@ -682,14 +682,18 @@ const params = {
             } else {
               // -- Draw random variable
               rvs.push(k)
-              createChart(k + ' Trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
-              // ---- Distribution
+              // Draw trace
+              createChart(k + ' trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
+              // Draw auto-covariogram
+              const autocov = Stats.AutoCov(50)
+              createChart(k + ' autocovariogram', autocov(samples[k]).map((c, ci) => [ci, c]), ['Lag', 'Autocovariance'])
+              // Draw histogram
               const unique = Array.from(new Set(samples[k])).length
               const t = (unique <= 30) ? unique : 30
               const hist = d3.histogram().thresholds(t)
               const h = hist(samples[k])
               createChart(
-                k + ' Distribution',
+                k + ' histogram',
                 h.map(v => [v.x0, v.length / samples[k].length]),
                 ['Sample', k],
                 {
