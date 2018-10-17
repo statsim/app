@@ -182,7 +182,14 @@ module.exports = function processResults (v) {
         // * All sampled arrays are same
         repeatingArrays[k] = samples[k][0]
         drawVector(samples[k][0], k)
-        const stats = Stats.Series(Stats.Mean(), Stats.Variance({ddof: 1}), Stats.Std(), Stats.Median(), Stats.Min(), Stats.Max())
+        const stats = Stats.Series([
+          { stat: Stats.Mean(), name: 'Average' },
+          { stat: Stats.Variance({ddof: 1}), name: 'Variance' },
+          { stat: Stats.Std(), name: 'Stdev' },
+          { stat: Stats.Median(), name: 'Median' },
+          { stat: Stats.Min(), name: 'Min' },
+          { stat: Stats.Max(), name: 'Max' }
+        ])
         samples[k][0].forEach(s => stats(s))
         drawObject(stats.values, k + ' summary')
       } else {
@@ -247,7 +254,14 @@ module.exports = function processResults (v) {
           createChart(k + ' CDF', cdf, [k, 'p'])
         }
         // ---- Statistics
-        const stats = Stats.Series(Stats.Mean(), Stats.Variance({ddof: 1}), Stats.Std(), Stats.Median(), Stats.Min(), Stats.Max())
+        const stats = Stats.Series([
+          { stat: Stats.Mean(), name: 'Average' },
+          { stat: Stats.Variance({ddof: 1}), name: 'Variance' },
+          { stat: Stats.Std(), name: 'Stdev' },
+          { stat: Stats.Median(), name: 'Median' },
+          { stat: Stats.Min(), name: 'Min' },
+          { stat: Stats.Max(), name: 'Max' }
+        ])
         samples[k].forEach(s => stats(s))
         drawObject(stats.values, k + ' summary')
       } // -- *draw random variable
