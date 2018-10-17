@@ -10,7 +10,7 @@
     "build-dev": "browserify src/main.js -t [ vueify ] -o dist/bundle.js --debug",
     "watch": "nodemon --watch src --ext vue,js,css,html --exec 'npm run build-dev'",
     "electron": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "http-server -s -p 8085 & tape test.js | faucet && kill $!"
   },
   "author": "Anton Zemlyansky",
   "license": "ISC",
@@ -39,7 +39,11 @@
     "electron": "^3.0.4",
     "electron-packager": "^12.2.0",
     "envify": "^4.1.0",
+    "faucet": "0.0.1",
+    "http-server": "^0.11.1",
     "nodemon": "^1.18.4",
+    "puppeteer": "^1.9.0",
+    "tape": "^4.9.1",
     "uglify-es": "^3.3.10",
     "vueify": "^9.4.1"
   }

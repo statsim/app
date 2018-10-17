@@ -533,8 +533,8 @@ const params = {
           if (!this.blocks.reduce((acc, b) => acc || b.show, false)) {
             throw new Error('No output! Choose blocks to show in results')
           }
-          if (this.modelParams.steps > 100000) {
-            throw new Error('Interval overflow! Max number of time steps is 100,000')
+          if (this.modelParams.steps > 1000000) {
+            throw new Error('Interval overflow! Max number of time steps is 1,000,000')
           }
           if (this.methodParams.samples > 10000000) {
             throw new Error('Samples overflow! Max number of samples is 10,000,000')
