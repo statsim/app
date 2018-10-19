@@ -483,7 +483,7 @@
     <!-- Empty model button -->
     <md-boards v-if="!blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 70px;">
       <md-board id="slide1">
-        <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data are typically constants or input parameters, expressions set relationships between blocks, random variables describe stochastic values.</p>
+        <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks are typically constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
       <md-board id="slide2">
         <p><b>Update blocks settings.</b> Each block has its own settings. They determine how the program will evaluate the block and how it will be used later. Almost all elements have the "Show in results" checkboxes. Such checkbox determines if the block will be shown in output.</p>
@@ -709,7 +709,7 @@
       <md-icon>tune</md-icon>
       Params
     </md-button>
-    <md-button class="run-button md-raised md-primary" v-on:click.native="run()">
+    <md-button class="run-button md-raised md-primary" :disabled="blocks.length < 1" v-on:click.native="run()">
       <md-icon>play_arrow</md-icon>
       <span class="desktop">Compile & </span>Run
     </md-button>
