@@ -520,6 +520,7 @@
     <div class="charts"></div>
     <div class="charts-2d"></div>
     <div class="charts-extra"></div>
+    <div class="archives"></div>
   </div>
 
   <!-- PARAMETERS BAR -->
@@ -598,6 +599,13 @@
         v-model="server"
         class="md-primary"
       >Server-side simulation</md-checkbox>
+
+      <md-checkbox 
+        name="server"
+        v-model="serverCompile"
+        class="md-primary"
+        :disabled="!server"
+      >Compile to binaries</md-checkbox>
 
       <!-- Server URL -->
       <md-input-container class="simulation-param">

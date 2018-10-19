@@ -511,17 +511,19 @@ const params = {
       document.querySelector('.charts').innerHTML = ''
       document.querySelector('.charts-2d').innerHTML = ''
       document.querySelector('.charts-extra').innerHTML = ''
+      document.querySelector('.links').innerHTML = ''
+      document.getElementById('loader').className = ''
 
       this.loading = true
       this.link = ''
-      document.getElementById('loader').className = ''
-      this.icon = icons[Math.floor(Math.random() * 6)]
       this.message = ''
       this.error = ''
-      this.compile()
+
       document.cookie = 'url=' + this.serverURL
       document.cookie = 'api=' + this.serverAPI
       document.cookie = 'server=' + this.server
+
+      this.compile()
 
       // Add some delay to finish display update
       setTimeout(() => {
@@ -549,7 +551,12 @@ const params = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({code: this.code, api: this.serverAPI})
+              body: JSON.stringify({
+                models: this.models,
+                activeModel: this.activeModel,
+                api: this.serverAPI,
+                compile: this.serverCompile
+              })
             })
               .then((r) => {
                 return r.json()
@@ -564,6 +571,12 @@ const params = {
                       const ch = document.createElement('img')
                       ch.src = chart
                       document.querySelector('.charts-extra').appendChild(ch)
+                    })
+                  }
+                  if (data.archives && data.archives.length) {
+                    data.archives.forEach(arc => {
+                      const link = `<div class="archive"><span clas="archive-icon">⇣</span> <a href="${arc}">${arc.split('/').pop()}</a></div>`
+                      document.querySelector('.archives').innerHTML += link
                     })
                   }
                   this.process(data.v)

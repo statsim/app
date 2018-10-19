@@ -189,7 +189,8 @@ textarea {
   font-style: normal;
 }
 
-.content .charts, .content .charts-2d, .content .charts-extra {
+
+.content .charts, .content .charts-2d, .content .charts-extra, .content .archives {
   margin: 20px;
   display: flex;
   justify-content: left;
@@ -199,15 +200,22 @@ textarea {
   align-items: flex-start;
 }
 
-.content .chart, .content .chart-2d, .content .charts-extra img {
+.content .chart, .content .chart-2d, .content .charts-extra img, .content .archive {
   border: 1px solid #EEE;
   margin: 0 1% 1% 0;
+}
+
+.content .chart, .content .chart-2d, .content .charts-extra img {
   display:flex;
   flex-direction: column;
   flex-wrap: wrap;
   justify-content: center;
   align-content: center;
   align-items: center;
+}
+
+.content .archive {
+  padding: 10px 14px;
 }
 
 .content .chart {
@@ -422,7 +430,7 @@ tile {
 .dark .md-input-focused label {
   color: rgb(68, 134, 255);
 }
-.dark .content .chart, .dark  .content .chart-2d {
+.dark .content .chart, .dark  .content .chart-2d, .dark .content .archive {
   background: #19181E !important;
   color: #e3e4f2 !important;
   border: none;
