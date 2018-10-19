@@ -11,6 +11,24 @@ h2 {
   font-weight: 400;
 }
 
+#loader span {
+  font-size: 15px;
+  display: inline-block;
+  margin: auto;
+  padding: 10px 20px;
+  border-radius: 30px;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0,0,0,.2);
+  opacity: 1;
+  animation: blinker .8s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: .6;
+  }
+}
+
 textarea {
   width: 100%;
   border: 0;
@@ -287,10 +305,10 @@ textarea {
 .content .parameters {
   position: absolute;
   width: 300px;
-  top: 55px;
+  top: 0px;
+  left: 60px;
   height: 500px;
   overflow: hidden;
-  left: calc(27% + 60px);
   display:flex;
   flex-direction: column;
   /*flex-wrap: wrap;*/
@@ -304,6 +322,7 @@ textarea {
 
 .content .parameters h2 {
   margin: 0 0 15px 0;
+  font-size: 30px;
 }
 
 .content .parameters p {

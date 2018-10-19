@@ -538,22 +538,24 @@
         </marker>
       </defs>
     </svg>
-    <d3-network
-      class="net desktop"
-      :net-nodes="graphNodes"
-      :net-links="graphLinks"
-      :options="graphOptions"
-      :link-cb="lcb"
-      v-on:node-click="ncb"
-      v-if="graphNodes.length"
-    ></d3-network>
-    <div class="parameters desktop" v-if="blocks.length || (models.length > 1)">
-      <p style="font-size:11px;">Model:</p>
-      <h2>{{ modelParams.name }}</h2>
-      <md-input-container v-for="b in blocks" v-if="b.typeCode === 2 && b.useAsParameter">
-        <label>{{ b.name }}</label>
-        <md-input v-model="b.value"></md-input>
-      </md-input-container>
+    <div style="position: relative" class="graph-container">
+      <d3-network
+        class="net desktop"
+        :net-nodes="graphNodes"
+        :net-links="graphLinks"
+        :options="graphOptions"
+        :link-cb="lcb"
+        v-on:node-click="ncb"
+        v-if="graphNodes.length"
+      ></d3-network>
+      <div class="parameters desktop" v-if="blocks.length || (models.length > 1)">
+        <p style="font-size:11px;">Model:</p>
+        <h2>{{ modelParams.name }}</h2>
+        <md-input-container v-for="b in blocks" v-if="b.typeCode === 2 && b.useAsParameter">
+          <label>{{ b.name }}</label>
+          <md-input v-model="b.value"></md-input>
+        </md-input-container>
+      </div>
     </div>
     <div class="charts"></div>
     <div class="charts-2d"></div>
@@ -712,5 +714,5 @@
       <span class="desktop">Compile & </span>Run
     </md-button>
   </md-bottom-bar>
-  <div id="loader" class="hidden"><span>Processing..</span></div>
+  <div id="loader" class="hidden"><span><md-icon>hourglass_empty</md-icon> Processing..</span></div>
 </div>
