@@ -7,12 +7,23 @@ hr {
   opacity: 0.3;
 }
 
+h2 {
+  font-weight: 400;
+}
+
 textarea {
   width: 100%;
   border: 0;
   padding: 8px;
   color: #444;
   background: #cecece;
+}
+
+.add-block-button {
+  background-color: #5db53b !important;
+}
+.add-block-button:hover {
+  background-color: #50a230 !important;
 }
 
 .md-input-container {
@@ -175,8 +186,8 @@ textarea {
   border: 1px solid #CCC;
 }
 
-
 .content .net {
+  height: 500px;
   background-color: #F2F2F2;
 }
 
@@ -273,6 +284,54 @@ textarea {
   color: #3f51b5;
 }
 
+.content .parameters {
+  position: absolute;
+  width: 300px;
+  top: 55px;
+  height: 500px;
+  overflow: hidden;
+  left: calc(27% + 60px);
+  display:flex;
+  flex-direction: column;
+  /*flex-wrap: wrap;*/
+  justify-content: center;
+  align-content: center;
+}
+
+.content .parameters .md-icon {
+  color: rgba(150, 150, 150, .4)
+}
+
+.content .parameters h2 {
+  margin: 0 0 15px 0;
+}
+
+.content .parameters p {
+  color: rgba(150,150,150);
+}
+
+.content .parameters .md-input-container {
+  margin: 0 0 5px 0;
+}
+
+.content .parameters .md-input-container::after{
+  display: none;
+}
+
+.content .parameters .md-input-container label {
+  margin-top: 2px;
+  left: 5px;
+}
+
+.content .parameters input {
+  font-size: 18px;
+  font-weight: bold;
+  padding-left: 5px;
+  margin-top: 4px;
+  background-color: white;
+}
+
+
 .progress {
   position: fixed;
   bottom: 56px;
@@ -357,6 +416,9 @@ tile {
   min-height: 100%;
   background: #292735;
 }
+.dark h2 {
+  color: #ddd;
+}
 .dark .tool-bar {
   background: #161325 !important;
 }
@@ -435,6 +497,9 @@ tile {
   color: #e3e4f2 !important;
   border: none;
 }
+.dark .content .parameters input {
+  background-color: #100f16;
+}
 .dark .net {
   background-color: #1D1C26 !important;
 }
@@ -447,16 +512,53 @@ tile {
   border: 1px solid #3e5269;
   color: #7fb9f8;
 }
+.dark .run-button, .dark .params-button, .dark .add-block-button {
+  background-color: transparent !important;
+}
+.dark .add-block-button {
+  border: 2px solid #5db53b !important;
+}
+.dark .add-block-button .md-icon {
+  color: #5db53b;
+}
+.dark .add-block-button:hover {
+  border: 2px solid #38801c !important;
+}
+.dark .params-button {
+  border: 2px solid #da346c !important;
+}
+.dark .params-button .md-icon {
+  color: #da346c;
+}
+.dark .params-button:hover {
+  border: 2px solid #9a1441 !important;
+}
+.dark .run-button {
+  border: 2px solid #475cd2 !important;
+}
+.dark .run-button .md-icon {
+  color: #475cd2;
+}
+.dark .run-button:hover {
+  border: 2px solid #28388f !important;
+}
+.dark .md-board span {
+  background: transparent !important;
+}
+
+
+
+
 
 @media only screen and (max-width: 860px) {
   .mobile {
     display: initial;
   }
   .md-tooltip {
-    display: none;
+    display: none !important;
   }
   .desktop {
-    display: none;
+    display: none !important;
   }
   .tool-bar {
     width: 100%;

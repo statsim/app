@@ -28,7 +28,7 @@ const baseModel = [
       name: 'Main',
       description: '',
       steps: 1,
-      method: 'MCMC'
+      method: 'deterministic'
     },
     blocks: [],
     methodParams:
@@ -157,7 +157,11 @@ const params = {
       nodeSize: 35,
       fontSize: 14,
       nodeLabels: true,
-      linkWidth: 2.3
+      linkWidth: 2.3,
+      offset: {
+        x: 100,
+        y: 0
+      }
     },
     link: '',
     loading: false, // show loading indicator
@@ -511,7 +515,7 @@ const params = {
       document.querySelector('.charts').innerHTML = ''
       document.querySelector('.charts-2d').innerHTML = ''
       document.querySelector('.charts-extra').innerHTML = ''
-      document.querySelector('.links').innerHTML = ''
+      document.querySelector('.archives').innerHTML = ''
       document.getElementById('loader').className = ''
 
       this.loading = true

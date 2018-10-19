@@ -14,7 +14,7 @@
     <input type="file" accept=".json, .ssp" id="openProjectFile" v-on:change="openProjectFile" style="display: none;" />
     <md-menu md-align-trigger md-size="4">
       <md-button md-menu-trigger class="md-icon-button md-raised">
-        <md-icon>more_vert</md-icon>
+        <md-icon>menu</md-icon>
       </md-button>
       <md-menu-content>
         <md-menu-item v-on:selected="newProject">
@@ -45,8 +45,9 @@
     </md-menu>
     <!-- <p class="logo-icon">{{ icon }}</p> -->
     <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.6.1</sup></h2>
-    <md-menu md-align-trigger md-size="4">
-      <md-button class="md-raised md-primary" md-menu-trigger>
+    <md-menu md-align-trigger md-size="4" md-direction="bottom left">
+      <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
+        <md-icon>add</md-icon>
         Add Block
         <md-tooltip md-direction="bottom">Add new element to the model</md-tooltip>
       </md-button>
@@ -98,13 +99,18 @@
         v-on:click.native="switchModel(modelId)"
       >{{ model.modelParams.name }}
       </md-button>
-      <md-button
-        class="md-dense md-icon-button"
-        v-on:click.native="createModel()"
-      >
-        <md-icon style="opacity: 0.3">add</md-icon>
-        <md-tooltip md-direction="bottom">Add new model or distribution</md-tooltip>
-      </md-button>
+      <md-menu md-align-trigger md-size="4" md-direction="bottom left" style="float: right">
+        <md-button md-menu-trigger class="md-icon-button md-dense">
+          <md-icon style="opacity: 0.3">more_horiz</md-icon>
+        </md-button>
+        <md-menu-content>
+          <md-menu-item v-on:selected="createModel()">
+            <md-icon>add</md-icon>
+            <span>Add new model</span>
+          </md-menu-item>
+        </md-menu-content>
+      </md-menu>
+
     </div>
     <!-- MODEL INFO -->
     <div style="padding: 10px;">
@@ -115,7 +121,7 @@
       ></md-input>
     </md-input-container>
     <div>
-      <textarea v-model="modelParams.description"></textarea>
+      <textarea v-model="modelParams.description" placeholder="Description..." rows="5"></textarea>
     </div>
     </div>
     <!-- BLOCKS -->
@@ -474,9 +480,32 @@
       </md-checkbox>
     </div>
 
+    <!-- Empty model button -->
+    <md-boards v-if="!blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 70px;">
+      <md-board id="slide1">
+        <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data are typically constants or input parameters, expressions set relationships between blocks, random variables describe stochastic values.</p>
+      </md-board>
+      <md-board id="slide2">
+        <p><b>Update blocks settings.</b> Each block has its own settings. They determine how the program will evaluate the block and how it will be used later. Almost all elements have the "Show in results" checkboxes. Such checkbox determines if the block will be shown in output.</p>
+      </md-board>
+      <md-board id="slide3">
+        <p><b>Set simulation <span style="border: 1px solid #e91e63; background-color: #e91e63; color: white; padding: 3px 4px;">Params</span>.</b> After you created and set all needed blocks it's time to choose a simulation method. The simple rule is if you don't use random variables select Deterministic, otherwise choose Rejection Sampling or MCMC. </p>
+      </md-board>
+      <md-board id="slide4">
+        <p><b><span style="border: 1px solid #3f51b5; background-color: #3f51b5; color: white; padding: 3px 4px;">&nbsp;Run&nbsp;</span> your model</b>, but save your project first! If you don't use a server for simulations, StatSim can become unresponsive. If everything is ok, you will see results as beautiful charts or scalar values. Compile your model to binaries if you want to use it as a separate app.</p>
+      </md-board>
+    </md-boards>
+
+
     <!-- Model control -->
-    <md-button v-on:click.native="duplicateModel()">Duplicate model</md-button>
-    <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">Remove model</md-button>
+    <md-button v-on:click.native="duplicateModel()">
+      <md-icon>flip_to_front</md-icon>
+      Duplicate model
+    </md-button>
+    <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">
+      <md-icon>delete_outlined</md-icon>
+      Remove model
+    </md-button>
   </div>
 
   <!-- CONTENT -->
@@ -510,6 +539,7 @@
       </defs>
     </svg>
     <d3-network
+      class="net desktop"
       :net-nodes="graphNodes"
       :net-links="graphLinks"
       :options="graphOptions"
@@ -517,6 +547,14 @@
       v-on:node-click="ncb"
       v-if="graphNodes.length"
     ></d3-network>
+    <div class="parameters desktop" v-if="blocks.length || (models.length > 1)">
+      <p style="font-size:11px;">Model:</p>
+      <h2>{{ modelParams.name }}</h2>
+      <md-input-container v-for="b in blocks" v-if="b.typeCode === 2 && b.useAsParameter">
+        <label>{{ b.name }}</label>
+        <md-input v-model="b.value"></md-input>
+      </md-input-container>
+    </div>
     <div class="charts"></div>
     <div class="charts-2d"></div>
     <div class="charts-extra"></div>
@@ -665,7 +703,7 @@
       <p>Time steps: {{ modelParams.steps }}</p>
       <p v-if="(['MCMC','rejection', 'HMC'].indexOf(modelParams.method) >= 0) && methodParams.samples">Samples: {{ methodParams.samples }}</p>
     </div>
-    <md-button class="md-raised md-accent" @click="toggleRightSidenav">
+    <md-button class="md-raised md-accent params-button" @click="toggleRightSidenav">
       <md-icon>tune</md-icon>
       Params
     </md-button>
