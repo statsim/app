@@ -44,7 +44,7 @@
       </md-menu-content>
     </md-menu>
     <!-- <p class="logo-icon">{{ icon }}</p> -->
-    <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.6.1</sup></h2>
+    <h2 class="md-title logo" style="flex: 1"> StatSim <sup class="version">0.7.0</sup></h2>
     <md-menu md-align-trigger md-size="4" md-direction="bottom left">
       <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
         <md-icon>add</md-icon>
@@ -466,51 +466,6 @@
         </md-button>
         </md-whiteframe>
 
-        <!--
-          <md-input-container>
-            <label for="distributionType">Distribution:</label>
-            <md-select
-              name="distributionType"
-              id="distributionType"
-              v-model="block.distribution"
-            >
-              <md-option
-                v-for="(params, distributionType) in distributions"
-                :value="distributionType"
-                @selected="block.params = {}"
-              >{{ distributionType }}</md-option>
-            </md-select>
-          </md-input-container>
-          <md-input-container
-            v-if="block.distribution.length" 
-            v-for="(paramOptions, param) in distributions[block.distribution]"
-            md-clearable
-          >
-            <label>{{ param }}</label>
-            <md-input
-              v-model="block.params[param]"
-            ></md-input>
-          </md-input-container>
-          <p style="font-size: 12px; color: 999;">
-            In case of vectors you can get index as <b>_j</b><br>
-            Dimension-wise indexes for tensors are <b>_j0, _j1, ...</b><br>
-            Values stored in <b>_v</b>
-          </p>
-        </md-whiteframe>
-        <md-card-expand>
-          <md-card-actions>
-            <span style="flex: 1"></span>
-            <md-button class="md-icon-button" md-expand-trigger>
-              <md-icon>help</md-icon>
-            </md-button>
-          </md-card-actions>
-
-          <md-card-content>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Optio itaque ea, nostrum odio. Dolores, sed accusantium quasi non, voluptas eius illo quas, saepe voluptate pariatur in deleniti minus sint. Excepturi.
-          </md-card-content>
-        </md-card-expand>
-        -->
-        <!-- <pre>{{ block }}</pre> -->
       </md-card-content>
 
 
@@ -600,15 +555,15 @@
     </div>
 
     <!-- Empty model button -->
-    <md-boards v-if="!blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 70px;">
+    <md-boards v-if="!blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
       <md-board id="slide1">
         <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks can be constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
       <md-board id="slide2">
-        <p><b>Update block settings.</b>Update block settings. Each block has its own settings. They determine how the program evaluates a block and its future usage. Almost each block has the Show in results checkbox. It determines if the block is shown in the output.</p>
+        <p><b>Update block settings.</b> Each block has its own settings. They determine how the program evaluates a block and its future usage. Almost each block has the <i>Show in results</i> checkbox. It determines if the block is shown in the output.</p>
       </md-board>
       <md-board id="slide3">
-        <p><b>Set simulation <span style="border: 1px solid #e91e63; background-color: #e91e63; color: white; padding: 3px 4px;">Params</span>.</b> After you created and set all the blocks it's time to choose a simulation method. The simple rule is if you don't use random variables select Deterministic. For simulations choose Rejection Sampling or MCMC, for ML select Optimization. </p>
+        <p><b>Set simulation <span style="border: 1px solid #e91e63; background-color: #e91e63; color: white; padding: 3px 4px;">Params</span>.</b> After you created and set all the blocks it's time to choose a simulation method. The simple rule is if you don't use random variables select <i>Deterministic</i>. For simulations choose <i>Rejection Sampling</i> or <i>MCMC</i>, for ML select <i>Optimization</i>. </p>
       </md-board>
       <md-board id="slide4">
         <p><b><span style="border: 1px solid #3f51b5; background-color: #3f51b5; color: white; padding: 3px 4px;">&nbsp;Run&nbsp;</span> your model</b> after saving it. If you don't use a server for simulations StatSim may become unresponsive and you may lose your data. In case everything went right you get some informative charts or scalar values as a result. Compile your model to binaries if you want to use it as a separate app.</p>
@@ -616,14 +571,17 @@
     </md-boards>
 
 
+    <div class="stat-seal" style="text-align: center;">
+    <img src="images/s.png" style="width: 100px; height: auto; opacity: 0.35; margin: 20px 0px"></img>
+    </div>
     <!-- Model control -->
     <md-button v-on:click.native="duplicateModel()">
       <md-icon>flip_to_front</md-icon>
-      Duplicate model
+      Duplicate
     </md-button>
     <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">
       <md-icon>delete_outlined</md-icon>
-      Remove model
+      Remove
     </md-button>
   </div>
 

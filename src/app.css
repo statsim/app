@@ -15,6 +15,15 @@ label {
   text-transform: capitalize;
 }
 
+.md-theme-default.md-boards > .md-boards-navigation .md-board-header {
+   color: rgba(0, 0, 0, .2) !important;
+}
+
+.md-theme-default.md-boards > .md-boards-navigation .md-board-header.md-active, .md-theme-default.md-boards > .md-boards-navigation .md-board-header:active {
+   color: #3f51b5 !important;
+}
+
+
 #loader span {
   font-size: 15px;
   display: inline-block;
@@ -290,6 +299,13 @@ textarea {
   right: 0 !important;
   left: inherit !important;
   position: absolute;
+  margin: 3px 10px !important;
+}
+
+.content .dygraph-title {
+  font-weight: bold !important;
+  font-size: 16px !important;
+  margin: 3px 10px !important;
 }
 
 .content .chart-heavy .dygraph-legend > span {
@@ -318,7 +334,9 @@ textarea {
 }
 
 .content .summary h3 {
-  margin: 2px 0;
+  margin: 6px 0;
+  font-size: 20px;
+  font-weight: 400;
 }
 
 .content .summary table td{
