@@ -68,6 +68,10 @@
           <md-icon :style="'color: ' + colors[3]">exposure_plus_1</md-icon>
           <span>Accumulator</span>
         </md-menu-item>
+        <md-menu-item v-on:click.native="addBlock(6)">
+          <md-icon :style="'color: ' + colors[6]">apps</md-icon>
+          <span>Neural Net</span>
+        </md-menu-item>
         <md-menu-item disabled>
           <small>Inference operators:</small>
         </md-menu-item>
@@ -395,6 +399,121 @@
 
       </md-card-content>
 
+      <!-- Neural net -->
+      <md-card-content v-if="block.typeCode === 6">
+        <md-input-container md-clearable>
+          <label>Network name</label>
+          <md-input
+            v-model="block.name"
+          ></md-input>
+        </md-input-container>
+        <md-checkbox 
+          v-model="block.convert"
+          class="md-primary"
+        >
+          Convert tensors
+        </md-checkbox>
+        <md-whiteframe
+          md-elevation="11"
+          style="margin: 5px 0 15px"
+        >
+          <div class="layer"
+            v-for="layer, layerIndex in block.layers"
+          >
+            <md-input-container>
+              <label for="layerType">Layer type:</label>
+              <md-select
+                name="layerType"
+                v-model="layer.type"
+              >
+                <md-option
+                  v-for="type in ['affine', 'sigmoid', 'tanh', 'relu', 'softplus', 'softmax']"
+                  :value="type"
+                >{{ type[0].toUpperCase() + type.slice(1) }}</md-option>
+              </md-select>
+            </md-input-container>
+            <md-input-container v-if="layer.type === 'affine'" md-clearable>
+              <label>Layer name</label>
+              <md-input
+                v-model="layer.name"
+              ></md-input>
+            </md-input-container>
+            <div style="display: flex" v-if="layer.type === 'affine'">
+              <md-input-container style="width:40%; margin-right: 1%;">
+                <label>In</label>
+                <md-input
+                  v-model="layer.in"
+                ></md-input>
+              </md-input-container>
+              <md-icon style="color: rgba(150,150,150,0.4); auto 5px auto 5px;">chevron_right</md-icon>
+              <md-input-container style="width: 40%;">
+                <label>Out</label>
+                <md-input
+                  v-model="layer.out"
+                ></md-input>
+              </md-input-container>
+            </div>
+            <div class="layer-control">
+            <md-button class="md-dense" v-on:click.native="block.layers.splice(layerIndex, 1)">
+              Remove
+            </md-button>
+            </div>
+          </div> <!-- *layer -->
+
+        <md-button class="md-dense" style="width: 94%; margin: 10px 3%;" v-on:click.native="addLayer(blockIndex)">
+          <md-icon>library_add</md-icon>
+          Add new layer
+        </md-button>
+        </md-whiteframe>
+
+        <!--
+          <md-input-container>
+            <label for="distributionType">Distribution:</label>
+            <md-select
+              name="distributionType"
+              id="distributionType"
+              v-model="block.distribution"
+            >
+              <md-option
+                v-for="(params, distributionType) in distributions"
+                :value="distributionType"
+                @selected="block.params = {}"
+              >{{ distributionType }}</md-option>
+            </md-select>
+          </md-input-container>
+          <md-input-container
+            v-if="block.distribution.length" 
+            v-for="(paramOptions, param) in distributions[block.distribution]"
+            md-clearable
+          >
+            <label>{{ param }}</label>
+            <md-input
+              v-model="block.params[param]"
+            ></md-input>
+          </md-input-container>
+          <p style="font-size: 12px; color: 999;">
+            In case of vectors you can get index as <b>_j</b><br>
+            Dimension-wise indexes for tensors are <b>_j0, _j1, ...</b><br>
+            Values stored in <b>_v</b>
+          </p>
+        </md-whiteframe>
+        <md-card-expand>
+          <md-card-actions>
+            <span style="flex: 1"></span>
+            <md-button class="md-icon-button" md-expand-trigger>
+              <md-icon>help</md-icon>
+            </md-button>
+          </md-card-actions>
+
+          <md-card-content>
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Optio itaque ea, nostrum odio. Dolores, sed accusantium quasi non, voluptas eius illo quas, saepe voluptate pariatur in deleniti minus sint. Excepturi.
+          </md-card-content>
+        </md-card-expand>
+        -->
+        <!-- <pre>{{ block }}</pre> -->
+      </md-card-content>
+
+
       <!-- Observer -->
       <md-card-content v-if="block.typeCode === 4">
         <md-input-container>
@@ -483,16 +602,16 @@
     <!-- Empty model button -->
     <md-boards v-if="!blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 70px;">
       <md-board id="slide1">
-        <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks are typically constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
+        <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks can be constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
       <md-board id="slide2">
-        <p><b>Update blocks settings.</b> Each block has its own settings. They determine how the program will evaluate the block and how it will be used later. Almost all elements have the "Show in results" checkboxes. Such checkbox determines if the block will be shown in output.</p>
+        <p><b>Update block settings.</b>Update block settings. Each block has its own settings. They determine how the program evaluates a block and its future usage. Almost each block has the Show in results checkbox. It determines if the block is shown in the output.</p>
       </md-board>
       <md-board id="slide3">
-        <p><b>Set simulation <span style="border: 1px solid #e91e63; background-color: #e91e63; color: white; padding: 3px 4px;">Params</span>.</b> After you created and set all needed blocks it's time to choose a simulation method. The simple rule is if you don't use random variables select Deterministic, otherwise choose Rejection Sampling or MCMC. </p>
+        <p><b>Set simulation <span style="border: 1px solid #e91e63; background-color: #e91e63; color: white; padding: 3px 4px;">Params</span>.</b> After you created and set all the blocks it's time to choose a simulation method. The simple rule is if you don't use random variables select Deterministic. For simulations choose Rejection Sampling or MCMC, for ML select Optimization. </p>
       </md-board>
       <md-board id="slide4">
-        <p><b><span style="border: 1px solid #3f51b5; background-color: #3f51b5; color: white; padding: 3px 4px;">&nbsp;Run&nbsp;</span> your model</b>, but save your project first! If you don't use a server for simulations, StatSim can become unresponsive. If everything is ok, you will see results as beautiful charts or scalar values. Compile your model to binaries if you want to use it as a separate app.</p>
+        <p><b><span style="border: 1px solid #3f51b5; background-color: #3f51b5; color: white; padding: 3px 4px;">&nbsp;Run&nbsp;</span> your model</b> after saving it. If you don't use a server for simulations StatSim may become unresponsive and you may lose your data. In case everything went right you get some informative charts or scalar values as a result. Compile your model to binaries if you want to use it as a separate app.</p>
       </md-board>
     </md-boards>
 
@@ -587,7 +706,7 @@
 
       <!-- Time steps-->
       <md-input-container class="simulation-param">
-        <label for="time-steps">Time steps (intervals):</label>
+        <label for="time-steps">Iterations:</label>
         <md-input
           name="time-steps"
           type="number"
@@ -618,6 +737,7 @@
           <md-input
             v-if="(paramOptions.type === 'int') || (paramOptions.type === 'real')"
             type="number"
+            :step="(paramOptions.type === 'int') ? 1 : 0.001"
             v-model="methodParams[param]"
           ></md-input>
           <md-select
@@ -679,7 +799,7 @@
   <md-bottom-bar class="bottom-bar">
     <!-- Time steps-->
     <md-input-container class="simulation-param desktop">
-      <label for="time-steps">Time steps:</label>
+      <label for="time-steps">Iterations</label>
       <md-input
         name="time-steps"
         type="number"
@@ -692,7 +812,7 @@
 
     <!-- Simulation method -->
     <md-input-container class="simulation-method-container simulation-param desktop">
-      <label for="simulation-method">Simulation method:</label>
+      <label for="simulation-method">Simulation method</label>
       <md-select name="simulation-method" id="simulation-method" v-model="modelParams.method">
         <md-option
           v-for="(methodObj, method) in simulationMethods" 

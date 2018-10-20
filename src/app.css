@@ -11,6 +11,10 @@ h2 {
   font-weight: 400;
 }
 
+label {
+  text-transform: capitalize;
+}
+
 #loader span {
   font-size: 15px;
   display: inline-block;
@@ -175,6 +179,11 @@ textarea {
 .side-bar .block-5 {
   border-top: 4px solid #ababab;
 }
+/* Neural net */
+.side-bar .block-6 {
+  border-top: 4px solid #530ea3;
+  overflow: hidden;
+}
 
 .side-bar .block-name {
   width: 100%;
@@ -187,6 +196,25 @@ textarea {
   line-height: 0px;
   color: #888;
   font-weight: bold;
+}
+
+/* Neural net layer */
+.side-bar .layer {
+  padding: 15px;
+  border-bottom: 2px dashed rgba(150,150,150,0.3);
+  position: relative;
+}
+
+.side-bar .layer-control {
+  text-align: center;
+}
+
+.side-bar .layer-control .md-button {
+  min-height: 20px;
+  line-height: 20px;
+  font-size: 11px;
+  padding: 1px 8px;
+  min-width: 0;
 }
 
 .content {
@@ -471,6 +499,9 @@ tile {
 }
 .dark .side-bar .block-type {
   color: rgba(166, 176, 209, 0.51)
+}
+.dark .side-bar .block .md-whiteframe {
+  background-color: #16141d;
 }
 .dark .side-bar .block .md-theme-default.md-tabs.md-transparent > .md-tabs-navigation .md-tab-header {
   color: rgb(98, 102, 124)

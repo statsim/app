@@ -26,6 +26,21 @@ const onlyMAP = {
   description: 'Retain sample with the highest score'
 }
 
+const steps = {
+  type: 'int',
+  min: 0,
+  default: 5,
+  description: 'The number of steps to take per-iteration'
+}
+
+const stepSize = {
+  type: 'real',
+  min: 0,
+  default: 0.1,
+  description: 'The size of each step'
+}
+
+
 module.exports = {
   'deterministic': {
     name: 'Deterministic',
@@ -79,18 +94,8 @@ module.exports = {
     params: {
       samples,
       burn,
-      steps: {
-        type: 'int',
-        min: 0,
-        default: 5,
-        description: 'The number of HMC steps to take per-iteration'
-      },
-      stepSize: {
-        type: 'real',
-        min: 0,
-        default: 0.1,
-        description: 'The size of each HMC step'
-      },
+      steps,
+      stepSize,
       lag,
       onlyMAP
     }
@@ -137,6 +142,14 @@ module.exports = {
   'optimize': {
     name: 'Optimization',
     params: {
+      optMethod: {
+        type: 'select',
+        values: ['adam', 'sgd', 'adagrad', 'rmsprop'],
+        default: 'adam',
+        description: 'Optimization method'
+      },
+      steps,
+      stepSize,
       samples,
       onlyMAP
     }

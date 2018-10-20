@@ -45,7 +45,7 @@ const colors = [
   '#d51558',
   '#ababab',
   '#ababab',
-  '#ababab'
+  '#530ea3'
 ]
 
 const sizes = [
@@ -54,7 +54,8 @@ const sizes = [
   15,
   30,
   25,
-  25
+  25,
+  30
 ]
 
 const icons = [
@@ -131,8 +132,16 @@ const BlockClasses = [
       this.typeCode = 5
       this.value = ''
     }
+  },
+  class NeuralNet {
+    constructor (counter) {
+      this.name = 'N' + counter
+      this.type = 'Neural Net'
+      this.typeCode = 6
+      this.layers = []
+      this.convert = false
+    }
   }
-
 ]
 
 function delay (time, cb) {
@@ -309,6 +318,16 @@ const params = {
     } // *if window.location.search is not empty
   },
   methods: {
+    addLayer (blockIndex) {
+      const block = this.blocks[blockIndex]
+      block.layers.push({
+        type: 'affine',
+        name: 'layer' + (block.layers.filter(l => l.type === 'affine').length + 1),
+        in: 1,
+        out: 1
+      })
+    },
+    // Add new expression to Expression value (via helper buttons)
     addExpression (str, i, sh) {
       const shift = (typeof sh === 'undefined') ? 0 : sh
       const input = document.querySelector(`#input-${i}`)

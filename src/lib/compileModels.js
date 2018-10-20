@@ -1,3 +1,5 @@
+const methods = require('./methods')
+
 module.exports = function (models, activeModel) {
   let finalCode = ''
   let modelCodes = []
@@ -99,6 +101,7 @@ module.exports = function (models, activeModel) {
 
     let modelOutput = ''
     let observers = ''
+    let initializeNeuralNetConverters = false
 
     /*
       ITERATING OVER ALL BLOCKS OF THE MODEL
@@ -159,9 +162,9 @@ module.exports = function (models, activeModel) {
         // If value is comma-separated list, add array brackets
         // Upd: check if NaN add brackets
         // Upd: if empty string between ,, - undefined
-        let valueStr = (b.value.indexOf(',') >= 0)
-          ? `[${b.value.split(',').map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
-          : !isNaN(b.value) ? b.value : `'${b.value}'`
+        let valueStr = ((b.value.indexOf(',') >= 0) && (b.value.indexOf('[') < 0))
+          ? `[${b.value.split(',').map(v => v.trim()).map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
+          : b.value.trim()
         // Check if it's a Tensor
         if (b.dims && b.dims.length && !isNaN(parseInt(b.dims))) {
           valueStr = `Tensor([${b.dims}], ${valueStr})`
@@ -208,6 +211,25 @@ module.exports = function (models, activeModel) {
         } else {
           model += `var ${b.name} = ${b.initialValue} + ${b.value}\n`
         }
+      } else if ((b.typeCode === 6) && b.layers.length) {
+        // --> NEURAL NET
+        var layers = ''
+        b.layers.slice().reverse().forEach((l, li) => {
+          if (li > 0) {
+            layers += ',\n'
+          }
+          if (l.type === 'affine') {
+            layers += `affine('${l.name}', {in: ${l.in}, out: ${l.out}})`
+          } else {
+            layers += l.type
+          }
+        })
+        if (b.convert) {
+          initializeNeuralNetConverters = true
+          layers = `convertOut,\n${layers},\nconvertIn`
+        }
+        var stack = ((b.layers.length > 1) || (b.convert)) ? `stack([\n${layers}\n])` : layers
+        model += `var ${b.name} = ${stack}\n`
       } else if (b.typeCode === 4) {
         // --> OBSERVER BLOCK
         const isNumber = (str) => {
@@ -340,7 +362,7 @@ if (typeof (${value}) === 'number') {
       }
     }) // End of block iterator
 
-    // Generate steps
+    // Generate steps add observers after iterator
     if (m.modelParams.steps > 1.5) {
       model +=
 `var step = function (n) {
@@ -375,6 +397,33 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
     model += '}\n'
     code += model
 
+    // Add helper functions
+    // Convert Neural Net layers from/to tesors
+    if (initializeNeuralNetConverters) {
+      const fIn =
+`var convertIn = function convertIn (_x) {
+  if (typeof _x === 'number') {
+    return Tensor([1,1],[_x])
+  } else if (Array.isArray(_x)) {
+    return Vector(_x)
+  } else {
+    return _x
+  }
+}\n`
+      const fOut =
+`var convertOut = function convertOut (_x) {
+  var _xout = T.toScalars(_x)
+  if (_xout.length === 0) {
+    return undefined
+  } else if (_xout.length === 1) {
+    return _xout[0]
+  } else {
+    return _xout
+  }
+}\n`
+      code = fIn + fOut + code
+    }
+
     // Inference
     let inf = (mi === activeModel) ? '' : 'return '
     if (m.modelParams.method === 'deterministic') {
@@ -383,18 +432,24 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
       let paramStr = ''
       let kernelStr = ''
       let kernelParamStr = ''
-      let realMethod = m.modelParams.method
+      let realMethod = (m.modelParams.method === 'HMC') ? 'MCMC' : m.modelParams.method
+
+      // Iterate over all method params
       Object.keys(m.methodParams).forEach(key => {
-        if (key === 'steps' || key === 'stepSize') {
-          kernelParamStr += (kernelParamStr.length) ? ', ' : ''
-          kernelParamStr += `${key}: ${m.methodParams[key]}`
-        } else {
-          paramStr += `, ${key}: ${m.methodParams[key]}`
+        // Check if param is not empty
+        if (m.methodParams[key] && m.methodParams[key] !== '' && methods[m.modelParams.method].params.hasOwnProperty(key)) {
+          if (((key === 'steps') && (m.modelParams.method === 'HMC')) || key === 'stepSize') {
+            kernelParamStr += (kernelParamStr.length) ? ', ' : ''
+            kernelParamStr += `${key}: ${m.methodParams[key]}`
+          } else if (key !== 'optMethod') {
+            paramStr += `, ${key}: ${m.methodParams[key]}`
+          }
         }
       })
       if (m.modelParams.method === 'HMC') {
-        realMethod = 'MCMC'
         kernelStr = (kernelParamStr.length) ? `, kernel: {HMC: {${kernelParamStr}}}` : `, kernel: 'HMC'`
+      } else if (m.modelParams.method === 'optimize') {
+        kernelStr = (kernelParamStr.length) ? `, optMethod: {${m.methodParams.optMethod || 'adam'}: {${kernelParamStr}}}` : `, optMethod: '${m.methodParams.optMethod || 'adam'}'`
       }
       inf += `Infer({model, method: '${realMethod}'${kernelStr + paramStr}})\n`
     }
