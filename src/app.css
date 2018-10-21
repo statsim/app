@@ -241,9 +241,21 @@ textarea {
   border: 1px solid #CCC;
 }
 
+.content .graph-container {
+  background-color: #F2F2F2;
+}
+
+.content .chips .md-chip {
+  margin: 0 -4px 7px 0;
+  height: 25px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: white;
+  box-shadow: 0 0 5px rgba(0,0,0,.25);
+}
+
 .content .net {
   height: 500px;
-  background-color: #F2F2F2;
 }
 
 .content #m-end{
@@ -548,6 +560,9 @@ tile {
 .dark .md-toolbar {
   background: #121115 !important;
 }
+.dark .message {
+  color: white;
+}
 .dark .md-sidenav-content {
   background: #3B3847 !important;
   color: white !important;
@@ -568,7 +583,7 @@ tile {
 .dark .content .parameters input {
   background-color: #100f16;
 }
-.dark .net {
+.dark .graph-container {
   background-color: #1D1C26 !important;
 }
 .dark .node-label {
@@ -614,9 +629,29 @@ tile {
   background: transparent !important;
 }
 
-
-
-
+/* Preview mode */
+.preview .editor-only {
+  display: none;
+}
+.preview .message-bar {
+  padding-left: 65px;
+}
+.preview .tool-bar {
+  width: 55px;
+  padding: 0;
+}
+.preview .content {
+  width: 100%;
+  margin: auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+.preview .wl {
+  position: relative;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 @media only screen and (max-width: 860px) {
   .mobile {
@@ -640,6 +675,17 @@ tile {
     padding-left: 0;
     padding-top: 55px;
   }
+  .content .parameters {
+    position: relative;
+    width: 100%;
+    top: initial;
+    left: initial;
+    height: auto;
+    overflow: auto;
+    display:block;
+    padding: 30px 40px;
+  }
+
   .content .chart {
     width: 98%;
   }
@@ -649,5 +695,24 @@ tile {
     padding-right: 26px;
     flex: 1;
     padding-left: 10px;
+  }
+  /* Preview mode on mobile */
+  .preview .content {
+    padding-top: 0;
+  }
+  .preview .tool-bar {
+    position: absolute;
+  }
+}
+
+@media only screen and (min-width: 861px) and (max-width: 1200px) {
+  .version {
+    display: none;
+  }
+  .tool-bar, .side-bar {
+    width: 33%;
+  }
+  .content {
+    padding-left: 33%;
   }
 }

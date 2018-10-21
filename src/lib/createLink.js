@@ -1,6 +1,6 @@
 const Querify = require('./querify.js')
 const abbr = require('./abbr.js')
-const query = new Querify(['a']) // Possible query variables
+const query = new Querify(['a', 'preview']) // Possible query variables
 
 function getAbbr (key) {
   let a = key // assume we have no abbreviation
@@ -13,7 +13,7 @@ function getAbbr (key) {
 }
 
 // Create a shareble link from models
-module.exports = function (models) {
+module.exports = function (models, isPreview, activeModel) {
   let link = 'https://statsim.com/app/'
   let shortModels = []
   models.forEach(m => {
@@ -48,6 +48,5 @@ module.exports = function (models) {
     shortModels.push(sm)
   })
 
-  console.log('Minimized models: ', shortModels)
-  return link + query.getQueryString({a: shortModels})
+  return link + query.getQueryString({a: shortModels, preview: isPreview ? '' + (activeModel + 1) : ''})
 }

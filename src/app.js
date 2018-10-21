@@ -160,6 +160,7 @@ const params = {
     icon,
     colors,
     theme: 'light',
+    preview: false,
     graphOptions:
     {
       force: 5000,
@@ -303,13 +304,17 @@ const params = {
     // m: short name for example model saved in JSON format
     // a: array of models embedded in the link
     if (window.location.search) {
+      let query = window.location.search
+      if (query.indexOf('preview') > 0) {
+        this.preview = true
+      }
       parseLink(
-        window.location.search,
-        (models) => {
+        query,
+        ({ models, activeModel }) => {
           setTimeout(() => {
             this.models = models
-            this.switchModel(0)
-          }, 200)
+            this.switchModel(0 || activeModel)
+          }, 100)
         },
         (err) => {
           this.error = err
@@ -346,6 +351,9 @@ const params = {
     },
     newProject () {
       delay.call(this, 500, () => {
+        // Switch to edit mode
+        this.preview = false
+        // Update history
         window.history.replaceState({}, 'New project', '.')
         // Clean models
         this.models = JSON.parse(JSON.stringify(baseModel))
@@ -421,9 +429,13 @@ const params = {
       this.switchModel(this.models.length - 1)
     },
     switchModel (modelId) {
+      this.error = ''
+      if (modelId < 0 || modelId > this.models.length - 1) {
+        this.error = 'Invalid model number. Switching to first model'
+        modelId = 0
+      }
       const m = this.models[modelId]
       this.link = '' // clean code
-      this.error = ''
       this.message = ''
       const chartContainer = document.querySelector('.charts')
       if (chartContainer) {
@@ -475,7 +487,7 @@ const params = {
     },
     generateLink () {
       delay.call(this, 400, () => {
-        this.link = createLink(this.models)
+        this.link = createLink(this.models, this.preview, this.activeModel)
       })
     },
     generateJSON () {

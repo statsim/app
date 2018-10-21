@@ -1,7 +1,7 @@
 const Querify = require('./querify')
 const abbr = require('./abbr')
 const getJSON = require('./getJSON')
-const query = new Querify(['a', 'm'])
+const query = new Querify(['a', 'm', 'preview'])
 
 const blockTypes = [
   'Random Variable',
@@ -20,6 +20,8 @@ function getFullKey (key) {
 module.exports = function (link, cb, err) {
   const q = query.getQueryObject(link) // parsed query object
   console.log('Got query:', q)
+  const activeModel = parseInt(q.preview) - 1 || 0
+  console.log(activeModel)
   // Models inside the link
   if (q.a && (typeof q.a === 'object')) { // array is also 'object'
     let models = []
@@ -60,7 +62,7 @@ module.exports = function (link, cb, err) {
 
       models.push(bm)
     })
-    cb(models)
+    cb({ models, activeModel })
 
   // Models in the external json file (short)
   } else if (q.m && (typeof q.m === 'string')) {
@@ -68,11 +70,11 @@ module.exports = function (link, cb, err) {
       `/models/${q.m}.json`,
       (models) => {
         if (Array.isArray(models)) {
-          cb(models)
+          cb({ models, activeModel })
         } else {
           // models - object
           let modelsArray = [models]
-          cb(modelsArray)
+          cb({ models: modelsArray, activeModel })
         }
       },
       (e) => {
