@@ -530,6 +530,7 @@ const params = {
     compile () {
       // Convert available models (this.models) to the probabilistic lang
       this.code = compileModels(this.models, this.activeModel)
+      console.log('Vue: F* yeah! Got compiled code!')
     },
     process (values) {
       this.loading = false
@@ -580,7 +581,7 @@ const params = {
           if (this.server && this.serverURL.length) {
             // Server-side simulation
             // Store server url in cookies
-            console.log('Server-side simulation: ', this.serverURL)
+            console.log('Vue: sending the code to', this.serverURL)
             fetch(this.serverURL, {
               method: 'POST',
               headers: {
@@ -619,9 +620,10 @@ const params = {
                 }
               })
           } else {
+            console.log('Vue: Sending the code to worker..')
             worker.postMessage(this.code)
             worker.onmessage = (msg) => {
-              console.log('Vue: Just received reply from Worker. Busy now!')
+              console.log('Vue: Just received reply from Worker. Processor?')
               this.process(msg.data)
             }
             worker.onerror = (err) => {

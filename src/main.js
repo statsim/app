@@ -9,4 +9,8 @@ const vm = new Vue({
   render: f => f(app)
 })
 
-console.log('Vue app:', typeof vm)
+if (vm) {
+  console.log(`Vue: Good morning!`)
+} else {
+  throw new Error(`Where's Vue?`)
+}

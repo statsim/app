@@ -19,9 +19,9 @@ function getFullKey (key) {
 
 module.exports = function (link, cb, err) {
   const q = query.getQueryObject(link) // parsed query object
-  console.log('Got query:', q)
+  console.log(`Parser Ivanovich: Ho-ho! Something interesting here.. `, q)
   const activeModel = parseInt(q.preview) - 1 || 0
-  console.log(activeModel)
+  console.log(`Parser Ivanovich: Preview value is `, activeModel)
   // Models inside the link
   if (q.a && (typeof q.a === 'object')) { // array is also 'object'
     let models = []

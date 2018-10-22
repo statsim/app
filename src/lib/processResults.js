@@ -31,7 +31,6 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
     chartData,
     options
   )
-  console.log('Dygraph chart:', typeof d)
 }
 
 function drawScalar (scalar, name) {
@@ -80,36 +79,17 @@ function drawVectors (vectors) {
 }
 
 module.exports = function processResults (v) {
-  console.log('Starting updated processing lib')
+  console.log('Processor, PhD: Z-z-z..')
+  console.log('Processor, PhD: Uh?')
 
   // Deterministic simulation
   if (!v.hasOwnProperty('samples')) {
-    console.log('Deterministic results')
-    console.log('Convert to 1 sample')
+    console.log(`Processor, PhD: That's a determistic BS, converting it to pseudo-random object!`)
     v = {samples: [{score: 0, value: v}]}
-    console.log('New result object:', v)
-    console.log('Pass control to random processor')
+    console.log(`Processor, PhD: Looks like random now,`, v)
   }
 
-  /*
-  let vectors = []
-  let names = []
-  Object.keys(v).forEach(key => {
-    const value = v[key]
-    if (Array.isArray(value)) {
-      // Vector
-      vectors.push(value)
-      names.push(key)
-      drawVector(value, key)
-    } else {
-      // Scalar value
-      drawScalar(value, key)
-    }
-  }) // *Object.keys
-  // All lines on one chart
-    */
-
-  console.log('Processing random samples', v)
+  console.log('Processor, PhD: Random samples. Good! Busy now!', v)
 
   // Collect samples in a useful object:
   // { variable_name: [1,2,...] }
@@ -164,7 +144,6 @@ module.exports = function processResults (v) {
 
   // Iterate over rearranged samples
   Object.keys(samples).forEach(k => {
-    console.log(typeof samples[k][0])
     if ((typeof samples[k][0] === 'boolean') || (typeof samples[k][0] === 'string')) {
       // --> Boolean and String samples (count samples)
       let count = {}
@@ -318,4 +297,5 @@ module.exports = function processResults (v) {
       }// *for
     }// *for
   }
+  console.log('Processor, PhD: Finished! Check the DOM!')
 }

@@ -1,6 +1,8 @@
 const methods = require('./methods')
 
 module.exports = function (models, activeModel) {
+  console.log(`Mr. Compiler: Oh, models again! Active model is ${activeModel} of ${models.length}`)
+
   let finalCode = ''
   let modelCodes = []
 
@@ -463,7 +465,6 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
     }
   }) // *models.forEach
 
-  console.log('Compiled models array: ', modelCodes)
   // Now we have an array of compiled models
   // Iteratively add only needed models to the code
   // We already have the main model added to the 'finalCode' text
@@ -483,5 +484,6 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
     })
   }
 
+  console.log(`Mr. Compiler: I've finished. Here's your WebPPL code:%c\n${finalCode}`, `color: #2C893A; font-size:10px;`)
   return finalCode
 }
