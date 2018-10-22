@@ -78,6 +78,33 @@ function drawVectors (vectors) {
   )
 }
 
+function topN (n, countObj) {
+  let top = {}
+  for (let k in countObj) {
+    const keys = Object.keys(top)
+    if (keys.length < n) {
+      // Add values to top until N
+      top[k] = countObj[k]
+    } else {
+      // Find min
+      let minValue = Infinity
+      let minKey
+      keys.forEach(k => {
+        if (top[k] < minValue) {
+          minKey = k
+          minValue = top[k]
+        }
+      })
+      // If more than min, add, than delete min
+      if (countObj[k] > minValue) {
+        top[k] = countObj[k]
+        delete top[minKey]
+      }
+    }
+  }
+  return top
+}
+
 module.exports = function processResults (v) {
   console.log('Processor, PhD: Z-z-z..')
   console.log('Processor, PhD: Uh?')
@@ -243,6 +270,20 @@ module.exports = function processResults (v) {
         ])
         samples[k].forEach(s => stats(s))
         drawObject(stats.values, k + ' summary')
+
+        // ---- Top 5 values
+        const counter = Stats.Count({countArrays: true})
+        counter(samples[k])
+        let showTop = false
+        const top = topN(5, counter.values)
+        for (let t in top) {
+          if (top[t] !== 1) {
+            showTop = true
+          }
+        }
+        if (showTop) {
+          drawObject(topN(5, top), `Top ${Object.keys(top).length <= 5 ? Object.keys(top).length : 5} ${k} values`)
+        }
       } // -- *draw random variable
     } // *scalars samples
   }) // *iterate over all sample keys (k)
