@@ -16,10 +16,13 @@ const graphIcons = require('./lib/graphIcons')
 // const query = new Querify(['m', 'a']) // Possible query variables
 
 // Access global objects
-const FileReader = window['FileReader']
 const Blob = window['Blob']
-const webppl = window['webppl']
 const fetch = window['fetch']
+const FileReader = window['FileReader']
+const Worker = window['Worker']
+// const webppl = window['webppl']
+
+var worker = new Worker('dist/worker.js')
 
 const baseModel = [
   {
@@ -218,7 +221,6 @@ const params = {
       return finDistrs
     },
     graphNodes: function () {
-      console.log('Active: ', this.activeModel)
       return this.blocks
         .map((b, i) => ({
           id: i,
@@ -539,7 +541,6 @@ const params = {
       const errorHandler = (err) => {
         this.loading = false
         document.getElementById('loader').className = 'hidden'
-        console.log(err)
         this.error = err.message
       }
 
@@ -616,16 +617,26 @@ const params = {
                   }
                   this.process(data.v)
                 }
-              })
           } else {
+              })
+            worker.postMessage(this.code)
+            worker.onmessage = (msg) => {
+              console.log('Vue: Just received reply from Worker. Busy now!')
+              this.process(msg.data)
+            }
+            worker.onerror = (err) => {
+              errorHandler(err)
+            }
+            /*
             webppl.run(this.code, (s, v) => {
               this.process(v)
-            }) // *webppl.run()
+            })
+            */
           }
         } catch (err) {
           errorHandler(err)
         }
-      }, 500)
+      }, 300)
     }
   }
 }

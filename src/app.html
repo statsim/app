@@ -596,7 +596,7 @@
   <div class="content">
     <md-toolbar :class="'message-bar md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
       <h3 class="message" style="flex: 1">
-        {{ (error.length) ? 'Error: ' + error : '' }}
+        {{ (error.length) ? (error.includes('Error') ? error : 'Error: ' + error) : '' }}
         {{ (message.length && !error.length) ? message : '' }}
       </h3>
       <md-button disabled class="desktop">Generate: </md-button>
