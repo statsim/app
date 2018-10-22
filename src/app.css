@@ -653,6 +653,29 @@ tile {
   margin-right: auto;
 }
 
+.content .chips {
+  display: none
+}
+
+@media only screen and (max-width: 1000px) {
+  .content .chips {
+    display: block;
+  }
+  .content .parameters {
+    position: relative;
+    width: 100%;
+    top: initial;
+    left: initial;
+    height: auto;
+    overflow: auto;
+    display:block;
+    padding: 30px 40px;
+  }
+  .content .net {
+    display: none;
+  }
+}
+
 @media only screen and (max-width: 860px) {
   .mobile {
     display: initial;
@@ -675,21 +698,10 @@ tile {
     padding-left: 0;
     padding-top: 55px;
   }
-  .content .parameters {
-    position: relative;
-    width: 100%;
-    top: initial;
-    left: initial;
-    height: auto;
-    overflow: auto;
-    display:block;
-    padding: 30px 40px;
-  }
-
   .content .chart {
     width: 98%;
   }
-  .summary {
+  .model-summary {
     font-size: 11px;
     line-height: 3px;
     padding-right: 26px;

@@ -626,7 +626,7 @@
     <div style="position: relative" class="graph-container">
       <div class="wl">
         <d3-network
-          class="net desktop"
+          class="net"
           :net-nodes="graphNodes"
           :net-links="graphLinks"
           :options="graphOptions"
@@ -635,7 +635,7 @@
           v-if="graphNodes.length"
         ></d3-network>
         <div class="parameters" v-if="blocks.length || (models.length > 1)">
-          <div class="chips mobile">
+          <div class="chips">
             <md-chip v-for="b in blocks" :style="{background: colors[b.typeCode]}">{{ b.name || b.type }}</md-chip>
           </div>
           <p style="font-size:11px;">Model:</p>
@@ -792,14 +792,14 @@
       </md-select>
     </md-input-container>
 
-    <div class="summary mobile">
+    <div class="model-summary mobile">
       <p>Method: {{ modelParams.method }}</p>
       <p>Time steps: {{ modelParams.steps }}</p>
       <p v-if="(['MCMC','rejection', 'HMC'].indexOf(modelParams.method) >= 0) && methodParams.samples">Samples: {{ methodParams.samples }}</p>
     </div>
     <md-button class="md-raised md-accent params-button editor-only" @click="toggleRightSidenav">
       <md-icon>tune</md-icon>
-      Params
+      <span class="desktop">Params</span>
     </md-button>
     <md-button class="run-button md-raised md-primary" :disabled="blocks.length < 1" v-on:click.native="run()">
       <md-icon>play_arrow</md-icon>
