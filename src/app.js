@@ -617,8 +617,8 @@ const params = {
                   }
                   this.process(data.v)
                 }
-          } else {
               })
+          } else {
             worker.postMessage(this.code)
             worker.onmessage = (msg) => {
               console.log('Vue: Just received reply from Worker. Busy now!')
