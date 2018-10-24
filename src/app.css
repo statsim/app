@@ -15,6 +15,10 @@ label {
   text-transform: capitalize;
 }
 
+.md-menu-content {
+  z-index: 2000;
+}
+
 .md-theme-default.md-boards > .md-boards-navigation .md-board-header {
    color: rgba(0, 0, 0, .2) !important;
 }
