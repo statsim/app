@@ -33,7 +33,7 @@
           <md-icon style="">border_outer</md-icon>
           <span>Import data</span>
         </md-menu-item>
-        <md-menu-item v-if="!preview" v-on:selected="preview = true">
+        <md-menu-item v-if="!preview" v-on:selected="preview = true; showDataTable = false">
           <md-icon style="">visibility</md-icon>
           <span>Preview mode</span>
         </md-menu-item>
@@ -159,10 +159,19 @@
           <md-icon>expand_more</md-icon>
           <md-tooltip md-direction="bottom">Move down</md-tooltip>
         </md-button>
-        <md-button class="md-icon-button" v-on:click.native="removeBlock(blockIndex)">
-          <md-icon>delete</md-icon>
-          <md-tooltip md-direction="bottom">Remove curent block</md-tooltip>
-        </md-button>
+        <md-menu md-align-trigger md-size="4" md-direction="bottom left">
+          <md-button md-menu-trigger class="md-icon-button md-dense">
+            <md-icon>more_horiz</md-icon>
+          </md-button>
+          <md-menu-content>
+            <md-menu-item v-on:selected="removeBlock(blockIndex)">
+              <md-icon>delete</md-icon>
+              <span>Delete block</span>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
+
+
       </md-card-actions>
 
       <!-- Random Variable -->
@@ -325,7 +334,8 @@
         </md-input-container>
         <md-input-container>
           <label>Comma-separated values</label>
-          <md-textarea v-model="block.value" height="5"></md-textarea>
+          <!-- If table is active, redraw it on blur -->
+          <md-textarea v-model="block.value" height="5" @blur="drawDataTable()"></md-textarea>
         </md-input-container>
         <md-input-container v-if="block.value.indexOf(',') >= 0">
           <label>Dimensions (Tensor)</label>
@@ -609,12 +619,49 @@
       <md-button v-on:click.native="generateLink">
         Link
       </md-button>
+      <md-button
+        class="md-icon-button editor-only"
+        v-if="!showDataTable"
+        @click.native="showDataTable = true; drawDataTable()"
+      >
+        <md-icon>grid_on</md-icon>
+      </md-button>
+      <md-button
+        class="md-icon-button editor-only"
+        v-if="showDataTable"
+        @click.native="showDataTable = false"
+      >
+        <md-icon>grid_off</md-icon>
+      </md-button>
+
       <md-button class="md-icon-button editor-only" @click="toggleRightSidenav">
         <md-icon>tune</md-icon>
       </md-button>
 
     </md-toolbar>
-    <pre id="link" v-if="link.length" class="wl">{{ link }}</pre>
+
+    <!-- Data table -->
+    <div class="tables wl" v-if="showDataTable">
+      <div class="control-buttons">
+        <md-button class="md-dense" @click="showDataTable = false">
+          <md-icon>close</md-icon>
+          Close
+        </md-button>
+      </div>
+      <div class="table-wrapper"></div>
+    </div>
+
+    <!-- Generated links and code -->
+    <div class="links" v-if="link.length">
+      <div class="control-buttons">
+        <md-button class="md-dense" @click="link = ''">
+          <md-icon>close</md-icon>
+          Close
+        </md-button>
+      </div>
+      <pre id="link" class="wl">{{ link }}</pre>
+    </div>
+
     <!-- Needed for graph -->
     <svg style="position: absolute; top: -1000px;">
       <defs>

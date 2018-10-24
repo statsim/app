@@ -23,6 +23,7 @@
     "density-plot": "^1.0.4",
     "dygraphs": "^2.1.0",
     "file-saver": "^2.0.0-rc.3",
+    "handsontable": "^6.1.1",
     "html-escape": "^2.0.0",
     "is": "^3.2.1",
     "is-json": "^2.0.1",

@@ -1,8 +1,8 @@
-// Deps
 const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
 const cookie = require('cookie')
 const D3Network = require('vue-d3-network')
+const Table = require('handsontable')
 const distributions = require('./lib/distributions')
 const simulationMethods = require('./lib/methods')
 const compileModels = require('./lib/compileModels')
@@ -11,18 +11,14 @@ const createLink = require('./lib/createLink')
 const parseLink = require('./lib/parseLink')
 const graphIcons = require('./lib/graphIcons')
 
-// const Querify = require('./lib/querify')
-// const getJSON = require('./lib/getJSON')
-// const query = new Querify(['m', 'a']) // Possible query variables
-
 // Access global objects
 const Blob = window['Blob']
 const fetch = window['fetch']
 const FileReader = window['FileReader']
 const Worker = window['Worker']
-// const webppl = window['webppl']
 
-var worker = new Worker('dist/worker.js')
+// Initialize a Web Worker
+const worker = new Worker('dist/worker.js')
 
 const baseModel = [
   {
@@ -155,6 +151,9 @@ function delay (time, cb) {
   }, time)
 }
 
+// Future HotTable object
+let table
+
 const params = {
   components: {
     D3Network
@@ -180,10 +179,10 @@ const params = {
     loading: false, // show loading indicator
     message: '',
     error: '',
-    server: false,
+    server: false, // server-side processing
     serverURL: '',
     serverAPI: '',
-    // distributions,
+    showDataTable: false, // to show or not data table
     code: '', // compiled webppl code
     simulationMethods,
     /*
@@ -325,6 +324,142 @@ const params = {
     } // *if window.location.search is not empty
   },
   methods: {
+    // Update data blocks from table inner data
+    updateData () {
+      // Convert array to a comma-separated string
+      function toStringList (arr) {
+        // Find lat non empty value
+        let lastIndexNonEmpty = arr.length - 1
+        for (let i = lastIndexNonEmpty; i > 0; i--) {
+          if (!arr[i] || arr[i].trim() === '') lastIndexNonEmpty--
+          else break
+        }
+        // Trim array
+        let a = arr.slice(0, lastIndexNonEmpty + 1)
+        // Convert array to string
+        return a.toString()
+      }
+      delay.call(this, 300, () => {
+        // Check if table exist
+        if (table) {
+          let data = table.getData()
+          // Get headers stored in the first line
+          let headers = data.shift(1)
+          // Remove blocks not present in the table
+          for (let i = this.blocks.length - 1; i >= 0; i--) {
+            let block = this.blocks[i]
+            if ((block.typeCode === 2) && (!headers.includes(block.name))) {
+              console.log(`Table: Vue, remove block ${block.name}, please.`)
+              this.blocks.splice(i, 1)
+            }
+          }
+          // Update data-blocks values
+          headers.forEach((h, hi) => {
+            // Check if header cell is not empty
+            if (h.length) {
+              // Find index of that header in the blocks array
+              const headerInBlocks = this.blocks.map(b => b.name).indexOf(h)
+              if (headerInBlocks < 0) {
+                // No such data-block, add new
+                this.blocks.push(
+                  new BlockClasses[2](
+                    h, // Name
+                    toStringList(data.map(d => d[hi])) // Value
+                  )
+                )
+              } else {
+                // Just update existing block
+                this.blocks[headerInBlocks].value = toStringList(data.map(d => d[hi]))
+              }
+            } // *header not empty
+          }) // *header iterator
+        } // *if table exist
+      }) // *delay
+    },
+    drawDataTable () {
+      // Draw table only if the corresponding flag is set
+      if (this.showDataTable) {
+        delay.call(this, 300, () => {
+          const app = this
+
+          let dataBlocks = this.blocks.filter(b => b.typeCode === 2)
+
+          // Create data array in the table-friendly format
+          // First row contain headers
+          let data = [dataBlocks.map(b => b.name)]
+
+          // Now add values
+          dataBlocks.forEach((b, bi) => {
+            b.value
+              .split(',')
+              .map(v => v.trim())
+              .forEach((v, vi) => {
+                if (!data[vi + 1]) data[vi + 1] = []
+                data[vi + 1][bi] = v
+              })
+          })
+
+          // Fill extra cells 10x20 for better user experience
+          let length = Math.max(20, data.length)
+          for (let i = 0; i <= length; i++) {
+            if (!Array.isArray(data[i])) {
+              data[i] = []
+            }
+            for (let j = 0; j <= 10; j++) {
+              if (!data[i][j]) data[i][j] = ''
+            }
+          }
+
+          var container = document.querySelector('.table-wrapper')
+          // Clear old table
+          container.innerHTML = ''
+          // Create a new table
+          table = new Table(container, {
+            data,
+            contextMenu: true,
+            observeChanges: false,
+            afterChange: app.updateData,
+            afterColumnMove: app.updateData,
+            afterColumnSort: app.updateData,
+            afterCut: app.updateData,
+            afterMergeCells: app.updateData,
+            afterPaste: app.updateData,
+            afterRemoveCol: app.updateData,
+            afterRemoveRow: app.updateData,
+            afterRowMove: app.updateData,
+            afterRowResize: app.updateData,
+            afterUndo: app.updateData,
+            allowInsertColumn: true,
+            allowRemoveColumn: true,
+            allowInsertRow: true,
+            allowRemoveRow: true,
+            autoColumnSize: {
+              samplingRatio: 23
+            },
+            dropdownMenu: true,
+            fixedRowsTop: 1,
+            manualRowMove: true,
+            manualColumnMove: true,
+            rowHeaders: function (index) {
+              return (index > 0) ? index : ''
+            },
+            stretchH: 'all',
+            cells: function (row, col) {
+              let cellProperties = {}
+              if (row === 0) {
+                cellProperties.renderer = function firstRowRenderer (instance, td, row, col, prop, value, cellProperties) {
+                  Table.renderers.TextRenderer.apply(this, arguments)
+                  td.style.fontWeight = 'bold'
+                  td.style.color = 'black'
+                  td.style.background = '#EEE'
+                }
+              }
+              return cellProperties
+            }
+          }) // *table cosntructor
+        }) // *delay
+      } // *if showDataTable
+    },
     addLayer (blockIndex) {
       const block = this.blocks[blockIndex]
       block.layers.push({
@@ -352,6 +487,7 @@ const params = {
       document.cookie = 'theme=' + theme
     },
     newProject () {
+      this.showDataTable = false
       delay.call(this, 500, () => {
         // Switch to edit mode
         this.preview = false
@@ -387,6 +523,8 @@ const params = {
               // Comma-separated line
               this.blocks.push(new BlockClasses[2](file.name.split('.')[0], output))
             }
+            // Update table
+            this.drawDataTable()
           } else {
             console.log(err)
           }
@@ -394,6 +532,7 @@ const params = {
       }
     },
     openProjectFile (e) {
+      this.showDataTable = false
       const reader = new FileReader()
       const file = e.target.files[0]
       reader.readAsText(file)
@@ -448,6 +587,8 @@ const params = {
       this.blocks = m.blocks
       this.modelParams = m.modelParams
       this.methodParams = m.methodParams
+      // Update table
+      this.drawDataTable()
     },
     duplicateModel () {
       let newModel = JSON.parse(JSON.stringify(this.models[this.activeModel]))
@@ -508,6 +649,10 @@ const params = {
     },
     addBlock (blockClassNumber) {
       this.blocks.push(new BlockClasses[blockClassNumber](this.blocks.length))
+      // If data added, update table
+      if (blockClassNumber === 2) {
+        this.drawDataTable()
+      }
     },
     moveBlockToTop (blockIndex) {
       if (blockIndex > 0) {
@@ -525,7 +670,12 @@ const params = {
       }
     },
     removeBlock (blockIndex) {
+      const typeCode = this.blocks[blockIndex].typeCode
       this.blocks.splice(blockIndex, 1)
+      // Redraw data table if data removed
+      if (typeCode === 2) {
+        this.drawDataTable()
+      }
     },
     compile () {
       // Convert available models (this.models) to the probabilistic lang

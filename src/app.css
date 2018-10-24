@@ -231,11 +231,15 @@ textarea {
   padding-bottom: 100px;
 }
 
-.content pre {
+.content .links {
+  margin: 20px;
+}
+
+.content .links pre {
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-x: auto;
-  margin: 20px;
+  margin: 0;
   padding: 10px;
   background-color: #EEE;
   border: 1px solid #CCC;
@@ -267,6 +271,27 @@ textarea {
   font-style: normal;
 }
 
+.content .tables {
+  margin: 20px;
+}
+
+.content .control-buttons {
+  text-align: right;
+}
+
+.content .control-buttons .md-button{
+  background-color: #a9a9a933;
+  margin: 0;
+  min-height: 25px;
+  line-height: 25px;
+  font-size: 12px;
+}
+
+.content .control-button .md-icon {
+  height: 21px;
+  min-height: 21px;
+}
+
 
 .content .charts, .content .charts-2d, .content .charts-extra, .content .archives {
   margin: 20px;
@@ -278,7 +303,7 @@ textarea {
   align-items: flex-start;
 }
 
-.content .chart, .content .chart-2d, .content .charts-extra img, .content .archive {
+.content .chart, .content .chart-2d, .content .charts-extra img, .content .archive, .content .tables .md-table {
   border: 1px solid #EEE;
   margin: 0 1% 1% 0;
 }
@@ -290,6 +315,10 @@ textarea {
   justify-content: center;
   align-content: center;
   align-items: center;
+}
+
+.content .tables .md-table-cell {
+  min-width: 90px;
 }
 
 .content .archive {
@@ -431,7 +460,7 @@ textarea {
 .bottom-bar {
   position: fixed;
   bottom: 0;
-  z-index: 2;
+  z-index: 1000;
 }
 
 .bottom-bar .simulation-param {
@@ -450,7 +479,7 @@ textarea {
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 100;
+  z-index: 1001;
 }
 
 .simulation-method-container .md-select-value {
@@ -591,9 +620,9 @@ tile {
   font-weight: 400;
 }
 .dark pre {
-  background-color: #151222;
-  border: 1px solid #3e5269;
-  color: #7fb9f8;
+  background-color: #151222 !important;
+  border: 1px solid #3e5269 !important;
+  color: #7fb9f8 !important;
 }
 .dark .run-button, .dark .params-button, .dark .add-block-button {
   background-color: transparent !important;
@@ -628,7 +657,28 @@ tile {
 .dark .md-board span {
   background: transparent !important;
 }
-
+.dark .handsontable th, .dark .handsontable tr:first-child td, .dark .handsontable tr:first-child th {
+  background-color: #201e29 !important;
+  color: #727085 !important;
+}
+.dark .handsontable tr:first-child td, .dark .handsontable tr:first-child th {
+  border-top: 1px solid #5C5B6C;
+}
+.dark .handsontable th {
+  border-left: 1px solid #5C5B6C;
+  border-right: 1px solid #5C5B6C;
+}
+.dark .handsontable td {
+  background-color: #3b3847;
+  color: white;
+}
+.dark .handsontable .handsontableInput {
+  background-color: #111 !important;
+}
+.dark .handsontable th, .dark .handsontable td {
+  border-bottom: 1px solid #5C5B6C;
+  border-right: 1px solid #5C5B6C;
+}
 /* Preview mode */
 .preview .editor-only {
   display: none;
