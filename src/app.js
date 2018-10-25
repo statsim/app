@@ -179,6 +179,7 @@ const params = {
     loading: false, // show loading indicator
     message: '',
     error: '',
+    reactiveDataTable: false,
     server: false, // server-side processing
     serverURL: '',
     serverAPI: '',
@@ -382,6 +383,13 @@ const params = {
         delay.call(this, 300, () => {
           const app = this
 
+          // Function called on each table update
+          function upd () {
+            if (app.reactiveDataTable) {
+              app.updateData()
+            }
+          }
+
           let dataBlocks = this.blocks.filter(b => b.typeCode === 2)
 
           // Create data array in the table-friendly format
@@ -418,17 +426,17 @@ const params = {
             data,
             contextMenu: true,
             observeChanges: false,
-            afterChange: app.updateData,
-            afterColumnMove: app.updateData,
-            afterColumnSort: app.updateData,
-            afterCut: app.updateData,
-            afterMergeCells: app.updateData,
-            afterPaste: app.updateData,
-            afterRemoveCol: app.updateData,
-            afterRemoveRow: app.updateData,
-            afterRowMove: app.updateData,
-            afterRowResize: app.updateData,
-            afterUndo: app.updateData,
+            afterChange: upd,
+            afterColumnMove: upd,
+            afterColumnSort: upd,
+            afterCut: upd,
+            afterMergeCells: upd,
+            afterPaste: upd,
+            afterRemoveCol: upd,
+            afterRemoveRow: upd,
+            afterRowMove: upd,
+            afterRowResize: upd,
+            afterUndo: upd,
             allowInsertColumn: true,
             allowRemoveColumn: true,
             allowInsertRow: true,
@@ -524,7 +532,7 @@ const params = {
               this.blocks.push(new BlockClasses[2](file.name.split('.')[0], output))
             }
             // Update table
-            this.drawDataTable()
+            if (this.reactiveDataTable && this.showDataTable) this.drawDataTable()
           } else {
             console.log(err)
           }
@@ -588,7 +596,7 @@ const params = {
       this.modelParams = m.modelParams
       this.methodParams = m.methodParams
       // Update table
-      this.drawDataTable()
+      if (this.reactiveDataTable && this.showDataTable) this.drawDataTable()
     },
     duplicateModel () {
       let newModel = JSON.parse(JSON.stringify(this.models[this.activeModel]))
@@ -650,9 +658,7 @@ const params = {
     addBlock (blockClassNumber) {
       this.blocks.push(new BlockClasses[blockClassNumber](this.blocks.length))
       // If data added, update table
-      if (blockClassNumber === 2) {
-        this.drawDataTable()
-      }
+      if ((blockClassNumber === 2) && this.reactiveDataTable && this.showDataTable) this.drawDataTable()
     },
     moveBlockToTop (blockIndex) {
       if (blockIndex > 0) {
@@ -673,9 +679,7 @@ const params = {
       const typeCode = this.blocks[blockIndex].typeCode
       this.blocks.splice(blockIndex, 1)
       // Redraw data table if data removed
-      if (typeCode === 2) {
-        this.drawDataTable()
-      }
+      if ((typeCode === 2) && this.reactiveDataTable && this.showDataTable) this.drawDataTable()
     },
     compile () {
       // Convert available models (this.models) to the probabilistic lang

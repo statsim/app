@@ -332,11 +332,17 @@
             v-model="block.name"
           ></md-input>
         </md-input-container>
-        <md-input-container>
-          <label>Comma-separated values</label>
-          <!-- If table is active, redraw it on blur -->
-          <md-textarea v-model="block.value" height="5" @blur="drawDataTable()"></md-textarea>
-        </md-input-container>
+        <div class="data-input">
+          <md-input-container>
+            <label>Comma-separated values</label>
+            <!-- If table is active, redraw it on blur -->
+            <md-textarea v-model="block.value" height="5" @blur="reactiveDataTable && showDataTable && drawDataTable()"></md-textarea>
+          </md-input-container>
+          <md-button class="md-icon-button md-dense" @click.native="showDataTable = true; drawDataTable()">
+            <md-icon>grid_on</md-icon>
+            <md-tooltip md-direction="bottom">Table view</md-tooltip>
+          </md-button>
+        </div>
         <md-input-container v-if="block.value.indexOf(',') >= 0">
           <label>Dimensions (Tensor)</label>
           <md-input v-model="block.dims"></md-input>
@@ -643,7 +649,18 @@
     <!-- Data table -->
     <div class="tables wl" v-if="showDataTable">
       <div class="control-buttons">
-        <md-button class="md-dense" @click="showDataTable = false">
+        <div style="float: left">
+          <md-switch v-model="reactiveDataTable" name="reactive-table" class="md-primary">Reactive updates</md-switch>
+        </div>
+        <md-button class="md-dense" @click.native="updateData" :disabled="reactiveDataTable">
+          <md-icon>check</md-icon>
+          Save changes
+        </md-button>
+        <md-button class="md-dense" @click.native="drawDataTable" :disabled="reactiveDataTable">
+          <md-icon>refresh</md-icon>
+          Reload
+        </md-button>
+        <md-button class="md-dense" @click.native="showDataTable = false">
           <md-icon>close</md-icon>
           Close
         </md-button>
