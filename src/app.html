@@ -147,10 +147,6 @@
           <strong>{{ block.name }}</strong>
           <p class="block-type">{{ block.type }}</p>
         </div>
-        <md-button class="md-icon-button" v-on:click.native="moveBlockToTop(blockIndex)">
-          <md-icon>keyboard_capslock</md-icon>
-          <md-tooltip md-direction="bottom">Move to top</md-tooltip>
-        </md-button>
         <md-button class="md-icon-button" v-on:click.native="moveBlockUp(blockIndex)">
           <md-icon>expand_less</md-icon>
           <md-tooltip md-direction="bottom">Move up</md-tooltip>
@@ -159,11 +155,15 @@
           <md-icon>expand_more</md-icon>
           <md-tooltip md-direction="bottom">Move down</md-tooltip>
         </md-button>
-        <md-menu md-align-trigger md-size="4" md-direction="bottom left">
+        <md-menu md-align-trigger md-size="4" md-direction="bottom left" style="margin-right: 10px;">
           <md-button md-menu-trigger class="md-icon-button md-dense">
             <md-icon>more_horiz</md-icon>
           </md-button>
           <md-menu-content>
+            <md-menu-item v-on:selected="moveBlockToTop(blockIndex)">
+              <md-icon>keyboard_capslock</md-icon>
+              <span>Move to top</span>
+            </md-menu-item>
             <md-menu-item v-on:selected="removeBlock(blockIndex)">
               <md-icon>delete</md-icon>
               <span>Delete block</span>
