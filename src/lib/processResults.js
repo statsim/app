@@ -31,6 +31,7 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
     chartData,
     options
   )
+  console.log(`Dygraph: I'm here`, d)
 }
 
 function drawScalar (scalar, name) {
@@ -229,11 +230,14 @@ module.exports = function processResults (v) {
       } else {
         // * Random scalar samples
         rvs.push(k)
+
         // Draw trace
         createChart(k + ' trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
+
         // Draw auto-covariogram
         const autocov = Stats.AutoCov(50)
         createChart(k + ' autocovariogram', autocov(samples[k]).map((c, ci) => [ci, c]), ['Lag', 'Autocovariance'])
+
         // Draw histogram
         const unique = Array.from(new Set(samples[k])).length
         const t = (unique <= 30) ? unique : 30
@@ -248,28 +252,63 @@ module.exports = function processResults (v) {
             fillGraph: true
           }
         )
-        // ---- CDF
-        const sMin = d3.min(samples[k])
-        const sMax = d3.max(samples[k])
-        if (sMin < sMax) {
-          const sStep = (sMax - sMin) / 200
-          const cdf = []
-          for (let i = sMin; i <= sMax; i += sStep) {
-            cdf.push([i, samples[k].filter(s => s < i).length / samples[k].length])
+
+        // ---- CDF (updated)
+        const sorted = samples[k].sort((a, b) => a - b)
+        console.log(sorted.toString())
+        const n = sorted.length
+        const step = (sorted[sorted.length - 1] - sorted[0]) / 200
+        if (step > 0) {
+          let cdf = []
+          let counter = 0
+          let nextPoint = sorted[0] + step
+          let cdfBin = 0
+          for (let i = 0; i < n; i++) {
+            counter += 1
+            if (sorted[i] >= nextPoint) {
+              while (nextPoint < sorted[i]) {
+                cdf[cdfBin] = [nextPoint, counter / n]
+                cdfBin += 1
+                nextPoint += step
+              }
+            }
           }
-          createChart(k + ' CDF', cdf, [k, 'p'])
+          createChart(k + ' CDF (upd)', cdf, [k, 'p'])
         }
+
+        // ---- Quantiles
+        const quantile = (arr, p) => {
+          const _h = (arr.length - 1) * p + 1
+          const h = Math.floor(_h)
+          const v = +arr[h - 1]
+          const e = _h - h
+          return e ? v + e * (arr[h] - v) : v
+          // h < 1 ? arr[0] : h >= arr.length ? arr[arr.length - 1] : arr[h - 1] + (_h - h) * (arr[h] - arr[h - 1])
+        }
+        const quantiles = {
+          '2.5%': quantile(sorted, 0.025),
+          '25%': quantile(sorted, 0.25),
+          '50%': quantile(sorted, 0.5),
+          '75%': quantile(sorted, 0.75),
+          '97.5%': quantile(sorted, 0.975)
+        }
+
         // ---- Statistics
         const stats = Stats.Series([
-          { stat: Stats.Mean(), name: 'Average' },
-          { stat: Stats.Variance({ddof: 1}), name: 'Variance' },
-          { stat: Stats.Std(), name: 'Stdev' },
-          { stat: Stats.Median(), name: 'Median' },
+          { stat: Stats.Mean(), name: 'Mean' },
+          // { stat: Stats.Variance({ddof: 1}), name: 'Variance' },
+          { stat: Stats.Std(), name: 'Std' },
           { stat: Stats.Min(), name: 'Min' },
           { stat: Stats.Max(), name: 'Max' }
         ])
         samples[k].forEach(s => stats(s))
-        drawObject(stats.values, k + ' summary')
+
+        // Prepare summary
+        const summary = Object.assign({}, quantiles, stats.values)
+        // Remove number of observations
+        delete summary.n
+        // Draw summary block
+        drawObject(summary, k + ' summary')
 
         // ---- Top 5 values
         const counter = Stats.Count({countArrays: true})
