@@ -2,6 +2,7 @@ const Stats = require('online-stats')
 const Dygraphs = require('dygraphs')
 const d3 = require('d3-array')
 const hist2d = require('d3-hist2d').hist2d
+const pdfast = require('pdfast')
 const plot2d = window['densityPlot'] // ESM WTF!!!
 
 function createChart (chartTitle, chartData, chartLabels, chartOptions) {
@@ -231,6 +232,10 @@ module.exports = function processResults (v) {
         // * Random scalar samples
         rvs.push(k)
 
+        // Prepare needed transforms
+        const sorted = samples[k].slice().sort((a, b) => a - b)
+        const n = sorted.length
+
         // Draw trace
         createChart(k + ' trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
 
@@ -246,17 +251,27 @@ module.exports = function processResults (v) {
         createChart(
           k + ' histogram',
           h.map(v => [v.x0, v.length / samples[k].length]),
-          ['Sample', k],
+          [k, 'p'],
           {
             stepPlot: true,
             fillGraph: true
           }
         )
 
+        // ---- PDF (KDE smoothing)
+        const pdf = pdfast.create(samples[k], {size: 30, min: sorted[0], max: sorted[sorted.length - 1]})
+        console.log('PDF:', pdf)
+        createChart(
+          k + ' PDF (smooth)',
+          pdf.map(v => [v.x, v.y]),
+          [k, 'f'],
+          {
+            rollPeriod: 2,
+            fillGraph: true
+          }
+        )
+
         // ---- CDF (updated)
-        const sorted = samples[k].sort((a, b) => a - b)
-        console.log(sorted.toString())
-        const n = sorted.length
         const step = (sorted[sorted.length - 1] - sorted[0]) / 200
         if (step > 0) {
           let cdf = []
@@ -273,7 +288,7 @@ module.exports = function processResults (v) {
               }
             }
           }
-          createChart(k + ' CDF (upd)', cdf, [k, 'p'])
+          createChart(k + ' CDF', cdf, [k, 'F'])
         }
 
         // ---- Quantiles
