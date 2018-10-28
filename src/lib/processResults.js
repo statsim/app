@@ -35,6 +35,27 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
   console.log(`Dygraph: I'm here`, d)
 }
 
+function drawHeader (name, value, description) {
+  const headerContainer = document.createElement('div')
+  headerContainer.className = 'result-header'
+  if (value === undefined) {
+    headerContainer.innerHTML = `
+      <h2>${name}</h2>
+    `
+  } else {
+    headerContainer.innerHTML = `
+      <h2>${name}: <span class="result-value">${(!isNaN(parseFloat(value)) && isFinite(value)) ? +value.toFixed(6) : value}</span></h2>
+    `
+  }
+  if (description !== undefined) {
+    headerContainer.innerHTML += `
+      <span class="result-description">${description}</span>
+    `
+  }
+  document.querySelector('.charts').appendChild(headerContainer)
+}
+
+/*
 function drawScalar (scalar, name) {
   const chartContainer = document.createElement('div')
   chartContainer.className = 'chart'
@@ -44,6 +65,7 @@ function drawScalar (scalar, name) {
   `
   document.querySelector('.charts').appendChild(chartContainer)
 }
+*/
 
 function drawObject (obj, name) {
   const chartContainer = document.createElement('div')
@@ -167,9 +189,12 @@ module.exports = function processResults (v) {
   })
 
   // Show MAP estimates if mapRandom has elements
+  // Temporary hide MAP block
+  /*
   if (Object.keys(mapRandom).length) {
     drawObject(mapRandom, 'MAP estimates')
   }
+  */
 
   // Iterate over rearranged samples
   Object.keys(samples).forEach(k => {
@@ -182,10 +207,12 @@ module.exports = function processResults (v) {
         }
         count[v] += 1
       })
+      drawHeader(k)
       drawObject(count, k + ' counts')
       // TODO: Draw pie chart?
     } else if (Array.isArray(samples[k][0])) {
       // --> Array samples
+      drawHeader(k)
       if (repeatingSamples[k]) {
         // * All sampled arrays are same
         repeatingArrays[k] = samples[k][0]
@@ -227,11 +254,15 @@ module.exports = function processResults (v) {
       // --> Scalar samples
       if (repeatingSamples[k]) {
         // * Repeating scalar samples (not random)
-        drawScalar(samples[k][0], k)
+        drawHeader(k, samples[k][0], (samples[k][0].toString().split('.')[1] > 6) ? '*Rounded' : '')
+        // drawScalar(samples[k][0], k)
       } else {
         // * Random scalar samples
         rvs.push(k)
 
+        // Show header and MAP estimate
+        console.log(k, map, map[k])
+        drawHeader(k, map[k], (map[k] !== undefined) ? 'MAP estimate' : '')
         // Prepare needed transforms
         const sorted = samples[k].slice().sort((a, b) => a - b)
         const n = sorted.length
@@ -344,11 +375,13 @@ module.exports = function processResults (v) {
 
   // Draw repeating arrays on one plot
   if (Object.keys(repeatingArrays).length > 1) {
+    drawHeader('All values')
     drawVectors(repeatingArrays)
   }
 
   // Draw 2d plot
   if (rvs.length >= 2) {
+    drawHeader('2D plot')
     document.querySelector('.charts-2d').innerHTML = ''
     for (let r1 = 0; r1 < rvs.length - 1; r1++) {
       for (let r2 = r1 + 1; r2 < rvs.length; r2++) {

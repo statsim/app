@@ -327,6 +327,33 @@ textarea {
   align-items: flex-start;
 }
 
+.content .result-header {
+  width: 100%;
+  border-top: 1px solid rgba(150,150,150,.4);
+  padding: 10px 0 22px 0;
+}
+
+.content .result-header h2 {
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 5px;
+}
+
+.content .result-header:first-child {
+  width: 100%;
+  border-top: none
+}
+
+.content .result-header .result-value {
+  color: #1a6fef;
+  font-weight: 600;
+}
+
+.content .result-header .result-description {
+  color: rgb(140, 140, 140);
+  font-size: 11px;
+}
+
 .content .chart, .content .chart-2d, .content .charts-extra img, .content .archive, .content .tables .md-table {
   border: 1px solid #EEE;
   margin: 0 1% 1% 0;
@@ -368,7 +395,9 @@ textarea {
 }
 
 .content .dygraph-title {
+  /*
   font-weight: bold !important;
+  */
   font-size: 16px !important;
   margin: 3px 10px !important;
 }
@@ -417,7 +446,7 @@ textarea {
   position: absolute;
   width: 300px;
   top: 0px;
-  left: 60px;
+  left: 20px;
   height: 500px;
   overflow: hidden;
   display:flex;
