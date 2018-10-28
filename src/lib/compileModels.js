@@ -146,14 +146,17 @@ module.exports = function (models, activeModel) {
         if (m.modelParams.steps > 1.5) {
           // Generate a list of accumulators
           step.list += (step.list.length) ? ', ' : ''
-          step.list += b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
+          step.list += b.name + ', _' + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
           // Caclulate expression in the body
-          step.body += `var _${b.name} = ${b.value}\n`
+          step.body += `var ${b.name} = ${b.value}\n`
           // Generate accumulator expressions
-          step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: _${b.name}`
-          step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''
+          step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: ${b.name}`
+          step.accum += `,\n_${b.name}: ${b.name}`
+          step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(${b.name})` : ''
           // Generate initial values
           step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: 0`
+          step.initial += `,\n_${b.name}: 0`
+          // Don't track initial value
           step.initial += (b.history) ? `,\n${b.name}_hist: []` : ''
         } else {
           model += `var ${b.name} = ${b.value}\n`
@@ -187,11 +190,11 @@ module.exports = function (models, activeModel) {
         if (m.modelParams.steps > 1.5) {
           // Generate a list of accumulators
           step.list += (step.list.length) ? ', ' : ''
-          step.list += b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
+          step.list += b.name + `, _` + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
           // Accumulate value in the step body
           if ((b.max && b.max.length) || (b.min && b.min.length)) {
-            step.body += `var __${b.name} = ${b.name} + ${b.value}\n`
-            step.body += `var _${b.name} = `
+            step.body += `var __${b.name} = _${b.name} + ${b.value}\n`
+            step.body += `var ${b.name} = `
 
             // Check max/min limits
             if (b.max && b.max.length) {
@@ -202,14 +205,18 @@ module.exports = function (models, activeModel) {
             }
             step.body += `__${b.name}\n`
           } else {
-            step.body += `var _${b.name} = ${b.name} + ${b.value}\n`
+            step.body += `var ${b.name} = _${b.name} + ${b.value}\n`
           }
-          // Generate accumulator expressions
-          step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: _${b.name}`
-          step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''
+          // Generate accumulator return in recursion function
+          step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: ${b.name}`
+          step.accum += `,\n_${b.name}: ${b.name}`
+          step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(${b.name})` : ''
           // Generate initial values
           step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: ${b.initialValue}`
-          step.initial += (b.history) ? `,\n${b.name}_hist: [${b.initialValue}]` : ''
+          step.initial += `,\n_${b.name}: ${b.initialValue}`
+          // Don't track initial value
+          // step.initial += (b.history) ? `,\n${b.name}_hist: [${b.initialValue}]` : ''
+          step.initial += (b.history) ? `,\n${b.name}_hist: []` : ''
         } else {
           model += `var ${b.name} = ${b.initialValue} + ${b.value}\n`
         }
