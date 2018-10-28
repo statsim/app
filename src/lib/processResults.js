@@ -66,7 +66,7 @@ function drawObject (obj, name) {
 function drawVector (vector, name) {
   createChart(
     name,
-    vector.map((v, i) => [i, v]),
+    vector.map((v, i) => [i + 1, v]),
     ['Step', name]
   )
 }
@@ -75,7 +75,7 @@ function drawVectors (vectors) {
   const keys = Object.keys(vectors)
   createChart(
     (keys.length > 5) ? 'Join' : keys.join(', '),
-    vectors[keys[0]].map((_, i) => [i].concat(keys.map(k => vectors[k][i]))),
+    vectors[keys[0]].map((_, i) => [i + 1].concat(keys.map(k => vectors[k][i]))),
     ['Step'].concat(keys)
   )
 }
