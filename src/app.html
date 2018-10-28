@@ -225,7 +225,7 @@
           v-model="block.show"
           class="md-primary"
         >
-          Show in results
+          Show in output
         </md-checkbox>
         <md-checkbox
           v-model="block.once"
@@ -312,7 +312,7 @@
           v-model="block.show"
           class="md-primary"
         >
-          Show in results
+          Show in output
         </md-checkbox>
         <md-checkbox 
           v-model="block.history"
@@ -348,20 +348,23 @@
           <md-input v-model="block.dims"></md-input>
         </md-input-container>
 
-        <md-checkbox
-          v-model="block.show"
-          class="md-primary"
-        >
-          Show in results
-        </md-checkbox>
+        <!-- Input? -->
         <md-checkbox
           v-model="block.useAsParameter"
           class="md-primary"
         >
-          Use as parameter
-          <md-tooltip md-direction="bottom">Pass data to current model using this parameter</md-tooltip>
+          Use as model input
         </md-checkbox>
-              </md-card-content>
+
+        <!-- Output? -->
+        <md-checkbox
+          v-model="block.show"
+          class="md-primary"
+        >
+          Show in output
+        </md-checkbox>
+
+      </md-card-content>
 
       <!-- Accumulator -->
       <md-card-content v-if="block.typeCode === 3">
@@ -410,7 +413,7 @@
           </md-input-container>
         </div>
         <md-checkbox v-model="block.show" class="md-primary">
-          Show in results
+          Show in output
         </md-checkbox>
         <md-checkbox 
           v-model="block.history"
