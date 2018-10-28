@@ -154,7 +154,7 @@ module.exports = function (models, activeModel) {
           step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(_${b.name})` : ''
           // Generate initial values
           step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: 0`
-          step.initial += (b.history) ? `,\n${b.name}_hist: [0]` : ''
+          step.initial += (b.history) ? `,\n${b.name}_hist: []` : ''
         } else {
           model += `var ${b.name} = ${b.value}\n`
         }
