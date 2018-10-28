@@ -775,7 +775,7 @@ tile {
     height: auto;
     overflow: auto;
     display:block;
-    padding: 30px 40px;
+    padding: 30px 20px;
   }
   .content .net {
     display: none;
