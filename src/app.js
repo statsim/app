@@ -658,7 +658,16 @@ const params = {
     addBlock (blockClassNumber) {
       this.blocks.push(new BlockClasses[blockClassNumber](this.blocks.length))
       // If data added, update table
-      if ((blockClassNumber === 2) && this.reactiveDataTable && this.showDataTable) this.drawDataTable()
+      if ((blockClassNumber === 2) && this.reactiveDataTable && this.showDataTable) {
+        this.drawDataTable()
+      } else if ((blockClassNumber === 0) && (this.modelParams.method === 'deterministic') && (this.blocks.filter(b => b.typeCode === 0).length === 1)) {
+        // Random variable added
+        // Should we check the simulation method?
+        // Probably yes!
+        this.modelParams.method = 'rejection'
+      } else if ((blockClassNumber === 4) && (['deterministic', 'rejection', 'forward', 'enumerate'].includes(this.modelParams.method))) {
+        this.modelParams.method = 'MCMC'
+      }
     },
     moveBlockToTop (blockIndex) {
       if (blockIndex > 0) {
