@@ -117,11 +117,14 @@ module.exports = function (models, activeModel) {
         const isMultiDim = dims.indexOf(',') >= 0
         const sampleStr = `sample(${b.distribution}(${params}))`
         let rvStr = ''
-        if (isMultiDim || ((!isMultiDim && (parseInt(dims) > 1)))) {
+        if (isMultiDim || ((!isMultiDim && (dims !== '1')))) {
           // Tensor or vector
-          const size = isMultiDim
-            ? dims.split(',').reduce((a, v) => a * parseInt(v), 1) // Multiplied dimensions
-            : parseInt(dims) // Original dim
+          // Size needed to create array first using mapN
+          // When array is created, use Tensor generator
+          let size = isMultiDim
+            ? dims.replace(',', '*')
+            : dims // Original dim
+          size = size.replace(/(\[|\])/g, '') // remove brackets if present
           const arrayStr = `mapN(function (_j) { return ${sampleStr}}, ${size})`
           if (isMultiDim) {
             dims = (dims.indexOf('[') < 0) ? `[${dims}]` : dims
