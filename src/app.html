@@ -219,6 +219,19 @@
             ></md-input>
           </md-input-container>
         </md-whiteframe>
+
+        <!-- Units -->
+        <md-input-container>
+         <label>Units</label>
+          <md-autocomplete
+            v-model="block.units"
+            :list="units"
+            :filter-list="unitsFilter"
+            :min-chars="0"
+            print-attribute="name"
+          ></md-autocomplete>
+        </md-input-container>
+
         <!-- Sample once per cycle-->
         <md-checkbox
           :disabled="(modelParams.steps > 1.5) && !block.once"
@@ -308,6 +321,28 @@
           </md-tab>
         </md-tabs>
 	<!-- *exp -->
+
+        <!-- Units -->
+        <div class="data-input">
+          <md-input-container>
+           <label>Units</label>
+            <md-autocomplete
+              v-model="block.units"
+              :list="units"
+              :filter-list="unitsFilter"
+              :min-chars="0"
+              print-attribute="name"
+            ></md-autocomplete>
+            <md-button
+              class="md-icon-button md-dense"
+              @click.native="guessUnits(block.value, blockIndex)"
+            >
+              <md-icon>loop</md-icon>
+              <md-tooltip md-direction="bottom">Guess units</md-tooltip>
+            </md-button>
+          </md-input-container>
+        </div>
+
         <md-checkbox
           v-model="block.show"
           class="md-primary"
@@ -346,6 +381,18 @@
         <md-input-container v-if="block.value.indexOf(',') >= 0">
           <label>Dimensions (Tensor)</label>
           <md-input v-model="block.dims"></md-input>
+        </md-input-container>
+
+        <!-- Units -->
+        <md-input-container>
+         <label>Units</label>
+          <md-autocomplete
+            v-model="block.units"
+            :list="units"
+            :filter-list="unitsFilter"
+            :min-chars="0"
+            print-attribute="name"
+          ></md-autocomplete>
         </md-input-container>
 
         <!-- Input? -->
@@ -412,6 +459,19 @@
             ></md-input>
           </md-input-container>
         </div>
+
+        <!-- Units -->
+        <md-input-container>
+         <label>Units</label>
+          <md-autocomplete
+            v-model="block.units"
+            :list="units"
+            :filter-list="unitsFilter"
+            :min-chars="0"
+            print-attribute="name"
+          ></md-autocomplete>
+        </md-input-container>
+
         <md-checkbox v-model="block.show" class="md-primary">
           Show in output
         </md-checkbox>
@@ -709,7 +769,7 @@
           <h2>{{ modelParams.name }}</h2>
           <p class="model-description">{{ modelParams.description }}</p>
           <md-input-container v-for="b in blocks" v-if="b.typeCode === 2 && b.useAsParameter">
-            <label>{{ b.name }}</label>
+            <label>{{ b.name + ((b.units && b.units.length) ? ', ' + b.units : '') }}</label>
             <md-input v-model="b.value"></md-input>
           </md-input-container>
         </div>

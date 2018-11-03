@@ -12,7 +12,7 @@ h2 {
 }
 
 label {
-  text-transform: capitalize;
+ /* text-transform: capitalize; */
 }
 
 .md-menu-content {
@@ -157,7 +157,7 @@ textarea {
   margin: 10px;
 }
 
-.side-bar .block .data-input {
+.side-bar .block .data-input, .side-bar .block .units-input  {
   position: relative;
 }
 
@@ -344,9 +344,14 @@ textarea {
   border-top: none
 }
 
-.content .result-header .result-value {
+.content .result-header .result-value,  .content .result-header .result-units{
   color: #1a6fef;
   font-weight: 600;
+}
+
+.content .result-header .result-units {
+  padding-left: 4px;
+  font-size: 16px;
 }
 
 .content .result-header .result-description {

@@ -3,6 +3,7 @@ const fileSaver = require('file-saver')
 const cookie = require('cookie')
 const D3Network = require('vue-d3-network')
 const Table = require('handsontable')
+const Qty = require('js-quantities')
 const distributions = require('./lib/distributions')
 const simulationMethods = require('./lib/methods')
 const compileModels = require('./lib/compileModels')
@@ -10,6 +11,7 @@ const processResults = require('./lib/processResults')
 const createLink = require('./lib/createLink')
 const parseLink = require('./lib/parseLink')
 const graphIcons = require('./lib/graphIcons')
+const guessUnits = require('./lib/guessUnits')
 
 // Access global objects
 const Blob = window['Blob']
@@ -74,6 +76,7 @@ const BlockClasses = [
       this.type = 'Random Variable'
       this.typeCode = 0
       this.dims = '1'
+      this.units = ''
     }
   },
   class Expression {
@@ -84,6 +87,7 @@ const BlockClasses = [
       this.type = 'Expression'
       this.typeCode = 1
       this.value = ''
+      this.units = ''
     }
   },
   class Data {
@@ -101,6 +105,7 @@ const BlockClasses = [
       } else {
         this.value = ''
       }
+      this.units = ''
     }
   },
   class Accumulator {
@@ -114,6 +119,7 @@ const BlockClasses = [
       this.value = ''
       this.min = ''
       this.max = ''
+      this.units = ''
     }
   },
   class Observer {
@@ -160,6 +166,7 @@ const params = {
   },
   data: () => ({
     icon,
+    units: Qty.getUnits().map(u => ({ name: u })),
     colors,
     theme: 'light',
     preview: false,
@@ -241,7 +248,7 @@ const params = {
         const l = []
         if (typeof str === 'string') {
           this.blocks.forEach((b, i) => {
-            if (b.name && (str.split(/[^A-Za-z0-9]/g).indexOf(b.name) >= 0)) {
+            if (b.name && (str.split(/[^A-Za-z0-9_]/g).indexOf(b.name) >= 0)) {
               l.push({
                 tid: baseBlockIndex,
                 sid: i,
@@ -326,6 +333,9 @@ const params = {
   },
   methods: {
     // Update data blocks from table inner data
+    guessUnits (str, i) {
+      this.blocks[i].units = guessUnits(str, this.blocks)
+    },
     updateData () {
       // Convert array to a comma-separated string
       function toStringList (arr) {
@@ -612,6 +622,18 @@ const params = {
     // Callback for autocomplete element
     // Filter the blocks list to match query string (using a block's name)
     // Returns filtered array of blocks
+    unitsFilter (list, query) {
+      const arr = []
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].hasOwnProperty('name') && (list[i].name.toLowerCase().indexOf(query.toLowerCase()) !== -1)) {
+          arr.push(list[i])
+        }
+        if (arr.length > 5) {
+          break
+        }
+      }
+      return arr
+    },
     blockFilter (list, query) {
       const arr = []
       for (let i = 0; i < list.length; i++) {
@@ -699,7 +721,7 @@ const params = {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
       this.message = 'Done!'
-      processResults(values)
+      processResults(values, this.blocks)
     },
     run () {
       const errorHandler = (err) => {

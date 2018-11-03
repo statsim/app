@@ -57,6 +57,10 @@ module.exports = function (link, cb, err) {
             block[getFullKey(k)] = b[k]
           }
         })
+        // Check missing params
+        if (([0, 1, 2, 3].indexOf(block.typeCode) >= 0) && (!block.units)) {
+          block.units = ''
+        }
         bm.blocks.push(block)
       })
 

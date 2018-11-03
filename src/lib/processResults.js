@@ -35,22 +35,35 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
   console.log(`Dygraph: I'm here`, d)
 }
 
-function drawHeader (name, value, description) {
+function drawHeader (name, value, description, units) {
   const headerContainer = document.createElement('div')
   headerContainer.className = 'result-header'
+  let h2 = document.createElement('h2')
   if (value === undefined) {
-    headerContainer.innerHTML = `
-      <h2>${name}</h2>
-    `
+    // No value in the header
+    h2.innerText = name
+    headerContainer.innerHTML = ''
+    headerContainer.appendChild(h2)
   } else {
-    headerContainer.innerHTML = `
-      <h2>${name}: <span class="result-value">${(!isNaN(parseFloat(value)) && isFinite(value)) ? +value.toFixed(6) : value}</span></h2>
-    `
+    // Value exist
+    h2.innerText = name + ': '
+    let vSpan = document.createElement('span')
+    vSpan.className = 'result-value'
+    vSpan.innerText = (!isNaN(parseFloat(value)) && isFinite(value)) ? +value.toFixed(6) : value
+    h2.appendChild(vSpan)
+    if (units && units.length) {
+      let uSpan = document.createElement('span')
+      uSpan.className = 'result-units'
+      uSpan.innerText = ' ' + units
+      h2.appendChild(uSpan)
+    }
   }
+  headerContainer.appendChild(h2)
   if (description !== undefined) {
-    headerContainer.innerHTML += `
-      <span class="result-description">${description}</span>
-    `
+    let dSpan = document.createElement('span')
+    dSpan.className = 'result-description'
+    dSpan.innerText = description
+    headerContainer.appendChild(dSpan)
   }
   document.querySelector('.charts').appendChild(headerContainer)
 }
@@ -67,21 +80,43 @@ function drawScalar (scalar, name) {
 }
 */
 
-function drawObject (obj, name) {
-  const chartContainer = document.createElement('div')
+function drawObject (obj, name, units) {
+  let chartContainer = document.createElement('div')
   chartContainer.className = 'chart'
-  let cont = `<div class="summary"><h3>${name}</h3><table>`
+
+  let summaryDiv = document.createElement('div')
+  summaryDiv.className = 'summary'
+
+  let h3 = document.createElement('h3')
+  h3.innerText = name
+
+  summaryDiv.appendChild(h3)
+
+  let table = document.createElement('table')
+
   Object.keys(obj).forEach(key => {
     const val = obj[key]
-    cont += `<tr><td><b>${key}<b></td>`
+    let b = document.createElement('b')
+    b.innerText = key
+    let td1 = document.createElement('td')
+    td1.appendChild(b)
+    let tr = document.createElement('tr')
+    tr.appendChild(td1)
+    let td2 = document.createElement('td')
     if (Array.isArray(val) || (typeof val === 'string')) {
-      cont += `<td>${val.toString().slice(0, 30)}</td></tr>`
+      td2.innerText = val.toString().slice(0, 30)
     } else {
-      cont += `<td>${(val % 1 === 0) ? val : val.toFixed(6)}</td></tr>`
+      td2.innerText = (val % 1 === 0) ? val : val.toFixed(6)
     }
+    if (units && units.length) {
+      td2.innerText += ' ' + units
+    }
+    tr.appendChild(td2)
+    table.appendChild(tr)
   })
-  cont += `</table></div>`
-  chartContainer.innerHTML = cont
+
+  summaryDiv.appendChild(table)
+  chartContainer.appendChild(summaryDiv)
   document.querySelector('.charts').appendChild(chartContainer)
 }
 
@@ -129,7 +164,7 @@ function topN (n, countObj) {
   return top
 }
 
-module.exports = function processResults (v) {
+module.exports = function processResults (v, blocks) {
   console.log('Processor, PhD: Z-z-z..')
   console.log('Processor, PhD: Uh?')
 
@@ -144,7 +179,9 @@ module.exports = function processResults (v) {
 
   // Collect samples in a useful object:
   // { variable_name: [1,2,...] }
-  const samples = {}
+  let samples = {}
+  // Collect units
+  let units = {}
   // Maximum a posteriori with all variables
   let map = {}
   // MAP with only random variables
@@ -152,13 +189,13 @@ module.exports = function processResults (v) {
   // Maximal MAP score
   let mapScore = Number.NEGATIVE_INFINITY
   // Collect random variables in rvs array to draw 2d plot later
-  const rvs = []
+  let rvs = []
   // Collect repeating samples
   // { var_name: true/false }
-  const repeatingSamples = {}
+  let repeatingSamples = {}
   // Collect repeating arrays
   // { var_name: [values] }
-  const repeatingArrays = {}
+  let repeatingArrays = {}
 
   // Iterate over initial samples
   v.samples.forEach((s, si) => {
@@ -168,10 +205,13 @@ module.exports = function processResults (v) {
       mapScore = s.score
     }
     // Detect repeating samples
+    // Collect samples in a proper object
+    // Collect units
     Object.keys(s.value).forEach(k => {
       const sampleValue = s.value[k]
       if (!samples.hasOwnProperty(k)) {
         samples[k] = []
+        units[k] = blocks.find(b => b.name === k).units
         repeatingSamples[k] = true
       }
       if ((samples[k].length) && (JSON.stringify(sampleValue) !== JSON.stringify(samples[k][0]))) {
@@ -254,15 +294,24 @@ module.exports = function processResults (v) {
       // --> Scalar samples
       if (repeatingSamples[k]) {
         // * Repeating scalar samples (not random)
-        drawHeader(k, samples[k][0], (samples[k][0].toString().split('.')[1] > 6) ? '*Rounded' : '')
+        drawHeader(
+          k,
+          samples[k][0],
+          (samples[k][0].toString().split('.')[1] > 6) ? '*Rounded' : '',
+          units[k]
+        )
         // drawScalar(samples[k][0], k)
       } else {
         // * Random scalar samples
         rvs.push(k)
 
         // Show header and MAP estimate
-        console.log(k, map, map[k])
-        drawHeader(k, map[k], (map[k] !== undefined) ? 'MAP estimate' : '')
+        drawHeader(
+          k,
+          map[k],
+          (map[k] !== undefined) ? 'MAP estimate' : '',
+          units[k]
+        )
         // Prepare needed transforms
         const sorted = samples[k].slice().sort((a, b) => a - b)
         const n = sorted.length
@@ -354,7 +403,7 @@ module.exports = function processResults (v) {
         // Remove number of observations
         delete summary.n
         // Draw summary block
-        drawObject(summary, k + ' summary')
+        drawObject(summary, k + ' summary', units[k])
 
         // ---- Top 5 values
         const counter = Stats.Count({countArrays: true})
@@ -406,7 +455,9 @@ module.exports = function processResults (v) {
             h.forEach(bin => { plotData[bin.x][bin.y] = bin.length })
             const chartContainer = document.createElement('div')
             chartContainer.className = 'chart-2d'
-            chartContainer.innerHTML = `<p>${rvs[r1]},${rvs[r2]}</p>`
+            let p = document.createElement('p')
+            p.innerText = rvs[r1] + ',' + rvs[r2]
+            chartContainer.appendChild(p)
             const chartCanvasContainer = document.createElement('div')
             chartContainer.appendChild(chartCanvasContainer)
             document.querySelector('.charts-2d').appendChild(chartContainer)

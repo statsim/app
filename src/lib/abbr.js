@@ -15,5 +15,6 @@ module.exports = {
   p: 'params',
   t: 'typeCode',
   u: 'useAsParameter',
-  v: 'value'
+  v: 'value',
+  z: 'units'
 }
