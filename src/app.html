@@ -818,7 +818,7 @@
 
       <!-- Number of chains -->
       <md-input-container
-        v-if="(modelParams.method === 'MCMC') || (modelParams.method === 'HMC')"
+        v-if="(modelParams.method !== 'deterministic')"
       >
         <label>Number of chains</label>
         <md-input

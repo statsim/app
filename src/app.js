@@ -810,9 +810,9 @@ const params = {
 
             let nw = 1 // Number of workers
             if (
-                (this.methodParams.chains) &&
-                (this.methodParams.chains > 1) &&
-                ((this.modelParams.method === 'MCMC') || (this.modelParams.method === 'HMC'))
+              (this.methodParams.chains) &&
+              (this.methodParams.chains > 1) &&
+              (this.modelParams.method !== 'deterministic')
             ) {
               nw = +this.methodParams.chains
             }
