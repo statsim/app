@@ -11,7 +11,10 @@ module.exports = function (models, activeModel) {
   */
   models.forEach((m, mi) => {
     let code = ''
-    let indexFunctionDeclared = false // true if we already declared index function in the observer block
+    // true if we already declared index function in the observer block
+    // index function id needed in compiled code to caclulate tensor indexes
+    // we don't want it to be declared multiple times
+    let indexFunctionDeclared = false
 
     // Prepare lists of arrays...
     const dataArrays = []
@@ -45,7 +48,8 @@ module.exports = function (models, activeModel) {
     const allTensors = dataTensors.concat(randomTensors)
 
     // Convert RV distribution parameters object to string
-    function getParams (paramObj) {
+    // If vectorIndex is passed, get arrays and tensors values by index
+    function getParams (paramObj, index) {
       let paramStr = ''
       if (paramObj) {
         const paramKeys = Object.keys(paramObj).filter(k => (paramObj[k] !== ''))
@@ -55,27 +59,29 @@ module.exports = function (models, activeModel) {
             ? `[${paramObj[key]}]`
             : paramObj[key]
 
-          // Add indexes to array names
-          allArrays.forEach((name) => {
-            // Check the name is word and next symbol is not
-            const r = new RegExp(`\\b${name}\\b(?!\\[)`, 'g')
-            value = value.replace(r, name + '[_j]')
-          })
-
-          // Add T.get() to read tensor values
-          if (value.indexOf('.get(') < 0) {
-            allTensors.forEach((name) => {
-              const r = new RegExp(`\\b${name}\\b`)
-              value = value.replace(r, `T.get(${name}, _j)`)
+          if (index && index.length) {
+            // Add indexes to array names
+            allArrays.forEach((name) => {
+              // Check the name is word and next symbol is not
+              const r = new RegExp(`\\b${name}\\b(?!\\[)`, 'g')
+              value = value.replace(r, `${name}[${index}]`)
             })
+
+            // Add T.get() to read tensor values
+            if (value.indexOf('.get(') < 0) {
+              allTensors.forEach((name) => {
+                const r = new RegExp(`\\b${name}\\b`)
+                value = value.replace(r, `T.get(${name}, ${index})`)
+              })
+            }
           }
 
           paramStr += `${key}: ${value}`
           paramStr += `${(i < paramKeys.length - 1) ? ', ' : ''}`
-        })
+        }) // *paramKeys.forEach
       }
       return (paramStr.length) ? `{${paramStr}}` : ''
-    }
+    } // *getParams
 
     // Check if the model is main or loaded as a function
     // Compile external models as functions
@@ -173,9 +179,15 @@ module.exports = function (models, activeModel) {
         let valueStr = ((b.value.indexOf(',') >= 0) && (b.value.indexOf('[') < 0))
           ? `[${b.value.split(',').map(v => v.trim()).map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
           : b.value.trim()
-        // Check if it's a Tensor
+        // Check if it has dimensions specified
         if (b.dims && b.dims.length && !isNaN(parseInt(b.dims))) {
-          valueStr = `Tensor([${b.dims}], ${valueStr})`
+          // If multiple dimensions - Tensor
+          if (b.dims.indexOf(',') > 0) {
+            valueStr = `Tensor([${b.dims}], ${valueStr})`
+          // Only one - Vector
+          } else {
+            valueStr = `Vector(${valueStr})`
+          }
         }
         // Check if it's an external model
         if ((mi !== activeModel) && (b.useAsParameter)) {
@@ -280,18 +292,18 @@ module.exports = function (models, activeModel) {
 
         let observer = ''
 
-        // Convert observer distribution params to string
-        let params = getParams(b.params)
-
         // Remove white spaces
         let value = b.value.trim()
 
         // Check if the value is scalar or vector
         if (isNumber(value) || isScalarData(value)) {
           // Scalar
+          // Convert observer distribution params to string
+          let params = getParams(b.params)
           observer += `observe(${b.distribution}(${params}), ${b.value})\n`
         } else if (isVector(value) || isVectorData(value)) {
           // Vector
+          let params = getParams(b.params, '_j')
           if (isVector(value) && (value.indexOf('[') < 0)) {
             // Inline vector without brackets:
             // Add brackets
@@ -303,6 +315,7 @@ mapIndexed(function (_j, _v) {
   observe(${b.distribution}(${params}), _v)
 }, ${value})\n`
         } else {
+          let params = getParams(b.params, '_j')
           // Here we actually not sure about what inside the Observer value
           // It could be inner expression or expression block or data-tensor
           // Make webppl check
