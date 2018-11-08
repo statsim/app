@@ -101,7 +101,7 @@ textarea {
 .side-bar {
   position: fixed;
   padding: 5px;
-  top: 47px;
+  top: 55px;
   left: 0;
   bottom: 55px;
   overflow-y: hidden;
@@ -144,7 +144,7 @@ textarea {
 }
 
 .side-bar .model-selector button {
-  margin: 24px 0 0 0;
+  margin: 17px 0 0 0;
   box-shadow: none !important;
   border-radius: 0;
 }

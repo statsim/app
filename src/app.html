@@ -658,7 +658,7 @@
 
 
     <div class="stat-seal" style="text-align: center;">
-    <img src="images/s.png" style="width: 100px; height: auto; opacity: 0.35; margin: 20px 0px"></img>
+    <img src="images/s.png" style="width: 90px; height: auto; opacity: 0.35; margin: 15px 0px"></img>
     </div>
     <!-- Model control -->
     <md-button v-on:click.native="duplicateModel()">
@@ -820,7 +820,7 @@
       <md-input-container
         v-if="(modelParams.method !== 'deterministic')"
       >
-        <label>Number of chains</label>
+        <label>Number of chains/workers</label>
         <md-input
           type="number"
           step="1"
