@@ -19,9 +19,6 @@ const fetch = window['fetch']
 const FileReader = window['FileReader']
 const Worker = window['Worker']
 
-// Initialize a Web Worker
-const worker = new Worker('dist/worker.js')
-
 const baseModel = [
   {
     modelParams:
@@ -34,6 +31,7 @@ const baseModel = [
     blocks: [],
     methodParams:
     {
+      chains: 1,
       samples: 1000
     }
   }
@@ -717,11 +715,11 @@ const params = {
       this.code = compileModels(this.models, this.activeModel)
       console.log('Vue: F* yeah! Got compiled code!')
     },
-    process (values) {
+    process (data) {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
       this.message = 'Done!'
-      processResults(values, this.blocks)
+      processResults(data, this.blocks)
     },
     run () {
       const errorHandler = (err) => {
@@ -805,21 +803,43 @@ const params = {
                 }
               })
           } else {
-            console.log('Vue: Sending the code to worker..')
-            worker.postMessage(this.code)
-            worker.onmessage = (msg) => {
-              console.log('Vue: Just received reply from Worker. Processor?')
-              this.process(msg.data)
+            // Browser-side simulation
+            console.log('Vue: Sending the code to workers..')
+
+            let workers = [] // Array of promisified worker
+
+            let nw = 1 // Number of workers
+            if (
+                (this.methodParams.chains) &&
+                (this.methodParams.chains > 1) &&
+                ((this.modelParams.method === 'MCMC') || (this.modelParams.method === 'HMC'))
+            ) {
+              nw = +this.methodParams.chains
             }
-            worker.onerror = (err) => {
-              errorHandler(err)
+
+            for (let i = 0; i < nw; i++) {
+              workers.push(
+                new Promise((resolve, reject) => {
+                  let w = new Worker('dist/worker.js')
+                  w.postMessage(this.code)
+                  w.onmessage = (msg) => {
+                    console.log(`Vue: Received reply from Worker ${i}`)
+                    resolve(msg.data)
+                  }
+                  w.onerror = reject
+                })
+              ) // *push
             }
-            /*
-            webppl.run(this.code, (s, v) => {
-              this.process(v)
-            })
-            */
-          }
+
+            Promise.all(workers)
+              .then((data) => {
+                console.log(data)
+                this.process(data)
+              })
+              .catch((err) => {
+                errorHandler(err)
+              })
+          } // *broser-side simulation
         } catch (err) {
           errorHandler(err)
         }

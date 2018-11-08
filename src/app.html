@@ -816,6 +816,19 @@
         </md-input>
       </md-input-container>
 
+      <!-- Number of chains -->
+      <md-input-container
+        v-if="(modelParams.method === 'MCMC') || (modelParams.method === 'HMC')"
+      >
+        <label>Number of chains</label>
+        <md-input
+          type="number"
+          step="1"
+          v-model="methodParams.chains"
+        ></md-input>
+      </md-input-container>
+
+
       <!-- Method parameters -->
       <div
         class="method-param"

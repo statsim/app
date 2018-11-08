@@ -12,7 +12,7 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
   let options = {
     title: chartTitle,
     labels: chartLabels,
-    colors: ['#3f51b5', '#ce3657'],
+    colors: ['#3f51b5', '#ce3657', '#7CCD40', '#F3C50F'],
     strokeWidth: 1,
     strokeBorderWidth: 0
   }
@@ -164,30 +164,32 @@ function topN (n, countObj) {
   return top
 }
 
-module.exports = function processResults (v, blocks) {
+module.exports = function processResults (chains, blocks) {
+  // Now v is an array of results from one or multiple workers
   console.log('Processor, PhD: Z-z-z..')
   console.log('Processor, PhD: Uh?')
+  console.log('Processor, PhD: Why you send me this?', chains)
 
   // Deterministic simulation
-  if (!v.hasOwnProperty('samples')) {
-    console.log(`Processor, PhD: That's a determistic BS, converting it to pseudo-random object!`)
-    v = {samples: [{score: 0, value: v}]}
-    console.log(`Processor, PhD: Looks like random now,`, v)
+  if ((chains.length === 1) && !chains[0].hasOwnProperty('samples')) {
+    console.log(`Processor, PhD: That's a determistic BS, converting it to pseudo-random result!`)
+    chains[0] = {samples: [{score: 0, value: chains[0]}]}
+    console.log(`Processor, PhD: Looks like a random output now!`)
   }
 
-  console.log('Processor, PhD: Random samples. Good! Busy now!', v)
+  console.log('Processor, PhD: Busy now!')
 
   // Collect samples in a useful object:
-  // { variable_name: [1,2,...] }
+  // { variable_name: [[1,2,...], [2,1,3...]]} - multiple chains case
   let samples = {}
   // Collect units
   let units = {}
   // Maximum a posteriori with all variables
-  let map = {}
+  // [{variable_1: value, variable_2: value}, {}]
+  let map = []
   // MAP with only random variables
   let mapRandom = {}
-  // Maximal MAP score
-  let mapScore = Number.NEGATIVE_INFINITY
+
   // Collect random variables in rvs array to draw 2d plot later
   let rvs = []
   // Collect repeating samples
@@ -197,29 +199,44 @@ module.exports = function processResults (v, blocks) {
   // { var_name: [values] }
   let repeatingArrays = {}
 
+  chains.forEach((chain, ci) => {
   // Iterate over initial samples
-  v.samples.forEach((s, si) => {
-    // Check sample score. Max score shows map estimate
-    if (s.hasOwnProperty('score') && (s.score > mapScore)) {
-      map = s.value
-      mapScore = s.score
-    }
-    // Detect repeating samples
-    // Collect samples in a proper object
-    // Collect units
-    Object.keys(s.value).forEach(k => {
-      const sampleValue = s.value[k]
-      if (!samples.hasOwnProperty(k)) {
-        samples[k] = []
-        units[k] = blocks.find(b => b.name === k).units
-        repeatingSamples[k] = true
+  // Maximal MAP score
+    let mapScore = Number.NEGATIVE_INFINITY
+    chain.samples.forEach((s, si) => {
+      // Check sample score. Max score shows map estimate
+      if (s.hasOwnProperty('score') && (s.score > mapScore)) {
+        map[ci] = s.value
+        mapScore = s.score
       }
-      if ((samples[k].length) && (JSON.stringify(sampleValue) !== JSON.stringify(samples[k][0]))) {
-        repeatingSamples[k] = false
-      }
-      samples[k].push(s.value[k])
-    })
-  })
+      // Detect repeating samples
+      // Collect samples in a proper object
+      // Collect units
+      Object.keys(s.value).forEach(k => {
+        const sampleValue = s.value[k]
+        // Check if we don't have such variable in samples object
+        if (!samples.hasOwnProperty(k)) {
+          samples[k] = []
+          units[k] = blocks.find(b => b.name === k).units
+          repeatingSamples[k] = true
+        }
+        // Check if it's a first sample in the chain
+        if (si === 0) {
+          samples[k][ci] = []
+        }
+        // Push sample
+        samples[k][ci].push(sampleValue)
+        // Check if all samples are same
+        if (JSON.stringify(sampleValue) !== JSON.stringify(samples[k][0][0])) {
+          repeatingSamples[k] = false
+        }
+      })
+    }) // *samples
+  }) // *chains
+
+  console.log('Processor, PhD: Updated samples and MAP are ready')
+  console.log('Samples: ', samples)
+  console.log('MAP: ', map)
 
   // Filter MAP object to contain only random variables
   Object.keys(map).forEach(k => {
@@ -236,27 +253,42 @@ module.exports = function processResults (v, blocks) {
   }
   */
 
+  let allSamples = {}
   // Iterate over rearranged samples
   Object.keys(samples).forEach(k => {
-    if ((typeof samples[k][0] === 'boolean') || (typeof samples[k][0] === 'string')) {
+    // Concat all samples
+    allSamples[k] = []
+
+    samples[k].forEach(samplesArr => {
+      allSamples[k] = allSamples[k].concat(samplesArr)
+    })
+    console.log('All samples:', allSamples)
+
+    // Total min and max
+    const min = d3.min(allSamples[k])
+    const max = d3.max(allSamples[k])
+
+    if ((typeof samples[k][0][0] === 'boolean') || (typeof samples[k][0][0] === 'string')) {
       // --> Boolean and String samples (count samples)
-      let count = {}
-      samples[k].forEach(v => {
-        if (!count.hasOwnProperty(v)) {
-          count[v] = 0
-        }
-        count[v] += 1
-      })
       drawHeader(k)
-      drawObject(count, k + ' counts')
+      samples[k].forEach((samplesArr, ci) => {
+        let count = {}
+        samplesArr.forEach(v => {
+          if (!count.hasOwnProperty(v)) {
+            count[v] = 0
+          }
+          count[v] += 1
+        })
+        drawObject(count, k + ' count' + ((chains.length > 1) ? ` (ch. ${ci})` : ''))
+      })
       // TODO: Draw pie chart?
-    } else if (Array.isArray(samples[k][0])) {
+    } else if (Array.isArray(samples[k][0][0])) {
       // --> Array samples
       drawHeader(k)
       if (repeatingSamples[k]) {
         // * All sampled arrays are same
-        repeatingArrays[k] = samples[k][0]
-        drawVector(samples[k][0], k)
+        repeatingArrays[k] = samples[k][0][0]
+        drawVector(samples[k][0][0], k)
         const stats = Stats.Series([
           { stat: Stats.Mean(), name: 'Average' },
           { stat: Stats.Variance({ddof: 1}), name: 'Variance' },
@@ -265,20 +297,20 @@ module.exports = function processResults (v, blocks) {
           { stat: Stats.Min(), name: 'Min' },
           { stat: Stats.Max(), name: 'Max' }
         ])
-        samples[k][0].forEach(s => stats(s))
+        samples[k][0][0].forEach(s => stats(s))
         drawObject(stats.values, k + ' summary')
       } else {
         // * Random arrays samples
         const data = []
         const labels = ['Step']
-        samples[k].forEach((s, si) => {
-          labels.push(k + ` (v${si})`)
+        allSamples[k].forEach((s, si) => {
+          labels.push(k + ` (s. ${si})`)
           s.forEach((sv, i) => {
             if (!data[i]) data[i] = [i]
             data[i].push(sv)
           })
         })
-        createChart(`${k} ${samples[k].length} samples`, data, labels)
+        createChart(`${k} ${allSamples[k].length} samples`, data, labels)
         createChart(
           k + ' Average',
           data.map(
@@ -294,10 +326,11 @@ module.exports = function processResults (v, blocks) {
       // --> Scalar samples
       if (repeatingSamples[k]) {
         // * Repeating scalar samples (not random)
+        console.log('Repeating scalar: ', samples[k][0][0])
         drawHeader(
           k,
-          samples[k][0],
-          (samples[k][0].toString().split('.')[1] > 6) ? '*Rounded' : '',
+          samples[k][0][0],
+          (samples[k][0][0].toString().split('.')[1] > 6) ? '*Rounded' : '',
           units[k]
         )
         // drawScalar(samples[k][0], k)
@@ -306,86 +339,132 @@ module.exports = function processResults (v, blocks) {
         rvs.push(k)
 
         // Show header and MAP estimate
+        let averagedMAP
+        if (map[0][k] !== undefined) {
+          averagedMAP = map.reduce((acc, m) => acc + m[k], 0) / chains.length
+        }
+
         drawHeader(
           k,
-          map[k],
-          (map[k] !== undefined) ? 'MAP estimate' : '',
+          averagedMAP,
+          (averagedMAP !== undefined)
+            ? 'MAP estimate' + ((chains.length > 1) ? ` (averaged: ${map.map(m => m[k].toFixed(6)).toString()})` : '')
+            : '',
           units[k]
         )
         // Prepare needed transforms
-        const sorted = samples[k].slice().sort((a, b) => a - b)
-        const n = sorted.length
+        let sorted = []
+        // Trace
+        let trace = []
+        let traceLabels = ['Sample']
+        // Autocov
+        let cov = []
+        let covLabels = ['Lag']
+        // Histogram
+        let hist = []
+        let histLabels = [k]
+        // PDF
+        let pdf = []
+        let pdfLabels = [k]
+        // CDF
+        let cdf = []
+        let cdfLabels = [k]
+        const step = (max - min) / 200 // CDF step
 
-        // Draw trace
-        createChart(k + ' trace', samples[k].map((s, si) => [si, s]), ['Sample', k])
+        // Iterate over all chain samples
+        samples[k].forEach((samplesArr, ci) => {
+          // Sort each chain samples
+          sorted[ci] = samplesArr.slice().sort((a, b) => a - b)
+          // Prepare trace labels
+          traceLabels.push(k + `(ch. ${ci + 1})`)
 
-        // Draw auto-covariogram
-        const autocov = Stats.AutoCov(50)
-        createChart(k + ' autocovariogram', autocov(samples[k]).map((c, ci) => [ci, c]), ['Lag', 'Autocovariance'])
+          // Calculate autocov
+          let autocov = Stats.AutoCov(50)
+          samplesArr.forEach((sample, si) => {
+            autocov(sample)
+            if (!trace[si]) trace[si] = [si]
+            trace[si].push(sample)
+          })
+          // Dychart wants to have each point as [index, value1, value2 etc]
+          autocov().forEach((c, covi) => {
+            if (!cov[covi]) cov[covi] = [covi]
+            cov[covi].push(c)
+          })
+          covLabels.push(`Autocov (ch. ${ci})`)
 
-        // Draw histogram
-        const unique = Array.from(new Set(samples[k])).length
-        const t = (unique <= 30) ? unique : 30
-        const hist = d3.histogram().thresholds(t)
-        const h = hist(samples[k])
-        createChart(
-          k + ' histogram',
-          h.map(v => [v.x0, v.length / samples[k].length]),
-          [k, 'p'],
-          {
-            stepPlot: true,
-            fillGraph: true
-          }
-        )
+          // Prepare histogram
+          const unique = Array.from(new Set(samplesArr)).length
+          const t = (unique <= 40) ? unique : 40
+          const histogram = d3.histogram().domain([min, max]).thresholds(t)
+          const h = histogram(samplesArr)
+          h.forEach((hv, hvi) => {
+            if (!hist[hvi]) hist[hvi] = [hv.x0]
+            hist[hvi].push(hv.length / samplesArr.length)
+          })
+          histLabels.push(`p (ch. ${ci})`)
 
-        // ---- PDF (KDE smoothing)
-        const pdf = pdfast.create(samples[k], {size: 30, min: sorted[0], max: sorted[sorted.length - 1]})
-        console.log('PDF:', pdf)
-        createChart(
-          k + ' PDF (smooth)',
-          pdf.map(v => [v.x, v.y]),
-          [k, 'f'],
-          {
-            rollPeriod: 2,
-            fillGraph: true
-          }
-        )
+          // PDF
+          const p = pdfast.create(samplesArr, {size: 30, min: min, max: max})
+          p.forEach((pv, pvi) => {
+            if (!pdf[pvi]) pdf[pvi] = [pv.x]
+            pdf[pvi].push(pv.y)
+          })
+          pdfLabels.push(`f (ch. ${ci})`)
 
-        // ---- CDF (updated)
-        const step = (sorted[sorted.length - 1] - sorted[0]) / 200
-        if (step > 0) {
-          let cdf = []
-          let counter = 0
-          let nextPoint = sorted[0] + step
-          let cdfBin = 0
-          for (let i = 0; i < n; i++) {
-            counter += 1
-            if (sorted[i] >= nextPoint) {
-              while (nextPoint < sorted[i]) {
-                cdf[cdfBin] = [nextPoint, counter / n]
-                cdfBin += 1
-                nextPoint += step
+          // CDF
+          if (step > 0) {
+            let nextPoint = min + step
+            let cdfBin = 0
+            for (let i = 0; i < sorted[ci].length; i++) {
+              if (sorted[ci][i] >= nextPoint) {
+                while (nextPoint < sorted[ci][i]) {
+                  if (!cdf[cdfBin]) cdf[cdfBin] = [nextPoint]
+                  cdf[cdfBin].push(i / sorted[ci].length)
+                  cdfBin += 1
+                  nextPoint += step
+                }
               }
             }
+            cdfLabels.push(`F (ch. ${ci})`)
           }
-          createChart(k + ' CDF', cdf, [k, 'F'])
-        }
+        })
+
+        // Draw trace
+        createChart(k + ' trace', trace, traceLabels)
+
+        // Draw auto-covariogram
+        createChart(k + ' autocovariogram', cov, covLabels)
+
+        // Draw histogram
+        createChart(k + ' histogram', hist, histLabels, {
+          stepPlot: true,
+          fillGraph: true
+        })
+
+        // Draw PDF (KDE smoothing)
+        createChart(k + ' PDF (smooth)', pdf, pdfLabels, {
+          rollPeriod: 2,
+          fillGraph: true
+        })
+
+        // Draw CDF (updated)
+        createChart(k + ' CDF', cdf, cdfLabels)
 
         // ---- Quantiles
+        const allSorted = allSamples[k].slice().sort((a, b) => a - b)
         const quantile = (arr, p) => {
           const _h = (arr.length - 1) * p + 1
           const h = Math.floor(_h)
           const v = +arr[h - 1]
           const e = _h - h
           return e ? v + e * (arr[h] - v) : v
-          // h < 1 ? arr[0] : h >= arr.length ? arr[arr.length - 1] : arr[h - 1] + (_h - h) * (arr[h] - arr[h - 1])
         }
         const quantiles = {
-          '2.5%': quantile(sorted, 0.025),
-          '25%': quantile(sorted, 0.25),
-          '50%': quantile(sorted, 0.5),
-          '75%': quantile(sorted, 0.75),
-          '97.5%': quantile(sorted, 0.975)
+          '2.5%': quantile(allSorted, 0.025),
+          '25%': quantile(allSorted, 0.25),
+          '50%': quantile(allSorted, 0.5),
+          '75%': quantile(allSorted, 0.75),
+          '97.5%': quantile(allSorted, 0.975)
         }
 
         // ---- Statistics
@@ -396,14 +475,14 @@ module.exports = function processResults (v, blocks) {
           { stat: Stats.Min(), name: 'Min' },
           { stat: Stats.Max(), name: 'Max' }
         ])
-        samples[k].forEach(s => stats(s))
+        allSamples[k].forEach(s => stats(s))
 
         // Prepare summary
         const summary = Object.assign({}, quantiles, stats.values)
         // Remove number of observations
         delete summary.n
         // Draw summary block
-        drawObject(summary, k + ' summary', units[k])
+        drawObject(summary, `${k} summary`, units[k])
 
         // ---- Top 5 values
         const counter = Stats.Count({countArrays: true})
@@ -434,11 +513,11 @@ module.exports = function processResults (v, blocks) {
     document.querySelector('.charts-2d').innerHTML = ''
     for (let r1 = 0; r1 < rvs.length - 1; r1++) {
       for (let r2 = r1 + 1; r2 < rvs.length; r2++) {
-        const samples2d = samples[rvs[r1]].map((v, i) => [v, samples[rvs[r2]][i]])
-        const r1min = d3.min(samples[rvs[r1]])
-        const r1max = d3.max(samples[rvs[r1]])
-        const r2min = d3.min(samples[rvs[r2]])
-        const r2max = d3.max(samples[rvs[r2]])
+        const samples2d = allSamples[rvs[r1]].map((v, i) => [v, allSamples[rvs[r2]][i]])
+        const r1min = d3.min(allSamples[rvs[r1]])
+        const r1max = d3.max(allSamples[rvs[r1]])
+        const r2min = d3.min(allSamples[rvs[r2]])
+        const r2max = d3.max(allSamples[rvs[r2]])
         hist2d().bins(100).domain([[r1min, r1max], [r2min, r2max]])(
           samples2d,
           h => {
