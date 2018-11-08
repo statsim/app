@@ -187,8 +187,6 @@ module.exports = function processResults (chains, blocks) {
   // Maximum a posteriori with all variables
   // [{variable_1: value, variable_2: value}, {}]
   let map = []
-  // MAP with only random variables
-  let mapRandom = {}
 
   // Collect random variables in rvs array to draw 2d plot later
   let rvs = []
@@ -237,21 +235,6 @@ module.exports = function processResults (chains, blocks) {
   console.log('Processor, PhD: Updated samples and MAP are ready')
   console.log('Samples: ', samples)
   console.log('MAP: ', map)
-
-  // Filter MAP object to contain only random variables
-  Object.keys(map).forEach(k => {
-    if (!repeatingSamples[k]) {
-      mapRandom[k] = map[k]
-    }
-  })
-
-  // Show MAP estimates if mapRandom has elements
-  // Temporary hide MAP block
-  /*
-  if (Object.keys(mapRandom).length) {
-    drawObject(mapRandom, 'MAP estimates')
-  }
-  */
 
   let allSamples = {}
   // Iterate over rearranged samples
@@ -340,7 +323,7 @@ module.exports = function processResults (chains, blocks) {
 
         // Show header and MAP estimate
         let averagedMAP
-        if (map[0][k] !== undefined) {
+        if (map.length && (map[0][k] !== undefined)) {
           averagedMAP = map.reduce((acc, m) => acc + m[k], 0) / chains.length
         }
 
