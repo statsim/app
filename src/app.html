@@ -369,11 +369,27 @@
         </md-input-container>
         <div class="data-input">
           <md-input-container>
-            <label>Comma-separated values</label>
+            <label>Value(s)</label>
             <!-- If table is active, redraw it on blur -->
-            <md-textarea v-model="block.value" height="5" @blur="reactiveDataTable && showDataTable && drawDataTable()"></md-textarea>
+            <md-textarea 
+              v-if="block.dataType !== 'boolean'"
+              v-model="block.value"
+              height="5"
+              @blur="reactiveDataTable && showDataTable && drawDataTable()"
+            ></md-textarea>
+            <md-select
+              v-else
+              v-model="block.value"
+            >
+              <md-option value="true">True</md-option>
+              <md-option value="false">False</md-option>
+            </md-select>
           </md-input-container>
-          <md-button class="md-icon-button md-dense" @click.native="showDataTable = true; drawDataTable()">
+          <md-button
+            class="md-icon-button md-dense"
+            v-if="block.dataType !== 'boolean'"
+            @click.native="showDataTable = true; drawDataTable()"
+          >
             <md-icon>grid_on</md-icon>
             <md-tooltip md-direction="bottom">Table view</md-tooltip>
           </md-button>
@@ -383,17 +399,35 @@
           <md-input v-model="block.dims"></md-input>
         </md-input-container>
 
-        <!-- Units -->
-        <md-input-container>
-         <label>Units</label>
-          <md-autocomplete
-            v-model="block.units"
-            :list="units"
-            :filter-list="unitsFilter"
-            :min-chars="0"
-            print-attribute="name"
-          ></md-autocomplete>
-        </md-input-container>
+
+        <div style="display: flex">
+          <!-- Units -->
+          <md-input-container style="width: 95%; margin-right: 5%;">
+            <label>Units</label>
+            <md-autocomplete
+              v-model="block.units"
+              :list="units"
+              :filter-list="unitsFilter"
+              :min-chars="0"
+              print-attribute="name"
+            ></md-autocomplete>
+          </md-input-container>
+          <!-- Data type -->
+          <md-input-container>
+            <label for="dataType">Data type</label>
+            <md-select
+              name="dataType"
+              id="dataType"
+              v-model="block.dataType"
+            >
+              <md-option value="any">Any (default)</md-option>
+              <md-option value="boolean">Boolean</md-option>
+              <md-option value="integer">Integer</md-option>
+              <md-option value="float">Float</md-option>
+              <md-option value="string">String</md-option>
+            </md-select>
+          </md-input-container>
+        </div>
 
         <!-- Input? -->
         <md-checkbox
@@ -446,13 +480,13 @@
           ></md-autocomplete>
         </md-input-container>
         <div style="display: flex">
-          <md-input-container style="width: 40%; margin-right: 5%;">
+          <md-input-container style="width: 95%; margin-right: 5%;">
             <label>Min</label>
             <md-input
               v-model="block.min"
             ></md-input>
           </md-input-container>
-          <md-input-container style="width: 40%">
+          <md-input-container>
             <label>Max</label>
             <md-input
               v-model="block.max"
@@ -761,6 +795,7 @@
           v-on:node-click="ncb"
           v-if="graphNodes.length"
         ></d3-network>
+        <!-- Model parameters input -->
         <div class="parameters" v-if="blocks.length || (models.length > 1)">
           <div class="chips">
             <md-chip v-for="b in blocks" :style="{background: colors[b.typeCode]}">{{ b.name || b.type }}</md-chip>
@@ -770,7 +805,19 @@
           <p class="model-description">{{ modelParams.description }}</p>
           <md-input-container v-for="b in blocks" v-if="b.typeCode === 2 && b.useAsParameter">
             <label>{{ b.name + ((b.units && b.units.length) ? ', ' + b.units : '') }}</label>
-            <md-input v-model="b.value"></md-input>
+            <md-input
+              v-model="b.value"
+              v-if="b.dataType !== 'boolean'"
+              :type="(b.dataType === 'float' || b.dataType === 'integer') ? 'number' : ''"
+              :step="(b.dataType === 'integer') ? 1 : 0.1"
+              ></md-input>
+            <md-select
+              v-else
+              v-model="b.value"
+            >
+              <md-option value="true">True</md-option>
+              <md-option value="false">False</md-option>
+            </md-select>
           </md-input-container>
         </div>
       </div>

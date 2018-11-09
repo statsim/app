@@ -111,6 +111,10 @@ textarea {
   box-shadow: 0 0 30px rgba(0, 0, 0, .2);
 }
 
+.md-menu-backdrop {
+  z-index: 1500;
+}
+
 .side-bar:hover {
   overflow-y: auto;
 }
@@ -485,16 +489,16 @@ textarea {
 .content .parameters .md-input-container label {
   margin-top: 2px;
   left: 5px;
+  z-index: 10;
 }
 
-.content .parameters input {
+.content .parameters input, .content .parameters .md-select {
   font-size: 18px;
   font-weight: bold;
   padding-left: 5px;
   margin-top: 4px;
   background-color: white;
 }
-
 
 .progress {
   position: fixed;
