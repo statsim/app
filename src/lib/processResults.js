@@ -215,7 +215,8 @@ module.exports = function processResults (chains, blocks) {
         // Check if we don't have such variable in samples object
         if (!samples.hasOwnProperty(k)) {
           samples[k] = []
-          units[k] = blocks.find(b => b.name === k).units
+          const thatBlock = blocks.find(b => b.name === k.replace('_hist',''))
+          units[k] = (thatBlock !== undefined) ? thatBlock.units : ''
           repeatingSamples[k] = true
         }
         // Check if it's a first sample in the chain
