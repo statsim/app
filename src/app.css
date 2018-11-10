@@ -147,7 +147,7 @@ textarea {
 }
 
 .side-bar .model-selector button {
-  margin: 17px 0 0 0;
+  margin: 17px 0 -2px 0;
   box-shadow: none !important;
   border-radius: 0;
 }
@@ -650,6 +650,9 @@ tile {
 .dark .md-select-value {
   color: #e3e4f2 !important;
 }
+.dark .md-select::after {
+  color: rgba(129, 129, 129, 0.7) !important;
+}
 .dark .md-toolbar {
   background: #121115 !important;
 }
@@ -673,7 +676,7 @@ tile {
   color: #e3e4f2 !important;
   border: none;
 }
-.dark .content .parameters input {
+.dark .content .parameters input, .dark .content .parameters .md-select {
   background-color: #100f16;
 }
 .dark .graph-container {
