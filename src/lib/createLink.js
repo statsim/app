@@ -38,7 +38,7 @@ module.exports = function (models, isPreview, activeModel) {
       let sb = {}
       Object.keys(b).forEach(bk => {
         // Ignore descriptional field 'type'
-        if ((bk !== 'type') && !((bk === 'units') && (b[bk] === ''))) {
+        if ((bk !== 'type') && !((['units', 'dataType'].indexOf(bk) >= 0) && (b[bk] === ''))) {
           sb[getAbbr(bk)] = b[bk]
         }
       })

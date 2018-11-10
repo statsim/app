@@ -2,6 +2,7 @@ module.exports = {
   b: 'burn',
   e: 'description',
   d: 'distribution',
+  dt: 'dataType',
   f: 'file',
   h: 'history',
   i: 'initialValue',
