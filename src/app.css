@@ -27,7 +27,6 @@ label {
    color: #3f51b5 !important;
 }
 
-
 #loader span {
   font-size: 15px;
   display: inline-block;
@@ -284,7 +283,12 @@ textarea {
 }
 
 .content .net {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 500px;
+  z-index: 1;
 }
 
 .content #m-end{
@@ -452,17 +456,15 @@ textarea {
 }
 
 .content .parameters {
-  position: absolute;
+  position: relative;
   width: 300px;
-  top: 0px;
-  left: 20px;
-  height: 500px;
-  overflow: hidden;
+  min-height: 500px;
+  padding: 20px;
   display:flex;
   flex-direction: column;
-  /*flex-wrap: wrap;*/
   justify-content: center;
   align-content: center;
+  z-index: 2;
 }
 
 .content .parameters .md-icon {
@@ -744,6 +746,11 @@ tile {
   border-bottom: 1px solid #5C5B6C;
   border-right: 1px solid #5C5B6C;
 }
+/* Graph lines */
+.dark .link {
+  stroke: rgb(126, 126, 126);
+  opacity: 0.5;
+}
 /* Preview mode */
 .preview .editor-only {
   display: none;
@@ -760,6 +767,9 @@ tile {
   margin: auto;
   padding-left: 0;
   padding-right: 0;
+}
+.preview .content .parameters {
+  padding-left: 0;
 }
 .preview .wl {
   position: relative;
@@ -783,6 +793,7 @@ tile {
     top: initial;
     left: initial;
     height: auto;
+    min-height: initial;
     overflow: auto;
     display:block;
     padding: 30px 20px;
