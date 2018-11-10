@@ -175,7 +175,7 @@ const params = {
       nodeSize: 35,
       fontSize: 14,
       nodeLabels: true,
-      linkWidth: 2.3,
+      linkWidth: 2.2,
       offset: {
         x: 100,
         y: 0
