@@ -176,9 +176,25 @@ module.exports = function (models, activeModel) {
         // If value is comma-separated list, add array brackets
         // Upd: check if NaN add brackets
         // Upd: if empty string between ,, - undefined
-        let valueStr = ((b.value.indexOf(',') >= 0) && (b.value.indexOf('[') < 0))
-          ? `[${b.value.split(',').map(v => v.trim()).map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
-          : b.value.trim()
+        let valueStr
+        if (b.value.indexOf('[') < 0) {
+          if (b.value.indexOf(',') >= 0) {
+            // Comma separated values, no brackets - add brackets
+            valueStr = `[${b.value.split(',').map(v => v.trim()).map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
+          } else {
+            // No brackets, no commas - check if it's a number or boolean
+            if (
+              !isNaN(parseInt(b.value)) ||
+              (['true', 'false', 'Infinity', 'null', '-Infinity', 'undefined'].indexOf(b.value.trim()) >= 0)
+            ) {
+              valueStr = b.value.trim()
+            } else {
+              valueStr = `'${b.value.trim()}'`
+            }
+          }
+        } else {
+          valueStr = b.value.trim()
+        }
         // Check if it has dimensions specified
         if (b.dims && b.dims.length && !isNaN(parseInt(b.dims))) {
           // If multiple dimensions - Tensor
