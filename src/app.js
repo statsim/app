@@ -105,6 +105,7 @@ const BlockClasses = [
       }
       this.units = ''
       this.dataType = ''
+      this.dataCategories = ''
     }
   },
   class Accumulator {

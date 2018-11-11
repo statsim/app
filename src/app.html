@@ -425,9 +425,19 @@
               <md-option value="integer">Integer</md-option>
               <md-option value="float">Float</md-option>
               <md-option value="string">String</md-option>
+              <md-option value="category">Category</md-option>
             </md-select>
           </md-input-container>
         </div>
+
+        <!-- Categories -->
+        <md-input-container v-if="block.dataType === 'category'">
+          <label>Categories (comma-separated)</label>
+          <md-input
+            v-model="block.dataCategories"
+          ></md-input>
+        </md-input-container>
+
 
         <!-- Input? -->
         <md-checkbox
@@ -807,16 +817,22 @@
             <label>{{ b.name + ((b.units && b.units.length) ? ', ' + b.units : '') }}</label>
             <md-input
               v-model="b.value"
-              v-if="b.dataType !== 'boolean'"
+              v-if="(b.dataType !== 'boolean') && (b.dataType !== 'category')"
               :type="(b.dataType === 'float' || b.dataType === 'integer') ? 'number' : ''"
               :step="(b.dataType === 'integer') ? 1 : 0.1"
               ></md-input>
             <md-select
-              v-else
+              v-else-if="b.dataType === 'boolean'"
               v-model="b.value"
             >
               <md-option value="true">True</md-option>
               <md-option value="false">False</md-option>
+            </md-select>
+            <md-select
+              v-else-if="b.dataType === 'category'"
+              v-model="b.value"
+            >
+              <md-option v-if="(b.dataCategories !== undefined)" v-for="c in b.dataCategories.split(',').map(cat => cat.trim())" :value="c" >{{ c }}</md-option>
             </md-select>
           </md-input-container>
         </div>

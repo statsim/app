@@ -3,6 +3,7 @@ module.exports = {
   e: 'description',
   d: 'distribution',
   dt: 'dataType',
+  dc: 'dataCategories',
   f: 'file',
   h: 'history',
   i: 'initialValue',
