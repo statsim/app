@@ -832,7 +832,7 @@
               v-else-if="b.dataType === 'category'"
               v-model="b.value"
             >
-              <md-option v-if="(b.dataCategories !== undefined)" v-for="c in b.dataCategories.split(',').map(cat => cat.trim())" :value="c" >{{ c }}</md-option>
+              <md-option v-for="c in b.dataCategories ? b.dataCategories.split(',').map(cat => cat.trim()) : ['']" :value="c" >{{ c }}</md-option>
             </md-select>
           </md-input-container>
         </div>
