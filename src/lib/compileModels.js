@@ -23,12 +23,12 @@ module.exports = function (models, activeModel) {
     const randomTensors = []
 
     m.blocks.forEach(b => {
-      if ((b.typeCode === 2) && (b.value.indexOf(',') >= 0)) {
-        // Multiple data values:
-        if ((!b.dims || (b.dims.indexOf(',') < 0))) {
+      if (b.typeCode === 2) {
+        let dataType = (b.dataType === undefined || b.dataType === '') ? 'auto' : b.dataType
+        if (((dataType === 'auto') && (b.value.indexOf(',') >= 0)) || (dataType === 'array')) {
           // Data arrays
           dataArrays.push(b.name)
-        } else {
+        } else if (dataType === 'vector' || dataType === 'tensor') {
           // Data tensors
           dataTensors.push(b.name)
         }
@@ -115,7 +115,7 @@ module.exports = function (models, activeModel) {
       ITERATING OVER ALL BLOCKS OF THE MODEL
     */
     m.blocks.forEach(b => {
-      if (b.typeCode === 0) {
+      if (b.typeCode === 0 && b.name.length) {
         // --> RANDOM VARIABLE
 
         const params = getParams(b.params)
@@ -148,7 +148,7 @@ module.exports = function (models, activeModel) {
         } else {
           model += rvStr
         }
-      } else if ((b.typeCode === 1) && b.value.length) {
+      } else if ((b.typeCode === 1) && b.value.length && b.name.length) {
         // --> EXPRESSION
 
         // Check if we are inside the loop
@@ -170,7 +170,7 @@ module.exports = function (models, activeModel) {
         } else {
           model += `var ${b.name} = ${b.value}\n`
         }
-      } else if ((b.typeCode === 2) && b.value.length) {
+      } else if ((b.typeCode === 2) && b.value.length && b.name.length) {
         // --> DATA
 
         // If value is comma-separated list, add array brackets
@@ -178,14 +178,21 @@ module.exports = function (models, activeModel) {
         // Upd: if empty string between ,, - undefined
         let valueStr
         if (b.value.indexOf('[') < 0) {
-          if (b.value.indexOf(',') >= 0) {
-            // Comma separated values, no brackets - add brackets
+          if (
+            ((b.value.indexOf(',') >= 0) && (b.dataType === 'auto' || b.dataType === '' || b.dataType === undefined)) ||
+            (['array', 'vector', 'tensor'].indexOf(b.dataType) >= 0)
+          ) {
+            // Comma separated values or array or vector or tensor type
+            // And no brackets - add brackets
             valueStr = `[${b.value.split(',').map(v => v.trim()).map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
           } else {
-            // No brackets, no commas - check if it's a number or boolean
+            // No brackets, no commas, no vector, no arrays, no tensors - check if it's a number or boolean
             if (
-              !isNaN(parseInt(b.value)) ||
-              (['true', 'false', 'Infinity', 'null', '-Infinity', 'undefined'].indexOf(b.value.trim()) >= 0)
+              (b.dataType !== 'string') &&
+              (
+                !isNaN(parseInt(b.value)) ||
+                (['true', 'false', 'Infinity', 'null', '-Infinity', 'undefined'].indexOf(b.value.trim()) >= 0)
+              )
             ) {
               valueStr = b.value.trim()
             } else {
@@ -193,17 +200,17 @@ module.exports = function (models, activeModel) {
             }
           }
         } else {
-          valueStr = b.value.trim()
-        }
-        // Check if it has dimensions specified
-        if (b.dims && b.dims.length && !isNaN(parseInt(b.dims))) {
-          // If multiple dimensions - Tensor
-          if (b.dims.indexOf(',') > 0) {
-            valueStr = `Tensor([${b.dims}], ${valueStr})`
-          // Only one - Vector
+          // Brackets exist - string or pass as it is
+          if (b.dataType === 'string') {
+            valueStr = `'${b.value.trim()}'`
           } else {
-            valueStr = `Vector(${valueStr})`
+            valueStr = b.value.trim()
           }
+        }
+        if (b.dataType === 'vector') {
+          valueStr = `Vector(${valueStr})`
+        } else if (b.dataType === 'tensor' && b.dims && b.dims.length && !isNaN(parseInt(b.dims))) {
+          valueStr = `Tensor([${b.dims}], ${valueStr})`
         }
         // Check if it's an external model
         if ((mi !== activeModel) && (b.useAsParameter)) {

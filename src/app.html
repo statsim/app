@@ -394,11 +394,6 @@
             <md-tooltip md-direction="bottom">Table view</md-tooltip>
           </md-button>
         </div>
-        <md-input-container v-if="block.value.indexOf(',') >= 0">
-          <label>Dimensions (Tensor)</label>
-          <md-input v-model="block.dims"></md-input>
-        </md-input-container>
-
 
         <div style="display: flex">
           <!-- Units -->
@@ -420,15 +415,24 @@
               id="dataType"
               v-model="block.dataType"
             >
-              <md-option value="any">Any (default)</md-option>
+              <md-option value="auto">Auto (default)</md-option>
               <md-option value="boolean">Boolean</md-option>
               <md-option value="integer">Integer</md-option>
               <md-option value="float">Float</md-option>
               <md-option value="string">String</md-option>
               <md-option value="category">Category</md-option>
+              <md-option value="array">Array</md-option>
+              <md-option value="vector">Vector</md-option>
+              <md-option value="tensor">Tensor</md-option>
             </md-select>
           </md-input-container>
         </div>
+
+        <!-- Tensor dimensions -->
+        <md-input-container v-if="block.dataType === 'tensor'">
+          <label>Tensor dimensions</label>
+          <md-input v-model="block.dims"></md-input>
+        </md-input-container>
 
         <!-- Categories -->
         <md-input-container v-if="block.dataType === 'category'">
