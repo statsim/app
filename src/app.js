@@ -577,7 +577,8 @@ const params = {
           name: 'Model' + this.models.length,
           description: '',
           method: 'deterministic',
-          steps: 1
+          steps: 1,
+          include: []
         },
         methodParams: {
           samples: 1000

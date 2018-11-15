@@ -125,16 +125,37 @@
     </div>
     <!-- MODEL INFO -->
     <div style="padding: 10px;">
-    <md-input-container md-clearable>
-      <label>Model name</label>
-      <md-input
-        v-model="modelParams.name"
-      ></md-input>
-    </md-input-container>
-    <div>
-      <textarea v-model="modelParams.description" placeholder="Description..." rows="5"></textarea>
+      <md-input-container md-clearable>
+        <label>Model name</label>
+        <md-input
+          v-model="modelParams.name"
+        ></md-input>
+      </md-input-container>
+      <div>
+        <textarea v-model="modelParams.description" placeholder="Description..." rows="5"></textarea>
+      </div>
+
+      <div style="margin: 10px 0" v-if="models.length > 1">
+        <label for="include">Include </label><br>
+        <select
+          name="include"
+          id="include"
+          v-model="modelParams.include"
+          multiple
+          style="width:100%"
+        >
+          <option
+            v-for="(m, mi) in models"
+            v-if="mi !== activeModel"
+            :value="mi"
+            :key="mi"
+          >{{ m.modelParams.name }}
+          </option>
+        </select>
+        {{ modelParams }}
+      </div>
     </div>
-    </div>
+
     <!-- BLOCKS -->
     <md-card 
       v-for="(block, blockIndex) in blocks"

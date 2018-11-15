@@ -6,6 +6,29 @@ module.exports = function (models, activeModel) {
   let finalCode = ''
   let modelCodes = []
 
+  function getBlocks (mi) {
+    console.log('Get blocks for the model:', models[mi].modelParams.name)
+    let resModelsIndexes = []
+    let resBlocks = []
+
+    function iter (i) {
+      let m = models[i]
+      resModelsIndexes.push(i)
+      resBlocks = m.blocks.concat(resBlocks)
+      if (m.modelParams.include && (m.modelParams.include.length > 0)) {
+        m.modelParams.include.forEach(inc => {
+          if (resModelsIndexes.indexOf(inc) < 0) {
+            iter(inc)
+          }
+        })
+      }
+    }
+
+    iter(mi)
+
+    return resBlocks
+  }
+
   /*
     ITERATING OVER ALL PROJECT MODELS
   */
@@ -111,10 +134,13 @@ module.exports = function (models, activeModel) {
     let observers = ''
     let initializeNeuralNetConverters = false
 
+    const blocks = getBlocks(mi)
+    console.log('Blocks:', blocks.map(b => b.name))
+
     /*
       ITERATING OVER ALL BLOCKS OF THE MODEL
     */
-    m.blocks.forEach(b => {
+    blocks.forEach(b => {
       if (b.typeCode === 0 && b.name.length) {
         // --> RANDOM VARIABLE
 
@@ -399,7 +425,10 @@ if (typeof (${value}) === 'number') {
       // Add needed block names to the model output
 
       if (
-        b.name && b.show && (
+        b.name &&
+        b.show &&
+        (m.blocks.map(bl => bl.name).indexOf(b.name) >= 0) &&
+        (
           // Multi step simulation - output only what we can
           ((m.modelParams.steps > 1.5) && (((b.typeCode === 0) && b.once) || (b.typeCode === 1) || (b.typeCode === 2) || (b.typeCode === 3))) ||
           // One step - output all we want

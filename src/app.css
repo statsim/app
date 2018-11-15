@@ -45,12 +45,15 @@ label {
   }
 }
 
-textarea {
+textarea, #include {
   width: 100%;
   border: 0;
-  padding: 8px;
   color: #444;
   background: #cecece;
+}
+
+textarea {
+  padding: 8px;
 }
 
 .add-block-button {
@@ -592,7 +595,7 @@ tile {
 .dark .tool-bar {
   background: #161325 !important;
 }
-.dark textarea {
+.dark textarea, .dark #include {
   background: rgb(32, 30, 41) none repeat scroll 0% 0%;
   color: #c4c3d4;
 }

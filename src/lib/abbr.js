@@ -7,6 +7,7 @@ module.exports = {
   f: 'file',
   h: 'history',
   i: 'initialValue',
+  in: 'include',
   l: 'lag',
   m: 'method',
   n: 'name',
