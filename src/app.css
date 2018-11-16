@@ -215,11 +215,18 @@ textarea {
 .side-bar .block-5 {
   border-top: 4px solid #ababab;
 }
+
 /* Neural net */
 .side-bar .block-6 {
   border-top: 4px solid #530ea3;
   overflow: hidden;
 }
+
+/* Neural net */
+.side-bar .block-7 {
+  border-top: 4px solid #1e33cc;
+}
+
 
 .side-bar .block-name {
   width: 100%;

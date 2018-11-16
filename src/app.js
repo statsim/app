@@ -44,7 +44,8 @@ const colors = [
   '#d51558',
   '#ababab',
   '#ababab',
-  '#530ea3'
+  '#530ea3',
+  '#1e33cc'
 ]
 
 const sizes = [
@@ -56,12 +57,6 @@ const sizes = [
   25,
   30
 ]
-
-const icons = [
-  '‧ ', '꞉ ', '⁝ ', '꞉꞉', '⁙', '⁝⁝'
-]
-
-const icon = icons[Math.floor(Math.random() * 6)]
 
 const BlockClasses = [
   class RandomVariable {
@@ -146,6 +141,18 @@ const BlockClasses = [
       this.layers = []
       this.convert = false
     }
+  },
+  class Func {
+    constructor (counter) {
+      this.name = 'F' + counter
+      this.type = 'Function'
+      this.typeCode = 7
+      this.x = ''
+      this.y = ''
+      this.min = ''
+      this.max = ''
+      this.tableFunction = false
+    }
   }
 ]
 
@@ -165,23 +172,10 @@ const params = {
     D3Network
   },
   data: () => ({
-    icon,
     units: Qty.getUnits().map(u => ({ name: u })),
     colors,
     theme: 'light',
     preview: false,
-    graphOptions:
-    {
-      force: 5000,
-      nodeSize: 35,
-      fontSize: 14,
-      nodeLabels: true,
-      linkWidth: 2.2,
-      offset: {
-        x: 100,
-        y: 0
-      }
-    },
     link: '',
     loading: false, // show loading indicator
     message: '',
@@ -211,6 +205,20 @@ const params = {
     // Calculated list of distributions
     // Based on predefined distributions from lib/distributions.js
     // Also new user-defined models added
+    graphOptions () {
+      let f = 5000 - this.blocks.length * 100
+      return {
+        force: (f > 1500) ? f : 1500,
+        nodeSize: 35,
+        fontSize: 10 + Math.round(f / 1000),
+        nodeLabels: true,
+        linkWidth: 2.2,
+        offset: {
+          x: 100,
+          y: 0
+        }
+      }
+    },
     distributions () {
       const newDistrs = {}
       // Iterate over all models

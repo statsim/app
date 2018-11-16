@@ -6,6 +6,7 @@ module.exports = function (models, activeModel) {
   let finalCode = ''
   let modelCodes = []
 
+  // Iteratively get all blocks for the model from all the included models
   function getBlocks (mi) {
     console.log('Get blocks for the model:', models[mi].modelParams.name)
     let resModelsIndexes = []
@@ -120,6 +121,9 @@ module.exports = function (models, activeModel) {
     }
 
     // Model generation
+    let data = ''
+    let functionGen = '' // Table function generator
+    let functions = '' // Code for all model functions
     let model = 'var model = function () {\n'
 
     // Step object needed when dealing with iterative models
@@ -242,10 +246,12 @@ module.exports = function (models, activeModel) {
         if ((mi !== activeModel) && (b.useAsParameter)) {
           // In external model check if data value is already defined as a parameter
           // Use inner model value as default value in case parameter is missing
-          model = `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n` + model
+          // model = `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n` + model
+          data += `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n`
         } else {
           // Active model: place data on top of model
-          model = `var ${b.name} = ${valueStr}\n` + model
+          // model = `var ${b.name} = ${valueStr}\n` + model
+          data += `var ${b.name} = ${valueStr}\n`
         }
       } else if ((b.typeCode === 3) && b.value.length) {
         // --> ACCUMULATOR
@@ -283,6 +289,37 @@ module.exports = function (models, activeModel) {
           step.initial += (b.history) ? `,\n${b.name}_hist: []` : ''
         } else {
           model += `var ${b.name} = ${b.initialValue} + ${b.value}\n`
+        }
+      } else if ((b.typeCode === 7) && b.name && b.name.length && b.x && b.x.length && b.y && b.y.length) {
+        if (b.tableFunction) {
+          if (functionGen === '') {
+            functionGen = `
+var functionGen = function(xarr, yarr) {
+  return function(x) {
+    var it = function (i) {
+      if (((i === 0) && (x <= xarr[i])) || ((x > xarr[i]) && (i === xarr.length - 2)) || ((x >= xarr[i]) && (x < xarr[i + 1]))) {
+        return i
+      } else {
+        return it(i + 1)
+      }
+    }
+    var i1 = it(0)
+    var i2 = i1 + 1
+    var y = (yarr[i2] - yarr[i1]) * (x - xarr[i1]) / (xarr[i2] - xarr[i1]) + yarr[i1]
+    return ${((b.max !== undefined) && !isNaN(parseFloat(b.max))) ? `(y > ${b.max}) ? ${b.max} :` : ``}${((b.min !== undefined) && !isNaN(parseFloat(b.min))) ? `(y < ${b.min}) ? ${b.min} :` : ``}y
+  }
+}
+`
+          }
+          functions += `
+var ${b.name.trim()} = functionGen([${b.x}],[${b.y}])
+`
+        } else {
+          functions += `
+var ${b.name.trim()} = function (${b.x.trim()}) {
+return ${b.y.trim()}
+}
+`
         }
       } else if ((b.typeCode === 6) && b.layers.length) {
         // --> NEURAL NET
@@ -472,7 +509,7 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
       model += `return 0\n`
     }
     model += '}\n'
-    code += model
+    code += data + functionGen + functions + model
 
     // Add helper functions
     // Convert Neural Net layers from/to tesors

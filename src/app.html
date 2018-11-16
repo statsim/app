@@ -71,6 +71,10 @@
           <md-icon :style="'color: ' + colors[1]">functions</md-icon>
           <span>Expression</span>
         </md-menu-item>
+        <md-menu-item v-on:click.native="addBlock(7)">
+          <md-icon :style="'color: ' + colors[7]">show_chart</md-icon>
+          <span>Function</span>
+        </md-menu-item>
         <md-menu-item v-on:click.native="addBlock(3)">
           <md-icon :style="'color: ' + colors[3]">exposure_plus_1</md-icon>
           <span>Accumulator</span>
@@ -480,6 +484,47 @@
           Show in output
         </md-checkbox>
 
+      </md-card-content>
+
+      <!-- Function -->
+      <md-card-content v-if="block.typeCode === 7">
+        <md-input-container md-clearable>
+          <label>Name</label>
+          <md-input
+            v-model="block.name"
+          ></md-input>
+        </md-input-container>
+        <md-input-container md-clearable>
+          <label v-if="block.tableFunction">X</label>
+          <label v-else>Function parameters</label>
+          <md-input
+            v-model="block.x"
+          ></md-input>
+        </md-input-container>
+        <md-input-container md-clearable>
+          <label v-if="block.tableFunction">Y</label>
+          <label v-else>Return value</label>
+          <md-input
+            v-model="block.y"
+          ></md-input>
+        </md-input-container>
+        <div style="display: flex">
+          <md-input-container style="width: 95%; margin-right: 5%;">
+            <label>Min</label>
+            <md-input
+              v-model="block.min"
+            ></md-input>
+          </md-input-container>
+          <md-input-container>
+            <label>Max</label>
+            <md-input
+              v-model="block.max"
+            ></md-input>
+          </md-input-container>
+        </div>
+        <md-checkbox v-model="block.tableFunction" class="md-primary">
+          Table function
+        </md-checkbox>
       </md-card-content>
 
       <!-- Accumulator -->
