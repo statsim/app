@@ -119,6 +119,14 @@
           <md-icon style="opacity: 0.3">more_horiz</md-icon>
         </md-button>
         <md-menu-content>
+          <md-menu-item v-on:selected="maximizeAllBlocks()">
+            <md-icon>crop_landscape</md-icon>
+            <span>Maximize all blocks</span>
+          </md-menu-item>
+          <md-menu-item v-on:selected="minimizeAllBlocks()">
+            <md-icon>remove</md-icon>
+            <span>Minimize all blocks</span>
+          </md-menu-item>
           <md-menu-item v-on:selected="createModel()">
             <md-icon>add</md-icon>
             <span>Add new model</span>
@@ -160,18 +168,31 @@
       </div>
     </div>
 
+    <!-- Add drag and drop -->
+    <draggable v-model="blocks" :options="{handle: '.block-header'}">
+    <transition-group name="block-list">
     <!-- BLOCKS -->
     <md-card 
       v-for="(block, blockIndex) in blocks"
+      :key="block.type + blockIndex"
       :id="'block-id-' + blockIndex"
-      :class="'block block-' + block.typeCode"
+      :class="['block', 'block-' + block.typeCode, block.minimized ? 'block-minimized' : 'block-full']"
     >
-      <!-- Block actions bar-->
-      <md-card-actions :class="'block-header-' + block.typeCode">
+   <!-- Block actions bar-->
+      <md-card-actions :class="'block-header block-header-' + block.typeCode">
         <div class="block-name">
           <strong>{{ block.name }}</strong>
-          <p class="block-type">{{ block.type }}</p>
+          <p class="block-type">{{ block.type }}
+            <span v-if="block.minimized && block.value && block.value.length" style="font-weight:400">: {{ block.value.slice(0,15) }}...</span>
+            <span v-if="block.minimized && block.distribution" style="font-weight:400">: {{ block.distribution }}...</span>
+          </p>
         </div>
+        <md-button class="md-icon-button" v-if="block.minimized" v-on:click.native="toggle(blockIndex)">
+          <md-icon>crop_landscape</md-icon>
+        </md-button>
+        <md-button class="md-icon-button" v-if="!block.minimized" v-on:click.native="toggle(blockIndex)">
+          <md-icon>remove</md-icon>
+        </md-button>
         <md-button class="md-icon-button" v-on:click.native="moveBlockUp(blockIndex)">
           <md-icon>expand_less</md-icon>
           <md-tooltip md-direction="bottom">Move up</md-tooltip>
@@ -745,6 +766,8 @@
         </md-input-container>
       </md-card-content>
     </md-card>
+    </transition-group>
+    </draggable>
 
     <!-- Model output -->
     <div class="block">

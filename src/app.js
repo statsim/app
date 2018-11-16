@@ -2,6 +2,7 @@ const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
 const cookie = require('cookie')
 const D3Network = require('vue-d3-network')
+const draggable = require('vuedraggable')
 const Table = require('handsontable')
 const Qty = require('js-quantities')
 const distributions = require('./lib/distributions')
@@ -169,7 +170,8 @@ let table
 
 const params = {
   components: {
-    D3Network
+    D3Network,
+    draggable
   },
   data: () => ({
     units: Qty.getUnits().map(u => ({ name: u })),
@@ -686,8 +688,19 @@ const params = {
       const offset = block.offsetTop
       document.getElementById('side-bar').scrollTop = offset - 20
     },
+    toggle (blockIndex) {
+      this.$set(this.blocks[blockIndex], 'minimized', !this.blocks[blockIndex].minimized)
+    },
+    maximizeAllBlocks () {
+      this.blocks.forEach(b => this.$set(b, 'minimized', false))
+    },
+    minimizeAllBlocks () {
+      this.blocks.forEach(b => this.$set(b, 'minimized', true))
+    },
     addBlock (blockClassNumber) {
-      this.blocks.push(new BlockClasses[blockClassNumber](this.blocks.length))
+      let block = new BlockClasses[blockClassNumber](this.blocks.length)
+      block.minimized = false
+      this.blocks.push(block)
       // If data added, update table
       if ((blockClassNumber === 2) && this.reactiveDataTable && this.showDataTable) {
         this.drawDataTable()

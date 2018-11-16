@@ -160,7 +160,25 @@ textarea {
 }
 
 .side-bar .block {
+  display: block;
   margin: 10px;
+  transition: all 0.5s;
+}
+
+.side-bar .block .block-header .md-button {
+  margin: 0;
+  padding: 0;
+  min-width: 30px;
+  width: 30px;
+}
+
+.side-bar .block-header {
+  cursor: move;
+}
+
+.side-bar .block-minimized {
+  height: 70px;
+  overflow: hidden;
 }
 
 .side-bar .block .data-input, .side-bar .block .units-input  {
@@ -232,11 +250,13 @@ textarea {
   width: 100%;
   padding-left: 10px;
   padding-top: 7px;
-  font-size: 20px;
+  font-size: 18px;
 }
+
 .side-bar .block-type {
   font-size: 11px;
-  line-height: 0px;
+  line-height: 10px;
+  margin: 5px 0;
   color: #888;
   font-weight: bold;
 }
