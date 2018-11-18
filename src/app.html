@@ -9,6 +9,12 @@
     ref="remove-dialog">
   </md-dialog-confirm>
 
+  <div class="icons" v-if="chooseIconForBlock >= 0">
+    <md-button v-for="(icon, iconKey) in icons" v-on:click.native="chooseIcon(icon)" class="md-icon-button">
+      <md-icon>{{ iconKey }}</md-icon>
+    </md-button>
+  </div>
+
   <md-toolbar class="tool-bar md-dense">
     <input type="file" accept=".csv, .tsv, .txt" id="openDataFile" v-on:change="openDataFile" style="display: none;" />
     <input type="file" accept=".json, .ssp" id="openProjectFile" v-on:change="openProjectFile" style="display: none;" />
@@ -174,9 +180,10 @@
     <!-- BLOCKS -->
     <md-card 
       v-for="(block, blockIndex) in blocks"
-      :key="block.type + blockIndex"
+      :key="block.id"
       :id="'block-id-' + blockIndex"
       :class="['block', 'block-' + block.typeCode, block.minimized ? 'block-minimized' : 'block-full']"
+      :style="block.color ? 'border-top-color:' + block.color : ''"
     >
    <!-- Block actions bar-->
       <md-card-actions :class="'block-header block-header-' + block.typeCode">
@@ -206,6 +213,10 @@
             <md-icon>more_horiz</md-icon>
           </md-button>
           <md-menu-content>
+            <md-menu-item v-on:selected="chooseIconForBlock = blockIndex">
+              <md-icon>toys</md-icon>
+              <span>Choose icon</span>
+            </md-menu-item>
             <md-menu-item v-on:selected="moveBlockToTop(blockIndex)">
               <md-icon>keyboard_capslock</md-icon>
               <span>Move to top</span>
@@ -765,6 +776,31 @@
           ></md-input>
         </md-input-container>
       </md-card-content>
+
+      <md-card-expand v-if="block.icon && block.icon.length">
+        <md-card-actions>
+          <md-button disabled>Icon settings</md-button>
+          <span style="flex: 1"></span>
+          <md-button class="md-icon-button" md-expand-trigger>
+            <md-icon>keyboard_arrow_down</md-icon>
+          </md-button>
+        </md-card-actions>
+        <md-card-content>
+          <md-input-container>
+            <label>Size</label>
+            <md-input
+              v-model.number="block.size"
+              type="number"
+            ></md-input>
+          </md-input-container>
+
+          <color-picker 
+            :value="block.color"
+            @input="block.color = $event.hex"
+          />
+        </md-card-content>
+      </md-card-expand>
+
     </md-card>
     </transition-group>
     </draggable>
@@ -889,6 +925,14 @@
     </svg>
     <div style="position: relative" class="graph-container">
       <div class="wl">
+        <network
+          class="net"
+          ref="network"
+          :nodes="graphNodes"
+          :edges="graphLinks"
+          :options="networkOptions"
+          ></network>
+        <!--
         <d3-network
           class="net"
           :net-nodes="graphNodes"
@@ -897,7 +941,8 @@
           :link-cb="lcb"
           v-on:node-click="ncb"
           v-if="graphNodes.length"
-        ></d3-network>
+          ></d3-network>
+        -->
         <!-- Model parameters input -->
         <div class="parameters" v-if="blocks.length || (models.length > 1)">
           <div class="chips">

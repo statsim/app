@@ -2,16 +2,19 @@ const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
 const cookie = require('cookie')
 const D3Network = require('vue-d3-network')
+const VueVis = require('vue2vis')
 const draggable = require('vuedraggable')
 const Table = require('handsontable')
 const Qty = require('js-quantities')
+const VueColor = require('vue-color')
 const distributions = require('./lib/distributions')
 const simulationMethods = require('./lib/methods')
 const compileModels = require('./lib/compileModels')
 const processResults = require('./lib/processResults')
 const createLink = require('./lib/createLink')
 const parseLink = require('./lib/parseLink')
-const graphIcons = require('./lib/graphIcons')
+const icons = require('./lib/icons')
+// const graphIcons = require('./lib/graphIcons')
 const guessUnits = require('./lib/guessUnits')
 
 // Access global objects
@@ -49,15 +52,132 @@ const colors = [
   '#1e33cc'
 ]
 
-const sizes = [
-  20,
-  25,
-  15,
-  30,
-  25,
-  25,
-  30
-]
+const networkOptions = {
+  autoResize: true,
+  height: '100%',
+  width: '100%',
+  locale: 'en',
+  manipulation: {
+    enabled: true,
+    initiallyActive: true,
+    addEdge: true,
+    deleteNode: true,
+    deleteEdge: true
+  },
+  nodes: {
+    shape: 'circle',
+    font: {
+      size: 18,
+      color: '#888888'
+    },
+    scaling: {
+      label: {
+        min: 8,
+        max: 50
+      }
+    },
+    borderWidth: 0,
+    shadow: false,
+    margin: {
+      top: 10,
+      left: 20,
+      right: 20,
+      bottom: 10
+    },
+    color: {
+      border: '',
+      background: '#b2dfdb',
+      highlight: {
+        border: '#e57373',
+        background: '#ffcdd2'
+      }
+    }
+  },
+  layout: {
+    improvedLayout: true,
+    hierarchical: {
+      enabled: false,
+      direction: 'UD',
+      sortMethod: 'hubsize',
+      parentCentralization: true,
+      blockShifting: true,
+      edgeMinimization: true
+    }
+  },
+  edges: {
+    smooth: true,
+    chosen: true,
+    arrows: {
+      to: {
+        enabled: true,
+        type: 'arrow'
+      }
+    },
+    color: {
+      color: '#888',
+      highlight: '#0042FF',
+      hover: '#999',
+      inherit: 'from',
+      opacity: 0.5
+    }
+  },
+  groups: {
+    0: {
+      shape: 'dot',
+      color: '#eaac0c', // RV
+      size: 10
+    },
+    1: {
+      shape: 'dot',
+      color: '#0097cc', // Exp
+      size: 10
+    },
+    2: {
+      shape: 'dot',
+      color: '#84c161',
+      size: 10 // Data
+    },
+    3: {
+      shape: 'icon',
+      icon: {
+        face: 'Material Icons',
+        code: '\ue146',
+        size: 30,
+        color: '#c44a78'
+      }
+    },
+    4: {
+      shape: 'diamond',
+      color: '#ababab', // observer
+      size: 10
+    },
+    5: {
+      shape: 'icon',
+      icon: {
+        face: 'Material Icons',
+        code: '\ue86c',
+        size: 40,
+        color: '#ababab'
+      }
+    },
+    6: {
+      shape: 'square',
+      color: '#530ea3', // nn
+      size: 15
+    },
+    7: {
+      shape: 'triangle',
+      color: '#1e33cc', // function
+      size: 10
+    }
+  },
+  physics: {
+    enabled: true,
+    barnesHut: {
+      gravitationalConstant: -2000
+    }
+  }
+}
 
 const BlockClasses = [
   class RandomVariable {
@@ -168,12 +288,20 @@ function delay (time, cb) {
 // Future HotTable object
 let table
 
+console.log(VueColor)
+
 const params = {
   components: {
     D3Network,
-    draggable
+    'color-picker': VueColor.Swatches,
+    draggable,
+    Network: VueVis.Network
   },
   data: () => ({
+    chooseIconForBlock: -1,
+    currentBlockColor: '#ababab',
+    icons,
+    networkOptions,
     units: Qty.getUnits().map(u => ({ name: u })),
     colors,
     theme: 'light',
@@ -238,20 +366,36 @@ const params = {
       return finDistrs
     },
     graphNodes: function () {
-      return this.blocks
-        .map((b, i) => ({
-          id: i,
-          name: (b.name && b.name.length) ? `${b.name}` : b.type,
-          _color: colors[b.typeCode],
-          _size: sizes[b.typeCode],
-          svgSym: graphIcons[b.typeCode]
-        }))
+      const nodes = this.blocks
+        .map((b, i) => {
+          let node = {
+            id: i,
+            label: (b.name && b.name.length) ? `${b.name}` : b.type
+          }
+          if (b.icon && b.icon.length) {
+            node.group = 'icon'
+            node.shape = 'icon'
+            node.icon = {
+              face: 'Material Icons',
+              code: b.icon,
+              size: b.size ? b.size : 40,
+              color: (b.color && b.color.length) ? b.color : '#ababab'
+            }
+          } else {
+            node.group = b.typeCode
+          }
+          return node
+        })
         .concat(this.models.filter((_, i) => i !== this.activeModel).map((m, i) => ({
           id: this.blocks.lenght + i,
-          name: m.modelParams.name,
+          // name: m.modelParams.name,
+          label: m.modelParams.name,
+          group: 42,
           _color: '#FFF',
           _size: 35
         })))
+      console.log(nodes)
+      return nodes
     },
     graphLinks: function () {
       const check = (str, baseBlockIndex) => {
@@ -260,8 +404,10 @@ const params = {
           this.blocks.forEach((b, i) => {
             if (b.name && (str.split(/[^A-Za-z0-9_]/g).indexOf(b.name) >= 0)) {
               l.push({
-                tid: baseBlockIndex,
-                sid: i,
+                // tid: baseBlockIndex,
+                // sid: i,
+                to: baseBlockIndex,
+                from: i,
                 _color: (this.theme === 'dark') ? '#444' : '#DDD'
               })
             }
@@ -333,6 +479,12 @@ const params = {
           setTimeout(() => {
             this.models = models
             this.switchModel(0 || activeModel)
+            // Add ID to each block for better list rendering
+            this.models.forEach(m => {
+              m.blocks.forEach(b => {
+                b.id = 'b' + Math.round(Math.random() * 100000000)
+              })
+            })
           }, 100)
         },
         (err) => {
@@ -342,6 +494,12 @@ const params = {
     } // *if window.location.search is not empty
   },
   methods: {
+    chooseIcon (icon) {
+      this.$set(this.blocks[this.chooseIconForBlock], 'icon', icon)
+      this.$set(this.blocks[this.chooseIconForBlock], 'color', colors[this.blocks[this.chooseIconForBlock].typeCode])
+      this.$set(this.blocks[this.chooseIconForBlock], 'size', 40)
+      this.chooseIconForBlock = -1
+    },
     // Update data blocks from table inner data
     guessUnits (str, i) {
       this.blocks[i].units = guessUnits(str, this.blocks)
@@ -569,6 +727,12 @@ const params = {
         delay.call(this, 500, () => {
           window.history.replaceState({}, 'New project', '.')
           this.models = Array.isArray(models) ? models : [models]
+          // Add ID to each block for better list rendering
+          this.models.forEach(m => {
+            m.blocks.forEach(b => {
+              b.id = (b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000)
+            })
+          })
           this.switchModel(0)
         })
       }
@@ -700,6 +864,7 @@ const params = {
     addBlock (blockClassNumber) {
       let block = new BlockClasses[blockClassNumber](this.blocks.length)
       block.minimized = false
+      block.id = 'b' + Math.round(Math.random() * 100000000)
       this.blocks.push(block)
       // If data added, update table
       if ((blockClassNumber === 2) && this.reactiveDataTable && this.showDataTable) {

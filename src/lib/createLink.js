@@ -37,10 +37,12 @@ module.exports = function (models, isPreview, activeModel) {
     m.blocks.forEach(b => {
       let sb = {}
       Object.keys(b).forEach(bk => {
-        // Ignore descriptional field 'type'
         if (
-          (bk !== 'type') &&
+          // Ignore fields 'type', 'id', 'minimized'
+          (['type', 'minimized', 'id'].indexOf(bk) < 0) &&
+          // Ignore fields with no values
           !((['units', 'dataType', 'dataCategories'].indexOf(bk) >= 0) && (b[bk] === '')) &&
+          // Ignore categories if data is not category
           !((bk === 'dataCategories') && (b.dataType !== 'category'))
         ) {
           sb[getAbbr(bk)] = b[bk]
