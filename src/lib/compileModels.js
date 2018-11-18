@@ -131,7 +131,7 @@ module.exports = function (models, activeModel) {
       body: '',
       list: '_i',
       accum: '_i: _i + 1',
-      initial: '_i: 1'
+      initial: '_i: ' + (!isNaN(parseInt(m.modelParams.start)) ? m.modelParams.start : '1')
     }
 
     let modelOutput = ''

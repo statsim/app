@@ -1004,6 +1004,19 @@
         </md-select>
       </md-input-container>
 
+      <!-- Time start-->
+      <md-input-container class="simulation-param">
+        <label for="time-steps">Time start:</label>
+        <md-input
+          name="time-start"
+          type="number"
+          min="0"
+          step="1"
+          v-model="modelParams.start"
+        >
+        </md-input>
+      </md-input-container>
+
       <!-- Time steps-->
       <md-input-container class="simulation-param">
         <label for="time-steps">Iterations:</label>
