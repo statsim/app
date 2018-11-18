@@ -57,13 +57,6 @@ const networkOptions = {
   height: '100%',
   width: '100%',
   locale: 'en',
-  manipulation: {
-    enabled: true,
-    initiallyActive: true,
-    addEdge: true,
-    deleteNode: true,
-    deleteEdge: true
-  },
   nodes: {
     shape: 'circle',
     font: {
@@ -390,11 +383,8 @@ const params = {
           id: this.blocks.lenght + i,
           // name: m.modelParams.name,
           label: m.modelParams.name,
-          group: 42,
-          _color: '#FFF',
-          _size: 35
+          group: 42
         })))
-      console.log(nodes)
       return nodes
     },
     graphLinks: function () {
@@ -494,6 +484,24 @@ const params = {
     } // *if window.location.search is not empty
   },
   methods: {
+    fitNetwork () {
+      // Scale network to fit all nodes
+      setTimeout(() => {
+        console.log(this.$refs.network)
+        this.$refs.network.fit({
+          animation: {
+            duration: 500
+          }
+        })
+      }, 1500)
+    },
+    selectNode (selection) {
+      console.log('Selected', selection)
+      const block = document.getElementById('block-id-' + selection.nodes[0])
+      const offset = block.offsetTop
+      document.getElementById('side-bar').scrollTop = offset - 20
+      this.$set(this.blocks[selection.nodes[0]], 'minimized', false)
+    },
     chooseIcon (icon) {
       this.$set(this.blocks[this.chooseIconForBlock], 'icon', icon)
       this.$set(this.blocks[this.chooseIconForBlock], 'color', colors[this.blocks[this.chooseIconForBlock].typeCode])
@@ -734,6 +742,7 @@ const params = {
             })
           })
           this.switchModel(0)
+          this.fitNetwork()
         })
       }
     },
@@ -843,15 +852,6 @@ const params = {
         this.link = JSON.stringify(this.models, null, 2) // indent with 2 spaces
       })
     },
-    lcb (link) {
-      link._svgAttrs = { 'marker-end': 'url(#m-end)' }
-      return link
-    },
-    ncb (e, node) {
-      const block = document.getElementById('block-id-' + node.index)
-      const offset = block.offsetTop
-      document.getElementById('side-bar').scrollTop = offset - 20
-    },
     toggle (blockIndex) {
       this.$set(this.blocks[blockIndex], 'minimized', !this.blocks[blockIndex].minimized)
     },
@@ -908,7 +908,7 @@ const params = {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
       this.message = 'Done!'
-      processResults(data, this.blocks)
+      processResults(data, this.blocks, this.modelParams)
     },
     run () {
       const errorHandler = (err) => {

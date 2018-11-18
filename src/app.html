@@ -931,6 +931,8 @@
           :nodes="graphNodes"
           :edges="graphLinks"
           :options="networkOptions"
+          :events="['selectNode']"
+          @select-node="selectNode"
           ></network>
         <!--
         <d3-network
@@ -1012,7 +1014,7 @@
           type="number"
           min="0"
           step="1"
-          v-model="modelParams.start"
+          v-model.number="modelParams.start"
         >
         </md-input>
       </md-input-container>
@@ -1025,7 +1027,7 @@
           type="number"
           min="1"
           step="1"
-          v-model="modelParams.steps"
+          v-model.number="modelParams.steps"
         >
         </md-input>
       </md-input-container>

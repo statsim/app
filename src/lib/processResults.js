@@ -120,19 +120,19 @@ function drawObject (obj, name, units) {
   document.querySelector('.charts').appendChild(chartContainer)
 }
 
-function drawVector (vector, name) {
+function drawVector (vector, name, timeStart) {
   createChart(
     name,
-    vector.map((v, i) => [i + 1, v]),
+    vector.map((v, i) => [i + ((timeStart !== undefined) ? timeStart : 1), v]),
     ['Step', name]
   )
 }
 
-function drawVectors (vectors) {
+function drawVectors (vectors, timeStart) {
   const keys = Object.keys(vectors)
   createChart(
     (keys.length > 5) ? 'Join' : keys.join(', '),
-    vectors[keys[0]].map((_, i) => [i + 1].concat(keys.map(k => vectors[k][i]))),
+    vectors[keys[0]].map((_, i) => [i + ((timeStart !== undefined) ? timeStart : 1)].concat(keys.map(k => vectors[k][i]))),
     ['Step'].concat(keys)
   )
 }
@@ -164,7 +164,7 @@ function topN (n, countObj) {
   return top
 }
 
-module.exports = function processResults (chains, blocks) {
+module.exports = function processResults (chains, blocks, modelParams) {
   // Now v is an array of results from one or multiple workers
   console.log('Processor, PhD: Z-z-z..')
   console.log('Processor, PhD: Uh?')
@@ -215,7 +215,7 @@ module.exports = function processResults (chains, blocks) {
         // Check if we don't have such variable in samples object
         if (!samples.hasOwnProperty(k)) {
           samples[k] = []
-          const thatBlock = blocks.find(b => b.name === k.replace('_hist',''))
+          const thatBlock = blocks.find(b => b.name === k.replace('_hist', ''))
           units[k] = (thatBlock !== undefined) ? thatBlock.units : ''
           repeatingSamples[k] = true
         }
@@ -272,7 +272,11 @@ module.exports = function processResults (chains, blocks) {
       if (repeatingSamples[k]) {
         // * All sampled arrays are same
         repeatingArrays[k] = samples[k][0][0]
-        drawVector(samples[k][0][0], k)
+        drawVector(
+          samples[k][0][0], // values
+          k, // name
+          ((k.indexOf('_hist') >= 0) && (modelParams.start !== undefined)) ? modelParams.start : 1
+        )
         const stats = Stats.Series([
           { stat: Stats.Mean(), name: 'Average' },
           { stat: Stats.Variance({ddof: 1}), name: 'Variance' },
@@ -290,7 +294,7 @@ module.exports = function processResults (chains, blocks) {
         allSamples[k].forEach((s, si) => {
           labels.push(k + ` (s. ${si})`)
           s.forEach((sv, i) => {
-            if (!data[i]) data[i] = [i]
+            if (!data[i]) data[i] = [i + (((k.indexOf('_hist') >= 0) && (modelParams.start !== undefined)) ? modelParams.start : 1)]
             data[i].push(sv)
           })
         })

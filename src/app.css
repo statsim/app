@@ -190,7 +190,7 @@ textarea {
 }
 
 .side-bar .block-minimized {
-  height: 70px;
+  height: 65px;
   overflow: hidden;
 }
 
@@ -258,7 +258,6 @@ textarea {
   border-top: 4px solid #1e33cc;
 }
 
-
 .side-bar .block-name {
   width: 100%;
   padding-left: 10px;
@@ -291,6 +290,10 @@ textarea {
   font-size: 11px;
   padding: 1px 8px;
   min-width: 0;
+}
+
+.side-bar .vc-swatches {
+  width: 100%;
 }
 
 .content {
@@ -694,6 +697,9 @@ tile {
 .dark .md-select-value {
   color: #e3e4f2 !important;
 }
+.dark .md-card-actions, .dark .vc-swatches {
+  background-color: #13111a !important;
+}
 .dark .md-select::after {
   color: rgba(129, 129, 129, 0.7) !important;
 }
@@ -702,6 +708,10 @@ tile {
 }
 .dark .message {
   color: white;
+}
+.dark .icons {
+  background: black;
+  padding: 30px;
 }
 .dark .md-sidenav-content {
   background: #3B3847 !important;
