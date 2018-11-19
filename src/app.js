@@ -162,6 +162,11 @@ const networkOptions = {
       shape: 'triangle',
       color: '#1e33cc', // function
       size: 10
+    },
+    'shadow': {
+      shape: 'dot',
+      color: '#ababab', // shadow
+      size: 10
     }
   },
   physics: {
@@ -344,6 +349,41 @@ const params = {
       const finDistrs = Object.assign({}, newDistrs, distributions)
       return finDistrs
     },
+    shadowNodes: function () {
+      // Stringify current blocks to easily search for variable
+      let blockString = JSON.stringify(this.blocks)
+      let sn = []
+      // Iterate over all non active models
+      this.models.filter((_, i) => i !== this.activeModel).forEach((m, mi) => {
+        // Check model first (shadow model)
+        if (m.modelParams.name && (blockString.indexOf(m.modelParams.name) >= 0)) {
+          sn.push({
+            id: m.modelParams.name,
+            label: m.modelParams.name,
+            shape: 'icon',
+            group: 'icon',
+            icon: {
+              face: 'Material Icons',
+              code: '\ue886',
+              size: 60,
+              color: '#ababab'
+            }
+          })
+        }
+        // Check model blocks (shadow blocks)
+        m.blocks.forEach((b, bi) => {
+          if (b.name && (blockString.indexOf(b.name) >= 0)) {
+            sn.push({
+              id: m.modelParams.name + bi,
+              label: b.name,
+              group: 'shadow'
+            })
+          }
+        })
+      })
+      console.log(new Date(), 'Shadow nodes', sn)
+      return sn
+    },
     graphNodes: function () {
       console.log(new Date(), 'Nodes: Starting dynamic update')
       const nodes = this.blocks
@@ -366,19 +406,21 @@ const params = {
           }
           return node
         })
-        .concat(this.models.filter((_, i) => i !== this.activeModel).map((m, i) => ({
-          id: (this.blocks.length ? this.blocks.length + i : i),
-          // name: m.modelParams.name,
-          label: m.modelParams.name,
-          shape: 'icon',
-          group: 'icon',
-          icon: {
-            face: 'Material Icons',
-            code: '\ue886',
-            size: 40,
-            color: '#ffffff'
-          }
-        })))
+        .concat(this.shadowNodes)
+      /* .concat(this.models.filter((_, i) => i !== this.activeModel).map((m, i) => ({
+        id: (this.blocks.length ? this.blocks.length + i : i),
+        // name: m.modelParams.name,
+        label: m.modelParams.name,
+        shape: 'icon',
+        group: 'icon',
+        icon: {
+          face: 'Material Icons',
+          code: '\ue886',
+          size: 40,
+          color: '#ffffff'
+        }
+      })))
+      */
       console.log(new Date(), 'Nodes: returning nodes', nodes)
       return nodes
     },
@@ -393,8 +435,15 @@ const params = {
                 // tid: baseBlockIndex,
                 // sid: i,
                 to: baseBlockIndex,
-                from: i,
-                _color: (this.theme === 'dark') ? '#444' : '#DDD'
+                from: i
+              })
+            }
+          })
+          this.shadowNodes.forEach((s, i) => {
+            if (s.label && (str.split(/[^A-Za-z0-9_]/g).indexOf(s.label) >= 0)) {
+              l.push({
+                to: baseBlockIndex,
+                from: s.id
               })
             }
           })
@@ -494,10 +543,12 @@ const params = {
     },
     selectNode (selection) {
       console.log('Selected', selection)
-      const block = document.getElementById('block-id-' + selection.nodes[0])
-      const offset = block.offsetTop
-      document.getElementById('side-bar').scrollTop = offset - 20
-      this.$set(this.blocks[selection.nodes[0]], 'minimized', false)
+      if (!isNaN(parseInt(selection.nodes[0]))) {
+        const block = document.getElementById('block-id-' + selection.nodes[0])
+        const offset = block.offsetTop
+        document.getElementById('side-bar').scrollTop = offset - 20
+        this.$set(this.blocks[selection.nodes[0]], 'minimized', false)
+      }
     },
     chooseIcon (icon) {
       this.$set(this.blocks[this.chooseIconForBlock], 'icon', icon)
