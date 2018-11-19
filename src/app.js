@@ -328,20 +328,6 @@ const params = {
     // Calculated list of distributions
     // Based on predefined distributions from lib/distributions.js
     // Also new user-defined models added
-    graphOptions () {
-      let f = 5000 - this.blocks.length * 100
-      return {
-        force: (f > 1500) ? f : 1500,
-        nodeSize: 35,
-        fontSize: 10 + Math.round(f / 1000),
-        nodeLabels: true,
-        linkWidth: 2.2,
-        offset: {
-          x: 100,
-          y: 0
-        }
-      }
-    },
     distributions () {
       const newDistrs = {}
       // Iterate over all models
@@ -359,6 +345,7 @@ const params = {
       return finDistrs
     },
     graphNodes: function () {
+      console.log(new Date(), 'Nodes: Starting dynamic update')
       const nodes = this.blocks
         .map((b, i) => {
           let node = {
@@ -380,14 +367,23 @@ const params = {
           return node
         })
         .concat(this.models.filter((_, i) => i !== this.activeModel).map((m, i) => ({
-          id: this.blocks.lenght + i,
+          id: (this.blocks.length ? this.blocks.length + i : i),
           // name: m.modelParams.name,
           label: m.modelParams.name,
-          group: 42
+          shape: 'icon',
+          group: 'icon',
+          icon: {
+            face: 'Material Icons',
+            code: '\ue886',
+            size: 40,
+            color: '#ffffff'
+          }
         })))
+      console.log(new Date(), 'Nodes: returning nodes', nodes)
       return nodes
     },
     graphLinks: function () {
+      console.log(new Date(), 'Links: generating network links')
       const check = (str, baseBlockIndex) => {
         const l = []
         if (typeof str === 'string') {
@@ -438,6 +434,7 @@ const params = {
             break
         }
       })
+      console.log(new Date(), 'Links: returning links', links.length)
       return links
     }
   },
@@ -487,7 +484,7 @@ const params = {
     fitNetwork () {
       // Scale network to fit all nodes
       setTimeout(() => {
-        console.log(this.$refs.network)
+        console.log('Network fitter: fiting the net')
         this.$refs.network.fit({
           animation: {
             duration: 500
@@ -731,17 +728,21 @@ const params = {
       const file = e.target.files[0]
       reader.readAsText(file)
       reader.onload = () => {
+        console.log(new Date(), 'Reader: Opened the file of length', reader.result.length)
         const models = JSON.parse(reader.result)
         delay.call(this, 500, () => {
           window.history.replaceState({}, 'New project', '.')
+          console.log(new Date(), 'Reader: Updating models')
           this.models = Array.isArray(models) ? models : [models]
+          console.log(new Date(), 'Reader: Models updated!')
           // Add ID to each block for better list rendering
           this.models.forEach(m => {
             m.blocks.forEach(b => {
-              b.id = (b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000)
+              this.$set(b, 'id', ((b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000)))
             })
           })
           this.switchModel(0)
+          console.log(new Date(), 'Reader: Model switched to 0')
           this.fitNetwork()
         })
       }
@@ -785,6 +786,9 @@ const params = {
         chartContainer.innerHTML = ''
         document.querySelector('.charts-2d').innerHTML = ''
       }
+      m.blocks.forEach(b => {
+        b.minimized = true
+      })
       this.activeModel = modelId
       this.blocks = m.blocks
       this.modelParams = m.modelParams

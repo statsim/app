@@ -152,7 +152,6 @@
       <div>
         <textarea v-model="modelParams.description" placeholder="Description..." rows="5"></textarea>
       </div>
-
       <div style="margin: 10px 0" v-if="models.length > 1">
         <label for="include">Include </label><br>
         <select
@@ -178,7 +177,7 @@
     <draggable v-model="blocks" :options="{handle: '.block-header'}">
     <transition-group name="block-list">
     <!-- BLOCKS -->
-    <md-card 
+    <md-card
       v-for="(block, blockIndex) in blocks"
       :key="block.id"
       :id="'block-id-' + blockIndex"
@@ -189,10 +188,11 @@
       <md-card-actions :class="'block-header block-header-' + block.typeCode">
         <div class="block-name">
           <strong>{{ block.name }}</strong>
-          <p class="block-type">{{ block.type }}
+          <p class="block-type">{{ block.type }}</p>
+            <!--
             <span v-if="block.minimized && block.value && block.value.length" style="font-weight:400">: {{ block.value.slice(0,15) }}...</span>
             <span v-if="block.minimized && block.distribution" style="font-weight:400">: {{ block.distribution }}...</span>
-          </p>
+            -->
         </div>
         <md-button class="md-icon-button" v-if="block.minimized" v-on:click.native="toggle(blockIndex)">
           <md-icon>crop_landscape</md-icon>
@@ -232,7 +232,7 @@
       </md-card-actions>
 
       <!-- Random Variable -->
-      <md-card-content v-if="block.typeCode === 0">
+      <md-card-content v-if="(block.typeCode === 0) && !block.minimized">
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
@@ -308,7 +308,7 @@
       </md-card-content>
 
       <!-- Expression -->
-      <md-card-content v-if="block.typeCode === 1">
+      <md-card-content v-if="(block.typeCode === 1) && !block.minimized">
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
@@ -417,7 +417,7 @@
       </md-card-content>
 
       <!-- Data -->
-      <md-card-content v-if="block.typeCode === 2">
+      <md-card-content v-if="(block.typeCode === 2) && !block.minimized">
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
@@ -519,7 +519,7 @@
       </md-card-content>
 
       <!-- Function -->
-      <md-card-content v-if="block.typeCode === 7">
+      <md-card-content v-if="(block.typeCode === 7) && !block.minimized">
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
@@ -560,7 +560,7 @@
       </md-card-content>
 
       <!-- Accumulator -->
-      <md-card-content v-if="block.typeCode === 3">
+      <md-card-content v-if="(block.typeCode === 3) && !block.minimized">
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
@@ -632,7 +632,7 @@
       </md-card-content>
 
       <!-- Neural net -->
-      <md-card-content v-if="block.typeCode === 6">
+      <md-card-content v-if="(block.typeCode === 6) && !block.minimized">
         <md-input-container md-clearable>
           <label>Network name</label>
           <md-input
@@ -702,7 +702,7 @@
 
 
       <!-- Observer -->
-      <md-card-content v-if="block.typeCode === 4">
+      <md-card-content v-if="(block.typeCode === 4) && !block.minimized">
         <md-input-container>
           <label>Observed data (scalar, vector or tensor)</label>
           <md-autocomplete
@@ -768,7 +768,7 @@
       </md-card-content>
 
       <!-- Condition -->
-      <md-card-content v-if="block.typeCode === 5">
+      <md-card-content v-if="(block.typeCode === 5) && !block.minimized">
         <md-input-container>
           <label>Proposition expression (boolean)</label>
           <md-input
