@@ -596,12 +596,13 @@ const params = {
               const headerInBlocks = this.blocks.map(b => b.name).indexOf(h)
               if (headerInBlocks < 0) {
                 // No such data-block, add new
-                this.blocks.push(
-                  new BlockClasses[2](
-                    h, // Name
-                    toStringList(data.map(d => d[hi])) // Value
-                  )
+                const block = new BlockClasses[2](
+                  h, // Name
+                  toStringList(data.map(d => d[hi])) // Value
                 )
+                block.id = Math.round(Math.random() * 100000000)
+
+                this.blocks.push(block)
               } else {
                 // Just update existing block
                 this.blocks[headerInBlocks].value = toStringList(data.map(d => d[hi]))
@@ -838,7 +839,7 @@ const params = {
         document.querySelector('.charts-2d').innerHTML = ''
       }
       m.blocks.forEach(b => {
-        b.minimized = true
+        this.$set(b, 'minimized', true)
       })
       this.activeModel = modelId
       this.blocks = m.blocks
