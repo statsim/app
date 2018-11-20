@@ -179,11 +179,18 @@
     </div>
 
     <!-- Add drag and drop -->
-    <draggable v-model="models[activeModel].blocks" :options="{handle: '.block-header'}">
+    <div
+      class="block-container"
+      v-for="(model, modelIndex) in models"
+      :style="'display:' + ((modelIndex === activeModel) ? 'block' : 'none')"
+    >
+    <draggable
+      v-model="model.blocks" :options="{handle: '.block-header'}"
+    >
     <transition-group name="block-list">
     <!-- BLOCKS -->
     <md-card
-      v-for="(block, blockIndex) in models[activeModel].blocks"
+      v-for="(block, blockIndex) in model.blocks"
       :key="block.id"
       :id="'block-id-' + blockIndex"
       :class="['block', 'block-' + block.typeCode, block.minimized ? 'block-minimized' : 'block-full']"
@@ -809,6 +816,7 @@
     </md-card>
     </transition-group>
     </draggable>
+    </div>
 
     <!-- Model output -->
     <div class="block">
@@ -938,7 +946,7 @@
           :options="networkOptions"
           :events="['selectNode']"
           @select-node="selectNode"
-          ></network>
+        ></network>
         <!--
         <d3-network
           class="net"
