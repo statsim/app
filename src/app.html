@@ -10,6 +10,11 @@
   </md-dialog-confirm>
 
   <div class="icons" v-if="chooseIconForBlock >= 0">
+    <div style="text-align: right;">
+      <md-button class="md-icon-button" v-on:click.native="chooseIconForBlock = -1">
+        <md-icon>close</md-icon>
+      </md-button>
+    </div>
     <md-button v-for="(icon, iconKey) in icons" v-on:click.native="chooseIcon(icon)" class="md-icon-button">
       <md-icon>{{ iconKey }}</md-icon>
     </md-button>
@@ -213,7 +218,7 @@
             <md-icon>more_horiz</md-icon>
           </md-button>
           <md-menu-content>
-            <md-menu-item v-on:selected="chooseIconForBlock = blockIndex">
+            <md-menu-item v-on:selected="chooseIconForBlock = blockIndex" class="desktop">
               <md-icon>toys</md-icon>
               <span>Choose icon</span>
             </md-menu-item>
@@ -777,7 +782,7 @@
         </md-input-container>
       </md-card-content>
 
-      <md-card-expand v-if="block.icon && block.icon.length">
+      <md-card-expand v-if="block.icon && block.icon.length" class="desktop">
         <md-card-actions>
           <md-button disabled>Icon settings</md-button>
           <span style="flex: 1"></span>
