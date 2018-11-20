@@ -1,12 +1,14 @@
+// NPM deps
 const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
 const cookie = require('cookie')
-const D3Network = require('vue-d3-network')
 const VueVis = require('vue2vis')
 const draggable = require('vuedraggable')
 const Table = require('handsontable')
 const Qty = require('js-quantities')
 const VueColor = require('vue-color')
+
+// Local deps
 const distributions = require('./lib/distributions')
 const simulationMethods = require('./lib/methods')
 const compileModels = require('./lib/compileModels')
@@ -14,8 +16,9 @@ const processResults = require('./lib/processResults')
 const createLink = require('./lib/createLink')
 const parseLink = require('./lib/parseLink')
 const icons = require('./lib/icons')
-// const graphIcons = require('./lib/graphIcons')
+const createBaseModel = require('./lib/createBaseModel')
 const guessUnits = require('./lib/guessUnits')
+const BlockClasses = require('./lib/blockClasses')
 
 // Access global objects
 const Blob = window['Blob']
@@ -23,24 +26,7 @@ const fetch = window['fetch']
 const FileReader = window['FileReader']
 const Worker = window['Worker']
 
-const baseModel = [
-  {
-    modelParams:
-    {
-      name: 'Main',
-      description: '',
-      steps: 1,
-      method: 'deterministic'
-    },
-    blocks: [],
-    methodParams:
-    {
-      chains: 1,
-      samples: 1000
-    }
-  }
-]
-
+// Block colors
 const colors = [
   '#eaac0c',
   '#0097cc',
@@ -52,6 +38,7 @@ const colors = [
   '#1e33cc'
 ]
 
+// Network options object
 const networkOptions = {
   autoResize: true,
   height: '100%',
@@ -117,17 +104,17 @@ const networkOptions = {
   groups: {
     0: {
       shape: 'dot',
-      color: '#eaac0c', // RV
+      color: colors[0], // RV
       size: 10
     },
     1: {
       shape: 'dot',
-      color: '#0097cc', // Exp
+      color: colors[1], // Exp
       size: 10
     },
     2: {
       shape: 'dot',
-      color: '#84c161',
+      color: colors[2],
       size: 10 // Data
     },
     3: {
@@ -136,12 +123,12 @@ const networkOptions = {
         face: 'Material Icons',
         code: '\ue146',
         size: 30,
-        color: '#c44a78'
+        color: colors[3]
       }
     },
     4: {
       shape: 'diamond',
-      color: '#ababab', // observer
+      color: colors[4], // observer
       size: 10
     },
     5: {
@@ -150,17 +137,17 @@ const networkOptions = {
         face: 'Material Icons',
         code: '\ue86c',
         size: 40,
-        color: '#ababab'
+        color: colors[5]
       }
     },
     6: {
       shape: 'square',
-      color: '#530ea3', // nn
+      color: colors[6], // nn
       size: 15
     },
     7: {
       shape: 'triangle',
-      color: '#1e33cc', // function
+      color: colors[7], // function
       size: 10
     },
     'shadow': {
@@ -177,104 +164,7 @@ const networkOptions = {
   }
 }
 
-const BlockClasses = [
-  class RandomVariable {
-    constructor (counter) {
-      this.distribution = 'Uniform'
-      this.name = 'R' + counter
-      this.once = false
-      this.params = {}
-      this.show = false
-      this.type = 'Random Variable'
-      this.typeCode = 0
-      this.dims = '1'
-      this.units = ''
-    }
-  },
-  class Expression {
-    constructor (counter) {
-      this.name = 'E' + counter
-      this.history = false
-      this.show = true
-      this.type = 'Expression'
-      this.typeCode = 1
-      this.value = ''
-      this.units = ''
-    }
-  },
-  class Data {
-    constructor (counter, data) {
-      this.name = (typeof counter === 'string') ? counter : 'D' + counter
-      this.show = false
-      this.type = 'Data'
-      this.typeCode = 2
-      this.useAsParameter = false // Name is a parameter for the model when called externally
-      this.dims = '' // Tensor dimensions
-      if (data && Array.isArray(data)) {
-        this.value = data.join()
-      } else if (data && (typeof data === 'string')) {
-        this.value = data
-      } else {
-        this.value = ''
-      }
-      this.units = ''
-      this.dataType = ''
-      this.dataCategories = ''
-    }
-  },
-  class Accumulator {
-    constructor (counter) {
-      this.initialValue = 0
-      this.history = false
-      this.name = 'A' + counter
-      this.show = true
-      this.type = 'Accumulator'
-      this.typeCode = 3
-      this.value = ''
-      this.min = ''
-      this.max = ''
-      this.units = ''
-    }
-  },
-  class Observer {
-    constructor (counter) {
-      this.distribution = 'Gaussian'
-      this.params = {}
-      this.type = 'Observer'
-      this.typeCode = 4
-      this.value = ''
-    }
-  },
-  class Condition {
-    constructor (counter) {
-      this.type = 'Condition'
-      this.typeCode = 5
-      this.value = ''
-    }
-  },
-  class NeuralNet {
-    constructor (counter) {
-      this.name = 'N' + counter
-      this.type = 'Neural Net'
-      this.typeCode = 6
-      this.layers = []
-      this.convert = false
-    }
-  },
-  class Func {
-    constructor (counter) {
-      this.name = 'F' + counter
-      this.type = 'Function'
-      this.typeCode = 7
-      this.x = ''
-      this.y = ''
-      this.min = ''
-      this.max = ''
-      this.tableFunction = false
-    }
-  }
-]
-
+// Delay showing loading indicator
 function delay (time, cb) {
   this.loading = true
   setTimeout(() => {
@@ -284,74 +174,79 @@ function delay (time, cb) {
 }
 
 // Future HotTable object
+// Need it here to easily call from any app method
 let table
 
-console.log(VueColor)
-
 const params = {
+  /*
+    COMPONENTS
+  */
   components: {
-    D3Network,
     'color-picker': VueColor.Swatches,
-    draggable,
-    Network: VueVis.Network
+    'draggable': draggable,
+    'network': VueVis.Network
   },
+
+  /*
+    DATA
+  */
   data: () => ({
-    chooseIconForBlock: -1,
-    currentBlockColor: '#ababab',
-    icons,
-    networkOptions,
-    units: Qty.getUnits().map(u => ({ name: u })),
-    colors,
-    theme: 'light',
-    preview: false,
-    link: '',
-    loading: false, // show loading indicator
-    message: '',
-    error: '',
-    reactiveDataTable: false,
-    server: false, // server-side processing
-    serverURL: '',
+    activeModel: 0, // Selected model
+    chooseIconForBlock: -1, // If > 0 icon selector activates
+    code: '', // Compiled webppl code
+    colors, // Array of block colors
+    error: '', // Error string, activates error bar
+    icons, // List of icons with codes
+    link: '', // Generated URL
+    loading: false, // Show loading indicator?
+    message: '', // Any message in top bar
+    models: [], // Array of project models
+    networkOptions, // Graph opts
+    preview: false, // Preview mode?
+    reactiveDataTable: false, // Update data from table reactively?
+    server: false, // Server-side processing
     serverAPI: '',
-    showDataTable: false, // to show or not data table
-    code: '', // compiled webppl code
-    simulationMethods,
-    /*
-      SWITCHING BETWEEN MODELS
-      In JS when you assign (o1 = o2) arrays or objects you actually just create a link
-      So changing o1 keys automatically changes o2
-      We'll use that feature to switch
-      There're active model param objects: modelParams, methodParams, blocks
-      But they always link to one of the models objects
-    */
-    activeModel: 0,
-    models: [],
-    blocks: [], // actually link to the 'blocks' array of one of the models[] object
-    modelParams: {}, // link
-    methodParams: {} // link
+    serverURL: '',
+    showDataTable: false, // Show or not data table?
+    simulationMethods, // Array of simulation methods
+    theme: 'light', // Current theme
+    units: Qty.getUnits().map(u => ({ name: u })) // All units
   }),
+
+  /*
+    COMPUTED PROPERTIES
+  */
   computed: {
     // Calculated list of distributions
     // Based on predefined distributions from lib/distributions.js
     // Also new user-defined models added
     distributions () {
-      const newDistrs = {}
+      const newDistributions = {}
       // Iterate over all models
-      this.models.forEach(m => {
-        const distr = {}
-        // Collect all data fields with useAsParameter attributes
-        m.blocks.filter(b => ((b.typeCode === 2) && (b.useAsParameter))).forEach(b => {
-          distr[b.name] = {
-            type: 'any'
-          }
+      this.models
+        // Skip active and deterministic models
+        .filter((m, i) => {
+          return ((i !== this.activeModel) && (m.modelParams.method !== 'deterministic'))
         })
-        newDistrs[m.modelParams.name] = distr
-      })
-      const finDistrs = Object.assign({}, newDistrs, distributions)
-      return finDistrs
+        // Iterate
+        .forEach(m => {
+          const distributionParameters = {}
+          // Collect all data fields with useAsParameter attributes
+          m.blocks
+            .filter(b => ((b.typeCode === 2) && (b.useAsParameter)))
+            .forEach(b => {
+              distributionParameters[b.name] = {
+                type: 'any'
+              }
+            })
+          newDistributions[m.modelParams.name] = distributionParameters
+        })
+      // Merge base distributions and generated ones
+      return Object.assign({}, newDistributions, distributions)
     },
     shadowNodes: function () {
       // Stringify current blocks to easily search for variable
-      let blockString = JSON.stringify(this.blocks)
+      let blockString = JSON.stringify(this.models[this.activeModel].blocks)
       let sn = []
       // Iterate over all non active models
       this.models.filter((_, i) => i !== this.activeModel).forEach((m, mi) => {
@@ -386,7 +281,7 @@ const params = {
     },
     graphNodes: function () {
       console.log(new Date(), 'Nodes: Starting dynamic update')
-      const nodes = this.blocks
+      const nodes = this.models[this.activeModel].blocks
         .map((b, i) => {
           let node = {
             id: i,
@@ -407,20 +302,6 @@ const params = {
           return node
         })
         .concat(this.shadowNodes)
-      /* .concat(this.models.filter((_, i) => i !== this.activeModel).map((m, i) => ({
-        id: (this.blocks.length ? this.blocks.length + i : i),
-        // name: m.modelParams.name,
-        label: m.modelParams.name,
-        shape: 'icon',
-        group: 'icon',
-        icon: {
-          face: 'Material Icons',
-          code: '\ue886',
-          size: 40,
-          color: '#ffffff'
-        }
-      })))
-      */
       console.log(new Date(), 'Nodes: returning nodes', nodes)
       return nodes
     },
@@ -429,7 +310,7 @@ const params = {
       const check = (str, baseBlockIndex) => {
         const l = []
         if (typeof str === 'string') {
-          this.blocks.forEach((b, i) => {
+          this.models[this.activeModel].blocks.forEach((b, i) => {
             if (b.name && (str.split(/[^A-Za-z0-9_]/g).indexOf(b.name) >= 0)) {
               l.push({
                 // tid: baseBlockIndex,
@@ -451,7 +332,7 @@ const params = {
         return l
       }
       let links = []
-      this.blocks.forEach((b, i) => {
+      this.models[this.activeModel].blocks.forEach((b, i) => {
         switch (b.typeCode) {
           case 0: // RV
             // Load selected distribution / model
@@ -490,7 +371,7 @@ const params = {
   created () {
     // Before mounting
     // Initialize main model
-    this.models = JSON.parse(JSON.stringify(baseModel))
+    this.models = [createBaseModel('Main')]
     this.switchModel(0)
     // Check theme
     this.theme = (document.cookie.indexOf('dark') > 0) ? 'dark' : 'light'
@@ -547,18 +428,18 @@ const params = {
         const block = document.getElementById('block-id-' + selection.nodes[0])
         const offset = block.offsetTop
         document.getElementById('side-bar').scrollTop = offset - 20
-        this.$set(this.blocks[selection.nodes[0]], 'minimized', false)
+        this.$set(this.models[this.activeModel].blocks[selection.nodes[0]], 'minimized', false)
       }
     },
     chooseIcon (icon) {
-      this.$set(this.blocks[this.chooseIconForBlock], 'icon', icon)
-      this.$set(this.blocks[this.chooseIconForBlock], 'color', colors[this.blocks[this.chooseIconForBlock].typeCode])
-      this.$set(this.blocks[this.chooseIconForBlock], 'size', 40)
+      this.$set(this.models[this.activeModel].blocks[this.chooseIconForBlock], 'icon', icon)
+      this.$set(this.models[this.activeModel].blocks[this.chooseIconForBlock], 'color', colors[this.models[this.activeModel].blocks[this.chooseIconForBlock].typeCode])
+      this.$set(this.models[this.activeModel].blocks[this.chooseIconForBlock], 'size', 40)
       this.chooseIconForBlock = -1
     },
     // Update data blocks from table inner data
     guessUnits (str, i) {
-      this.blocks[i].units = guessUnits(str, this.blocks)
+      this.models[this.activeModel].blocks[i].units = guessUnits(str, this.models[this.activeModel].blocks)
     },
     updateData () {
       // Convert array to a comma-separated string
@@ -581,11 +462,11 @@ const params = {
           // Get headers stored in the first line
           let headers = data.shift(1)
           // Remove blocks not present in the table
-          for (let i = this.blocks.length - 1; i >= 0; i--) {
-            let block = this.blocks[i]
+          for (let i = this.models[this.activeModel].blocks.length - 1; i >= 0; i--) {
+            let block = this.models[this.activeModel].blocks[i]
             if ((block.typeCode === 2) && (!headers.includes(block.name))) {
               console.log(`Table: Vue, remove block ${block.name}, please.`)
-              this.blocks.splice(i, 1)
+              this.models[this.activeModel].blocks.splice(i, 1)
             }
           }
           // Update data-blocks values
@@ -593,7 +474,7 @@ const params = {
             // Check if header cell is not empty
             if (h.length) {
               // Find index of that header in the blocks array
-              const headerInBlocks = this.blocks.map(b => b.name).indexOf(h)
+              const headerInBlocks = this.models[this.activeModel].blocks.map(b => b.name).indexOf(h)
               if (headerInBlocks < 0) {
                 // No such data-block, add new
                 const block = new BlockClasses[2](
@@ -602,10 +483,10 @@ const params = {
                 )
                 block.id = Math.round(Math.random() * 100000000)
 
-                this.blocks.push(block)
+                this.models[this.activeModel].blocks.push(block)
               } else {
                 // Just update existing block
-                this.blocks[headerInBlocks].value = toStringList(data.map(d => d[hi]))
+                this.models[this.activeModel].blocks[headerInBlocks].value = toStringList(data.map(d => d[hi]))
               }
             } // *header not empty
           }) // *header iterator
@@ -625,7 +506,7 @@ const params = {
             }
           }
 
-          let dataBlocks = this.blocks.filter(b => b.typeCode === 2)
+          let dataBlocks = this.models[this.activeModel].blocks.filter(b => b.typeCode === 2)
 
           // Create data array in the table-friendly format
           // First row contain headers
@@ -704,7 +585,7 @@ const params = {
       } // *if showDataTable
     },
     addLayer (blockIndex) {
-      const block = this.blocks[blockIndex]
+      const block = this.models[this.activeModel].blocks[blockIndex]
       block.layers.push({
         type: 'affine',
         name: 'layer' + (block.layers.filter(l => l.type === 'affine').length + 1),
@@ -717,8 +598,8 @@ const params = {
       const shift = (typeof sh === 'undefined') ? 0 : sh
       const input = document.querySelector(`#input-${i}`)
       const pos = input.selectionStart
-      const value = this.blocks[i].value
-      this.blocks[i].value = value.slice(0, pos) + str + value.slice(pos)
+      const value = this.models[this.activeModel].blocks[i].value
+      this.models[this.activeModel].blocks[i].value = value.slice(0, pos) + str + value.slice(pos)
       const newPos = pos + str.length + shift
       setTimeout(() => {
         input.focus()
@@ -737,7 +618,7 @@ const params = {
         // Update history
         window.history.replaceState({}, 'New project', '.')
         // Clean models
-        this.models = JSON.parse(JSON.stringify(baseModel))
+        this.models = [createBaseModel('Main')]
         // Switch to base model
         this.switchModel(0)
       })
@@ -756,7 +637,7 @@ const params = {
             if (output.length > 1) {
               // CSV
               output[0].forEach((h, hi) => {
-                this.blocks.push(new BlockClasses[2](
+                this.models[this.activeModel].blocks.push(new BlockClasses[2](
                   h,
                   // Filter out the first line
                   output.filter((_, i) => i > 0).map(v => v[hi])
@@ -764,7 +645,7 @@ const params = {
               })
             } else {
               // Comma-separated line
-              this.blocks.push(new BlockClasses[2](file.name.split('.')[0], output))
+              this.models[this.activeModel].blocks.push(new BlockClasses[2](file.name.split('.')[0], output))
             }
             // Update table
             if (this.reactiveDataTable && this.showDataTable) this.drawDataTable()
@@ -808,20 +689,7 @@ const params = {
       this.$refs[ref].open()
     },
     createModel () {
-      const m = {
-        modelParams: {
-          name: 'Model' + this.models.length,
-          description: '',
-          method: 'deterministic',
-          steps: 1,
-          include: []
-        },
-        methodParams: {
-          samples: 1000
-        },
-        blocks: []
-      }
-      this.models.push(m)
+      this.models.push(createBaseModel('Model' + this.models.length))
       this.switchModel(this.models.length - 1)
     },
     switchModel (modelId) {
@@ -841,10 +709,8 @@ const params = {
       m.blocks.forEach(b => {
         this.$set(b, 'minimized', true)
       })
+      console.log(new Date(), 'Vue: switching to model', modelId)
       this.activeModel = modelId
-      this.blocks = m.blocks
-      this.modelParams = m.modelParams
-      this.methodParams = m.methodParams
       // Update table
       if (this.reactiveDataTable && this.showDataTable) this.drawDataTable()
     },
@@ -909,49 +775,53 @@ const params = {
       })
     },
     toggle (blockIndex) {
-      this.$set(this.blocks[blockIndex], 'minimized', !this.blocks[blockIndex].minimized)
+      this.$set(
+        this.models[this.activeModel].blocks[blockIndex],
+        'minimized',
+        !this.models[this.activeModel].blocks[blockIndex].minimized
+      )
     },
     maximizeAllBlocks () {
-      this.blocks.forEach(b => this.$set(b, 'minimized', false))
+      this.models[this.activeModel].blocks.forEach(b => this.$set(b, 'minimized', false))
     },
     minimizeAllBlocks () {
-      this.blocks.forEach(b => this.$set(b, 'minimized', true))
+      this.models[this.activeModel].blocks.forEach(b => this.$set(b, 'minimized', true))
     },
     addBlock (blockClassNumber) {
-      let block = new BlockClasses[blockClassNumber](this.blocks.length)
+      let block = new BlockClasses[blockClassNumber](this.models[this.activeModel].blocks.length)
       block.minimized = false
       block.id = 'b' + Math.round(Math.random() * 100000000)
-      this.blocks.push(block)
+      this.models[this.activeModel].blocks.push(block)
       // If data added, update table
       if ((blockClassNumber === 2) && this.reactiveDataTable && this.showDataTable) {
         this.drawDataTable()
-      } else if ((blockClassNumber === 0) && (this.modelParams.method === 'deterministic') && (this.blocks.filter(b => b.typeCode === 0).length === 1)) {
+      } else if ((blockClassNumber === 0) && (this.models[this.activeModel].modelParams.method === 'deterministic') && (this.models[this.activeModel].blocks.filter(b => b.typeCode === 0).length === 1)) {
         // Random variable added
         // Should we check the simulation method?
         // Probably yes!
-        this.modelParams.method = 'rejection'
-      } else if ((blockClassNumber === 4) && (['deterministic', 'rejection', 'forward', 'enumerate'].includes(this.modelParams.method))) {
-        this.modelParams.method = 'MCMC'
+        this.models[this.activeModel].modelParams.method = 'rejection'
+      } else if ((blockClassNumber === 4) && (['deterministic', 'rejection', 'forward', 'enumerate'].includes(this.models[this.activeModel].modelParams.method))) {
+        this.models[this.activeModel].modelParams.method = 'MCMC'
       }
     },
     moveBlockToTop (blockIndex) {
       if (blockIndex > 0) {
-        this.blocks.splice(0, 0, this.blocks.splice(blockIndex, 1)[0])
+        this.models[this.activeModel].blocks.splice(0, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
       }
     },
     moveBlockUp (blockIndex) {
       if (blockIndex > 0) {
-        this.blocks.splice(blockIndex - 1, 0, this.blocks.splice(blockIndex, 1)[0])
+        this.models[this.activeModel].blocks.splice(blockIndex - 1, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
       }
     },
     moveBlockDown (blockIndex) {
-      if (blockIndex < this.blocks.length - 1) {
-        this.blocks.splice(blockIndex + 1, 0, this.blocks.splice(blockIndex, 1)[0])
+      if (blockIndex < this.models[this.activeModel].blocks.length - 1) {
+        this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
       }
     },
     removeBlock (blockIndex) {
-      const typeCode = this.blocks[blockIndex].typeCode
-      this.blocks.splice(blockIndex, 1)
+      const typeCode = this.models[this.activeModel].blocks[blockIndex].typeCode
+      this.models[this.activeModel].blocks.splice(blockIndex, 1)
       // Redraw data table if data removed
       if ((typeCode === 2) && this.reactiveDataTable && this.showDataTable) this.drawDataTable()
     },
@@ -964,7 +834,7 @@ const params = {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
       this.message = 'Done!'
-      processResults(data, this.blocks, this.modelParams)
+      processResults(data, this.models[this.activeModel].blocks, this.models[this.activeModel].modelParams)
     },
     run () {
       const errorHandler = (err) => {
@@ -994,16 +864,16 @@ const params = {
       setTimeout(() => {
         try {
           // Precheck models
-          if (!this.blocks.length) {
+          if (!this.models[this.activeModel].blocks.length) {
             throw new Error('Empty model! Click ADD BLOCK to start designing the model!')
           }
-          if (!this.blocks.reduce((acc, b) => acc || b.show, false)) {
+          if (!this.models[this.activeModel].blocks.reduce((acc, b) => acc || b.show, false)) {
             throw new Error('No output! Choose blocks to show in results')
           }
-          if (this.modelParams.steps > 1000000) {
+          if (this.models[this.activeModel].modelParams.steps > 1000000) {
             throw new Error('Interval overflow! Max number of time steps is 1,000,000')
           }
-          if (this.methodParams.samples > 10000000) {
+          if (this.models[this.activeModel].methodParams.samples > 10000000) {
             throw new Error('Samples overflow! Max number of samples is 10,000,000')
           }
           if (this.server && this.serverURL.length) {
@@ -1055,11 +925,11 @@ const params = {
 
             let nw = 1 // Number of workers
             if (
-              (this.methodParams.chains) &&
-              (this.methodParams.chains > 1) &&
-              (this.modelParams.method !== 'deterministic')
+              (this.models[this.activeModel].methodParams.chains) &&
+              (this.models[this.activeModel].methodParams.chains > 1) &&
+              (this.models[this.activeModel].modelParams.method !== 'deterministic')
             ) {
-              nw = +this.methodParams.chains
+              nw = +this.models[this.activeModel].methodParams.chains
             }
 
             for (let i = 0; i < nw; i++) {

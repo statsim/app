@@ -151,18 +151,18 @@
       <md-input-container md-clearable>
         <label>Model name</label>
         <md-input
-          v-model="modelParams.name"
+          v-model="models[activeModel].modelParams.name"
         ></md-input>
       </md-input-container>
       <div>
-        <textarea v-model="modelParams.description" placeholder="Description..." rows="5"></textarea>
+        <textarea v-model="models[activeModel].modelParams.description" placeholder="Description..." rows="5"></textarea>
       </div>
       <div style="margin: 10px 0" v-if="models.length > 1">
         <label for="include">Include </label><br>
         <select
           name="include"
           id="include"
-          v-model="modelParams.include"
+          v-model="models[activeModel].modelParams.include"
           multiple
           style="width:100%"
         >
@@ -174,16 +174,16 @@
           >{{ m.modelParams.name }}
           </option>
         </select>
-        {{ modelParams }}
+        {{ models[activeModel].modelParams }}
       </div>
     </div>
 
     <!-- Add drag and drop -->
-    <draggable v-model="blocks" :options="{handle: '.block-header'}">
+    <draggable v-model="models[activeModel].blocks" :options="{handle: '.block-header'}">
     <transition-group name="block-list">
     <!-- BLOCKS -->
     <md-card
-      v-for="(block, blockIndex) in blocks"
+      v-for="(block, blockIndex) in models[activeModel].blocks"
       :key="block.id"
       :id="'block-id-' + blockIndex"
       :class="['block', 'block-' + block.typeCode, block.minimized ? 'block-minimized' : 'block-full']"
@@ -264,7 +264,7 @@
             >
               <md-option
                 v-for="(params, distributionType) in distributions"
-                v-if="distributionType !== modelParams.name" 
+                v-if="distributionType !== models[activeModel].modelParams.name" 
                 :value="distributionType"
                 @selected="block.params = {}"
               >{{ distributionType }}</md-option>
@@ -296,7 +296,7 @@
 
         <!-- Sample once per cycle-->
         <md-checkbox
-          :disabled="(modelParams.steps > 1.5) && !block.once"
+          :disabled="(models[activeModel].modelParams.steps > 1.5) && !block.once"
           v-model="block.show"
           class="md-primary"
         >
@@ -304,7 +304,7 @@
         </md-checkbox>
         <md-checkbox
           v-model="block.once"
-          :disabled="modelParams.steps < 1.5"
+          :disabled="models[activeModel].modelParams.steps < 1.5"
           class="md-primary"
         >
           Sampled once
@@ -331,7 +331,7 @@
         <md-tabs class="md-transparent">
           <md-tab md-label="Base">
             <md-button
-              v-for="b, bi in blocks"
+              v-for="b, bi in models[activeModel].blocks"
               v-if="([0, 1, 2].indexOf(b.typeCode) >= 0) && (bi !== blockIndex)"
               @click.native="addExpression(b.name, blockIndex, 1)"
             >{{ b.name }}</md-button>
@@ -414,7 +414,7 @@
         <md-checkbox 
           v-model="block.history"
           class="md-primary"
-          :disabled="modelParams.steps < 1.5"
+          :disabled="models[activeModel].modelParams.steps < 1.5"
         >
           Track history
         </md-checkbox>
@@ -576,7 +576,7 @@
           <label>Change value/expression</label>
           <md-autocomplete
             v-model="block.value"
-            :list="blocks"
+            :list="models[activeModel].blocks"
             :filter-list="blockFilter"
             :min-chars="0"
             :debounce="300"
@@ -588,7 +588,7 @@
           <label>Initial value</label>
           <md-autocomplete
             v-model="block.initialValue"
-            :list="blocks"
+            :list="models[activeModel].blocks"
             :filter-list="blockFilter"
             :min-chars="0"
             :debounce="300"
@@ -629,7 +629,7 @@
         <md-checkbox 
           v-model="block.history"
           class="md-primary"
-          :disabled="modelParams.steps < 1.5"
+          :disabled="models[activeModel].modelParams.steps < 1.5"
         >
           Track history
         </md-checkbox>
@@ -712,7 +712,7 @@
           <label>Observed data (scalar, vector or tensor)</label>
           <md-autocomplete
             v-model="block.value"
-            :list="blocks"
+            :list="models[activeModel].blocks"
             :filter-list="blockFilter"
             :min-chars="0"
             :debounce="300"
@@ -812,14 +812,14 @@
 
     <!-- Model output -->
     <div class="block">
-      <h3 v-if="blocks.length > 0" style="margin: 35px 0 0 0">Model output:</h3>
-      <md-checkbox v-for="block in blocks" v-if="block.hasOwnProperty('show')" v-model="block.show" class="md-primary" style="width: 100%; margin: 10px 0 5px 0;">
+      <h3 v-if="models[activeModel].blocks.length > 0" style="margin: 35px 0 0 0">Model output:</h3>
+      <md-checkbox v-for="block in models[activeModel].blocks" v-if="block.hasOwnProperty('show')" v-model="block.show" class="md-primary" style="width: 100%; margin: 10px 0 5px 0;">
         <strong>{{ block.name }}</strong> ({{ block.type }})
       </md-checkbox>
     </div>
 
     <!-- Empty model button -->
-    <md-boards v-if="!blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
+    <md-boards v-if="!models[activeModel].blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
       <md-board id="slide1">
         <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks can be constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
@@ -951,14 +951,14 @@
           ></d3-network>
         -->
         <!-- Model parameters input -->
-        <div class="parameters" v-if="blocks.length || (models.length > 1)">
+        <div class="parameters" v-if="models[activeModel].blocks.length || (models.length > 1)">
           <div class="chips">
-            <md-chip v-for="b in blocks" :style="{background: colors[b.typeCode]}">{{ b.name || b.type }}</md-chip>
+            <md-chip v-for="b in models[activeModel].blocks" :style="{background: colors[b.typeCode]}">{{ b.name || b.type }}</md-chip>
           </div>
           <p style="font-size:11px;">Model:</p>
-          <h2>{{ modelParams.name }}</h2>
-          <p class="model-description">{{ modelParams.description }}</p>
-          <md-input-container v-for="b in blocks" v-if="b.typeCode === 2 && b.useAsParameter">
+          <h2>{{ models[activeModel].modelParams.name }}</h2>
+          <p class="model-description">{{ models[activeModel].modelParams.description }}</p>
+          <md-input-container v-for="b in models[activeModel].blocks" v-if="b.typeCode === 2 && b.useAsParameter">
             <label>{{ b.name + ((b.units && b.units.length) ? ', ' + b.units : '') }}</label>
             <md-input
               v-model="b.value"
@@ -1004,7 +1004,7 @@
       <!-- Simulation method -->
       <md-input-container class="simulation-method-container">
         <label for="simulation-method">Simulation method:</label>
-        <md-select name="simulation-method" id="simulation-method" v-model="modelParams.method">
+        <md-select name="simulation-method" id="simulation-method" v-model="models[activeModel].modelParams.method">
           <md-option
             v-for="(methodObj, method) in simulationMethods" 
             :value="method">{{ methodObj.name }}</md-option>
@@ -1019,7 +1019,7 @@
           type="number"
           min="0"
           step="1"
-          v-model.number="modelParams.start"
+          v-model.number="models[activeModel].modelParams.start"
         >
         </md-input>
       </md-input-container>
@@ -1032,20 +1032,20 @@
           type="number"
           min="1"
           step="1"
-          v-model.number="modelParams.steps"
+          v-model.number="models[activeModel].modelParams.steps"
         >
         </md-input>
       </md-input-container>
 
       <!-- Number of chains -->
       <md-input-container
-        v-if="(modelParams.method !== 'deterministic')"
+        v-if="(models[activeModel].modelParams.method !== 'deterministic')"
       >
         <label>Number of chains/workers</label>
         <md-input
           type="number"
           step="1"
-          v-model="methodParams.chains"
+          v-model="models[activeModel].methodParams.chains"
         ></md-input>
       </md-input-container>
 
@@ -1053,13 +1053,13 @@
       <!-- Method parameters -->
       <div
         class="method-param"
-        v-for="(paramOptions, param) in simulationMethods[modelParams.method].params"
+        v-for="(paramOptions, param) in simulationMethods[models[activeModel].modelParams.method].params"
       >
 
       <!-- Boolean -->
       <md-checkbox 
         :name="param"
-        v-model="methodParams[param]"
+        v-model="models[activeModel].methodParams[param]"
         v-if="paramOptions.type === 'boolean'"
         class="md-primary"
       >{{ param }}</md-checkbox>
@@ -1071,12 +1071,12 @@
             v-if="(paramOptions.type === 'int') || (paramOptions.type === 'real')"
             type="number"
             :step="(paramOptions.type === 'int') ? 1 : 0.001"
-            v-model="methodParams[param]"
+            v-model="models[activeModel].methodParams[param]"
           ></md-input>
           <md-select
             :name="param"
             v-if="paramOptions.type === 'select'"
-            v-model="methodParams[param]"
+            v-model="models[activeModel].methodParams[param]"
           >
             <md-option
               v-for="paramSelectValue in paramOptions.values"
@@ -1138,7 +1138,7 @@
         type="number"
         min="1"
         step="1"
-        v-model="modelParams.steps"
+        v-model="models[activeModel].modelParams.steps"
       >
       </md-input>
     </md-input-container>
@@ -1146,7 +1146,7 @@
     <!-- Simulation method -->
     <md-input-container class="simulation-method-container simulation-param desktop editor-only">
       <label for="simulation-method">Simulation method</label>
-      <md-select name="simulation-method" id="simulation-method" v-model="modelParams.method">
+      <md-select name="simulation-method" id="simulation-method" v-model="models[activeModel].modelParams.method">
         <md-option
           v-for="(methodObj, method) in simulationMethods" 
           :value="method">{{ methodObj.name }}</md-option>
@@ -1154,15 +1154,15 @@
     </md-input-container>
 
     <div class="model-summary mobile">
-      <p>Method: {{ modelParams.method }}</p>
-      <p>Time steps: {{ modelParams.steps }}</p>
-      <p v-if="(['MCMC','rejection', 'HMC'].indexOf(modelParams.method) >= 0) && methodParams.samples">Samples: {{ methodParams.samples }}</p>
+      <p>Method: {{ models[activeModel].modelParams.method }}</p>
+      <p>Time steps: {{ models[activeModel].modelParams.steps }}</p>
+      <p v-if="(['MCMC','rejection', 'HMC'].indexOf(models[activeModel].modelParams.method) >= 0) &&  models[activeModel].methodParams.samples">Samples: {{ models[activeModel].methodParams.samples }}</p>
     </div>
     <md-button class="md-raised md-accent params-button editor-only" @click="toggleRightSidenav">
       <md-icon>tune</md-icon>
       <span class="desktop">Params</span>
     </md-button>
-    <md-button class="run-button md-raised md-primary" :disabled="blocks.length < 1" v-on:click.native="run()">
+    <md-button class="run-button md-raised md-primary" :disabled="models[activeModel].blocks.length < 1" v-on:click.native="run()">
       <md-icon>play_arrow</md-icon>
       <span class="desktop editor-only">Compile & </span>Run
     </md-button>
