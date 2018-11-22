@@ -129,6 +129,7 @@ module.exports = function (models, activeModel) {
     // Step object needed when dealing with iterative models
     let step = {
       body: '',
+      innerList: '_i',
       list: '_i',
       accum: '_i: _i + 1',
       initial: '_i: ' + (!isNaN(parseInt(m.modelParams.start)) ? m.modelParams.start : '1')
@@ -186,15 +187,28 @@ module.exports = function (models, activeModel) {
           // Generate a list of accumulators
           step.list += (step.list.length) ? ', ' : ''
           step.list += b.name + ', _' + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
-          // Caclulate expression in the body
-          step.body += `var ${b.name} = ${b.value}\n`
+          step.innerList += (step.innerList.length) ? ', ' : ''
+          step.innerList += '_' + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
+          // Calculate expression in the body
+          let value = b.value
+          blocks.forEach(bb => {
+            if ((bb.typeCode === 1) || (bb.typeCode === 3)) {
+              console.log('Check block name: ', bb.name)
+              const r = new RegExp(`\\b${bb.name}\\b`, 'g')
+              value = value.replace(r, `(typeof ${bb.name} !== 'undefined' ? ${bb.name} : _${bb.name})`)
+            }
+          })
+          console.log('Original: ', b.value)
+          console.log('Upd:', value)
+
+          step.body += `var ${b.name} = ${value}\n`
           // Generate accumulator expressions
           step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: ${b.name}`
           step.accum += `,\n_${b.name}: ${b.name}`
           step.accum += (b.history) ? `,\n${b.name}_hist: ${b.name}_hist.concat(${b.name})` : ''
           // Generate initial values
-          step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: 0`
-          step.initial += `,\n_${b.name}: 0`
+          step.initial += (step.initial.length ? ',\n' : '') + `${b.name}: undefined`
+          step.initial += `,\n_${b.name}: undefined`
           // Don't track initial value
           step.initial += (b.history) ? `,\n${b.name}_hist: []` : ''
         } else {
@@ -261,9 +275,22 @@ module.exports = function (models, activeModel) {
           // Generate a list of accumulators
           step.list += (step.list.length) ? ', ' : ''
           step.list += b.name + `, _` + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
+          step.innerList += (step.innerList.length) ? ', ' : ''
+          step.innerList += `_` + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
+
+          let value = b.value
+          blocks.forEach(bb => {
+            if ((bb.typeCode === 1) || (bb.typeCode === 3)) {
+              console.log('Check block name: ', bb.name)
+              const r = new RegExp(`\\b${bb.name}\\b`, 'g')
+              value = value.replace(r, `(typeof ${bb.name} !== 'undefined' ? ${bb.name} : _${bb.name})`)
+            }
+          })
+
           // Accumulate value in the step body
+          step.body += `var ___${b.name} = ${value}\n`
           if ((b.max && b.max.length) || (b.min && b.min.length)) {
-            step.body += `var __${b.name} = _${b.name} + ${b.value}\n`
+            step.body += `var __${b.name} = _${b.name} + ((___${b.name}) ? ___${b.name} : 0)\n`
             step.body += `var ${b.name} = `
 
             // Check max/min limits
@@ -275,7 +302,7 @@ module.exports = function (models, activeModel) {
             }
             step.body += `__${b.name}\n`
           } else {
-            step.body += `var ${b.name} = _${b.name} + ${b.value}\n`
+            step.body += `var ${b.name} = _${b.name} + ((___${b.name}) ? ___${b.name} : 0)\n`
           }
           // Generate accumulator return in recursion function
           step.accum += (step.accum.length ? ',\n' : '') + `${b.name}: ${b.name}`
@@ -296,17 +323,21 @@ module.exports = function (models, activeModel) {
             functionGen = `
 var functionGen = function(xarr, yarr) {
   return function(x) {
-    var it = function (i) {
-      if (((i === 0) && (x <= xarr[i])) || ((x > xarr[i]) && (i === xarr.length - 2)) || ((x >= xarr[i]) && (x < xarr[i + 1]))) {
-        return i
-      } else {
-        return it(i + 1)
+    if ((x === x) && (x !== null) && (x !== undefined)) {
+      var it = function (i) {
+        if (((i === 0) && (x <= xarr[i])) || ((x > xarr[i]) && (i === xarr.length - 2)) || ((x >= xarr[i]) && (x < xarr[i + 1]))) {
+          return i
+        } else {
+          return it(i + 1)
+        }
       }
+      var i1 = it(0)
+      var i2 = i1 + 1
+      var y = (yarr[i2] - yarr[i1]) * (x - xarr[i1]) / (xarr[i2] - xarr[i1]) + yarr[i1]
+      return ${((b.max !== undefined) && !isNaN(parseFloat(b.max))) ? `(y > ${b.max}) ? ${b.max} :` : ``}${((b.min !== undefined) && !isNaN(parseFloat(b.min))) ? `(y < ${b.min}) ? ${b.min} :` : ``}y
+    } else {
+      return undefined
     }
-    var i1 = it(0)
-    var i2 = i1 + 1
-    var y = (yarr[i2] - yarr[i1]) * (x - xarr[i1]) / (xarr[i2] - xarr[i1]) + yarr[i1]
-    return ${((b.max !== undefined) && !isNaN(parseFloat(b.max))) ? `(y > ${b.max}) ? ${b.max} :` : ``}${((b.min !== undefined) && !isNaN(parseFloat(b.min))) ? `(y < ${b.min}) ? ${b.min} :` : ``}y
   }
 }
 `
@@ -481,7 +512,7 @@ if (typeof (${value}) === 'number') {
       model +=
 `var step = function (n) {
 if (n > 0) {
-var {${step.list}} = step(n - 1)
+var {${step.innerList}} = step(n - 1)
 ${step.body}return {
 ${step.accum}
 }
