@@ -299,6 +299,11 @@ const params = {
           } else {
             node.group = b.typeCode
           }
+          if (b.pos) {
+            node.x = b.pos.x
+            node.y = b.pos.y
+            delete b.pos
+          }
           return node
         })
         .concat(this.shadowNodes)
@@ -681,6 +686,10 @@ const params = {
       }
     },
     saveProject () {
+      // Store current model nodes positions
+      this.models[this.activeModel].blocks.forEach((b, bi) => {
+        b.pos = this.$refs.network.getPositions([bi])[bi]
+      })
       const blob = new Blob([JSON.stringify(this.models, null, 2)], {type: 'text/plain;charset=utf-8'})
       fileSaver.saveAs(blob, this.models[0].modelParams.name + '.json')
     },
@@ -709,6 +718,12 @@ const params = {
       m.blocks.forEach(b => {
         this.$set(b, 'minimized', true)
       })
+
+      // Get current positions
+      this.models[this.activeModel].blocks.forEach((b, bi) => {
+        b.pos = this.$refs.network.getPositions([bi])[bi]
+      })
+
       console.log(new Date(), 'Vue: switching to model', modelId)
       this.activeModel = modelId
       // Update table

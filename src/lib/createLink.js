@@ -39,7 +39,7 @@ module.exports = function (models, isPreview, activeModel) {
       Object.keys(b).forEach(bk => {
         if (
           // Ignore fields 'type', 'id', 'minimized'
-          (['type', 'minimized', 'id'].indexOf(bk) < 0) &&
+          (['type', 'minimized', 'id', 'pos'].indexOf(bk) < 0) &&
           // Ignore fields with no values
           !((['units', 'dataType', 'dataCategories'].indexOf(bk) >= 0) && (b[bk] === '')) &&
           // Ignore categories if data is not category
