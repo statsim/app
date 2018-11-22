@@ -263,6 +263,7 @@ textarea {
   padding-left: 10px;
   padding-top: 7px;
   font-size: 18px;
+  overflow: hidden;
 }
 
 .side-bar .block-type {
