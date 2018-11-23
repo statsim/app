@@ -34,6 +34,7 @@
     "vue": "^2.5.17",
     "vue-color": "^2.7.0",
     "vue-material": "^0.8.1",
+    "vue2-perfect-scrollbar": "^1.2.0",
     "vue2vis": "0.0.15",
     "vuedraggable": "^2.16.0"
   },
