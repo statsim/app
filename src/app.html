@@ -248,7 +248,8 @@
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
-            v-model="block.name"
+            :value="block.name"
+            @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
         <md-input-container md-clearable>
@@ -324,13 +325,15 @@
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
-            v-model="block.name"
+            :value="block.name"
+            @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
         <md-input-container>
           <label>Value</label>
           <md-input
-            v-model="block.value"
+            :value="block.value"
+            @blur="set(block, 'value', $event)"
             :id="'input-' + blockIndex"
           ></md-input>
         </md-input-container>
@@ -433,7 +436,8 @@
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
-            v-model="block.name"
+            :value="block.name"
+            @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
         <div class="data-input">
@@ -442,9 +446,9 @@
             <!-- If table is active, redraw it on blur -->
             <md-textarea 
               v-if="block.dataType !== 'boolean'"
-              v-model="block.value"
               height="5"
-              @blur="reactiveDataTable && showDataTable && drawDataTable()"
+              :value="block.value"
+              @blur="set(block, 'value', $event), reactiveDataTable && showDataTable && drawDataTable()"
             ></md-textarea>
             <md-select
               v-else
@@ -535,34 +539,39 @@
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
-            v-model="block.name"
+            :value="block.name"
+            @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
         <md-input-container md-clearable>
           <label v-if="block.tableFunction">X</label>
           <label v-else>Function parameters</label>
           <md-input
-            v-model="block.x"
+            :value="block.x"
+            @blur="set(block, 'x', $event)"
           ></md-input>
         </md-input-container>
         <md-input-container md-clearable>
           <label v-if="block.tableFunction">Y</label>
           <label v-else>Return value</label>
           <md-input
-            v-model="block.y"
+            :value="block.y"
+            @blur="set(block, 'y', $event)"
           ></md-input>
         </md-input-container>
         <div style="display: flex">
           <md-input-container style="width: 95%; margin-right: 5%;">
             <label>Min</label>
             <md-input
-              v-model="block.min"
+              :value="block.min"
+              @blur="set(block, 'min', $event)"
             ></md-input>
           </md-input-container>
           <md-input-container>
             <label>Max</label>
             <md-input
-              v-model="block.max"
+              :value="block.max"
+              @blur="set(block, 'max', $event)"
             ></md-input>
           </md-input-container>
         </div>
@@ -576,7 +585,8 @@
         <md-input-container md-clearable>
           <label>Name</label>
           <md-input
-            v-model="block.name"
+            :value="block.name"
+            @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
         <md-input-container>
@@ -607,13 +617,15 @@
           <md-input-container style="width: 95%; margin-right: 5%;">
             <label>Min</label>
             <md-input
-              v-model="block.min"
+              :value="block.min"
+              @blur="set(block, 'min', $event)"
             ></md-input>
           </md-input-container>
           <md-input-container>
             <label>Max</label>
             <md-input
-              v-model="block.max"
+              :value="block.max"
+              @blur="set(block, 'max', $event)"
             ></md-input>
           </md-input-container>
         </div>
@@ -648,7 +660,8 @@
         <md-input-container md-clearable>
           <label>Network name</label>
           <md-input
-            v-model="block.name"
+            :value="block.name"
+            @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
         <md-checkbox 
@@ -762,21 +775,6 @@
             Values stored in <b>_v</b>
           </p>
         </md-whiteframe>
-        <!--
-        <md-card-expand>
-          <md-card-actions>
-            <span style="flex: 1"></span>
-            <md-button class="md-icon-button" md-expand-trigger>
-              <md-icon>help</md-icon>
-            </md-button>
-          </md-card-actions>
-
-          <md-card-content>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Optio itaque ea, nostrum odio. Dolores, sed accusantium quasi non, voluptas eius illo quas, saepe voluptate pariatur in deleniti minus sint. Excepturi.
-          </md-card-content>
-        </md-card-expand>
-        -->
-        <!-- <pre>{{ block }}</pre> -->
       </md-card-content>
 
       <!-- Condition -->
@@ -784,7 +782,8 @@
         <md-input-container>
           <label>Proposition expression (boolean)</label>
           <md-input
-            v-model="block.value"
+            :value="block.value"
+            @blur="set(block, 'value', $event)"
           ></md-input>
         </md-input-container>
       </md-card-content>

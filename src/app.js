@@ -417,6 +417,9 @@ const params = {
     }
   },
   methods: {
+    set (obj, param, value) {
+      this.$set(obj, param, value)
+    },
     fitNetwork () {
       // Scale network to fit all nodes
       setTimeout(() => {
