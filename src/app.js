@@ -248,36 +248,43 @@ const params = {
     },
     shadowNodes: function () {
       // Stringify current blocks to easily search for variable
-      let blockString = JSON.stringify(this.models[this.activeModel].blocks)
+      // let blockString = JSON.stringify(this.models[this.activeModel].blocks)
       let sn = []
-      // Iterate over all non active models
-      this.models.filter((_, i) => i !== this.activeModel).forEach((m, mi) => {
-        // Check model first (shadow model)
-        if (m.modelParams.name && (blockString.indexOf(m.modelParams.name) >= 0)) {
-          sn.push({
-            id: m.modelParams.name,
-            label: m.modelParams.name,
-            shape: 'icon',
-            group: 'icon',
-            icon: {
-              face: 'Material Icons',
-              code: '\ue886',
-              size: 60,
-              color: '#ababab'
-            }
-          })
-        }
-        // Check model blocks (shadow blocks)
-        m.blocks.forEach((b, bi) => {
-          if (b.name && (blockString.indexOf(b.name) >= 0)) {
+      // Check for shadow nodes only if multiple models
+      if (this.models.length > 1) {
+        console.log('Shadow pirate: Start searching!')
+        let blockString = JSON.stringify(this.models[this.activeModel].blocks).split(/[^A-Za-z0-9_]/g).filter(el => el.length)
+        // Iterate over all non active models
+        this.models.filter((_, i) => i !== this.activeModel).forEach((m, mi) => {
+          // Check model first (shadow model)
+          if (m.modelParams.name && (blockString.indexOf(m.modelParams.name) >= 0)) {
             sn.push({
-              id: m.modelParams.name + bi,
-              label: b.name,
-              group: 'shadow'
+              id: m.modelParams.name,
+              label: m.modelParams.name,
+              shape: 'icon',
+              group: 'icon',
+              icon: {
+                face: 'Material Icons',
+                code: '\ue886',
+                size: 60,
+                color: '#ababab'
+              }
+            })
+          }
+          // Check model blocks (shadow blocks)
+          if (this.models[this.activeModel].modelParams.include && this.models[this.activeModel].modelParams.include.length) {
+            m.blocks.forEach((b, bi) => {
+              if (b.name && (blockString.indexOf(b.name) >= 0)) {
+                sn.push({
+                  id: m.modelParams.name + bi,
+                  label: b.name,
+                  group: 'shadow'
+                })
+              }
             })
           }
         })
-      })
+      }
       // console.log(new Date(), 'Shadow nodes', sn)
       return sn
     },
