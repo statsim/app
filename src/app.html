@@ -192,7 +192,7 @@
     <md-card
       v-for="(block, blockIndex) in model.blocks"
       :key="block.id"
-      :id="'block-id-' + blockIndex"
+      :id="'block-id-' + modelIndex + '-' + blockIndex"
       :class="['block', 'block-' + block.typeCode, block.minimized ? 'block-minimized' : 'block-full']"
       :style="block.color ? 'border-top-color:' + block.color : ''"
     >

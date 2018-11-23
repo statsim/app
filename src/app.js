@@ -430,7 +430,7 @@ const params = {
     selectNode (selection) {
       console.log('Selected', selection)
       if (!isNaN(parseInt(selection.nodes[0]))) {
-        const block = document.getElementById('block-id-' + selection.nodes[0])
+        const block = document.getElementById('block-id-' + this.activeModel + '-' + selection.nodes[0])
         const offset = block.offsetTop
         document.getElementById('side-bar').scrollTop = offset - 20
         this.$set(this.models[this.activeModel].blocks[selection.nodes[0]], 'minimized', false)
