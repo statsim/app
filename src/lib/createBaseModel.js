@@ -4,7 +4,8 @@ module.exports = function (name) {
       name,
       description: '',
       steps: 1,
-      method: 'deterministic'
+      method: 'deterministic',
+      include: []
     },
     blocks: [],
     methodParams: {

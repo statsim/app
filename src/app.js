@@ -178,8 +178,6 @@ function delay (time, cb) {
 // Need it here to easily call from any app method
 let table
 
-console.log(Scrollbar)
-
 const params = {
   /*
     COMPONENTS
@@ -280,11 +278,11 @@ const params = {
           }
         })
       })
-      console.log(new Date(), 'Shadow nodes', sn)
+      // console.log(new Date(), 'Shadow nodes', sn)
       return sn
     },
     graphNodes: function () {
-      console.log(new Date(), 'Nodes: Starting dynamic update')
+      // console.log(new Date(), 'Nodes: Starting dynamic update')
       const nodes = this.models[this.activeModel].blocks
         .map((b, i) => {
           let node = {
@@ -311,11 +309,11 @@ const params = {
           return node
         })
         .concat(this.shadowNodes)
-      console.log(new Date(), 'Nodes: returning nodes', nodes)
+      // console.log(new Date(), 'Nodes: returning nodes', nodes)
       return nodes
     },
     graphLinks: function () {
-      console.log(new Date(), 'Links: generating network links')
+      // console.log(new Date(), 'Links: generating network links')
       const check = (str, baseBlockIndex) => {
         const l = []
         if (typeof str === 'string') {
@@ -373,15 +371,12 @@ const params = {
             break
         }
       })
-      console.log(new Date(), 'Links: returning links', links.length)
+      // console.log(new Date(), 'Links: returning links', links.length)
       return links
     }
   },
   created () {
     // Before mounting
-    // Initialize main model
-    this.models = [createBaseModel('Main')]
-    this.switchModel(0)
     // Check theme
     this.theme = (document.cookie.indexOf('dark') > 0) ? 'dark' : 'light'
     const c = cookie.parse(document.cookie)
@@ -391,9 +386,6 @@ const params = {
   },
   mounted () {
     // After mounting
-    // Check if window.location contain any param
-    // m: short name for example model saved in JSON format
-    // a: array of models embedded in the link
     if (window.location.search) {
       let query = window.location.search
       if (query.indexOf('preview') > 0) {
@@ -402,22 +394,27 @@ const params = {
       parseLink(
         query,
         ({ models, activeModel }) => {
-          setTimeout(() => {
+          models.forEach(m => {
+            // Add include field to each model
+            if (typeof m.modelParams.include === 'undefined') {
+              m.modelParams.include = []
+            }
+            // Add ID to each block for better list rendering
+            m.blocks.forEach(b => {
+              b.id = 'b' + Math.round(Math.random() * 100000000)
+            })
             this.models = models
             this.switchModel(0 || activeModel)
-            // Add ID to each block for better list rendering
-            this.models.forEach(m => {
-              m.blocks.forEach(b => {
-                b.id = 'b' + Math.round(Math.random() * 100000000)
-              })
-            })
-          }, 100)
+          })
         },
         (err) => {
           this.error = err
         }
       )
-    } // *if window.location.search is not empty
+    } else { // *if window.location.search is not empty
+      this.models = [createBaseModel('Main')]
+      this.switchModel(0)
+    }
   },
   methods: {
     fitNetwork () {
@@ -626,10 +623,10 @@ const params = {
         this.preview = false
         // Update history
         window.history.replaceState({}, 'New project', '.')
+        // Switch to firstModel model
+        this.switchModel(0)
         // Clean models
         this.models = [createBaseModel('Main')]
-        // Switch to base model
-        this.switchModel(0)
       })
     },
     openFile (fileType) {
@@ -674,17 +671,20 @@ const params = {
         const models = JSON.parse(reader.result)
         delay.call(this, 500, () => {
           window.history.replaceState({}, 'New project', '.')
+          this.switchModel(0)
           console.log(new Date(), 'Reader: Updating models')
           this.models = Array.isArray(models) ? models : [models]
           console.log(new Date(), 'Reader: Models updated!')
-          // Add ID to each block for better list rendering
           this.models.forEach(m => {
+            // Add include field to each model
+            if (typeof m.modelParams.include === 'undefined') {
+              m.modelParams.include = []
+            }
+            // Add ID to each block for better list rendering
             m.blocks.forEach(b => {
               this.$set(b, 'id', ((b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000)))
             })
           })
-          this.switchModel(0)
-          console.log(new Date(), 'Reader: Model switched to 0')
           this.fitNetwork()
         })
       }
@@ -706,6 +706,7 @@ const params = {
       this.switchModel(this.models.length - 1)
     },
     switchModel (modelId) {
+      console.log('Vue: switching to model', modelId)
       this.error = ''
       if (modelId < 0 || modelId > this.models.length - 1) {
         this.error = 'Invalid model number. Switching to first model'
@@ -724,11 +725,13 @@ const params = {
       })
 
       // Get current positions
-      this.models[this.activeModel].blocks.forEach((b, bi) => {
-        b.pos = this.$refs.network.getPositions([bi])[bi]
-      })
+      if (this.$refs.network) {
+        this.models[this.activeModel].blocks.forEach((b, bi) => {
+          console.log('Network: get pos')
+          b.pos = this.$refs.network.getPositions([bi])[bi]
+        })
+      }
 
-      console.log(new Date(), 'Vue: switching to model', modelId)
       this.activeModel = modelId
       // Update table
       if (this.reactiveDataTable && this.showDataTable) this.drawDataTable()

@@ -25,7 +25,9 @@ module.exports = function (models, isPreview, activeModel) {
 
     // Shortening model params
     Object.keys(m.modelParams).forEach(k => {
-      sm.mod[getAbbr(k)] = m.modelParams[k]
+      if (!((k === 'include') && (m.modelParams.include.length === 0))) {
+        sm.mod[getAbbr(k)] = m.modelParams[k]
+      }
     })
 
     // Method params

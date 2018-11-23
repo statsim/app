@@ -116,7 +116,7 @@
 
 
   </md-toolbar>
-  <scrollbar id="side-bar" class="side-bar editor-only">
+  <scrollbar id="side-bar" v-if="models && models.length" class="side-bar editor-only">
     <!-- MODELS -->
     <div class="model-selector">
       <md-button
@@ -929,14 +929,7 @@
     </div>
 
     <!-- Needed for graph -->
-    <svg style="position: absolute; top: -1000px;">
-      <defs>
-        <marker id="m-end" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth" >
-          <path d="M0,0 L0,6 L9,3 z"></path>
-        </marker>
-      </defs>
-    </svg>
-    <div style="position: relative" class="graph-container">
+    <div v-if="models && models.length" style="position: relative" class="graph-container">
       <div class="wl">
         <network
           class="net"
@@ -998,7 +991,7 @@
   </div>
 
   <!-- PARAMETERS BAR -->
-  <md-sidenav class="param-bar md-right editor-only" ref="rightSidenav">
+  <md-sidenav v-if="models && models.length" class="param-bar md-right editor-only" ref="rightSidenav">
     <md-toolbar class="md-dense">
       <div class="md-toolbar-container">
         <h3 class="md-title" style="flex: 1">Simulation parameters</h3>
@@ -1137,7 +1130,7 @@
 
   <!-- BOTTOM BAR-->
   <md-progress class="progress" v-if="loading" md-indeterminate></md-progress>
-  <md-bottom-bar class="bottom-bar">
+  <md-bottom-bar v-if="models && models.length" class="bottom-bar">
     <!-- Time steps-->
     <md-input-container class="simulation-param desktop">
       <label for="time-steps">Iterations</label>

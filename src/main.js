@@ -9,8 +9,6 @@ const vm = new Vue({
   render: f => f(app)
 })
 
-if (vm) {
-  console.log(`Vue: Good morning!`)
-} else {
-  throw new Error(`Where's Vue?`)
+if (!vm) {
+  throw new Error(`Browser: Where the fuck is Vue?`)
 }
