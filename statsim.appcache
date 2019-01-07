@@ -1,7 +1,8 @@
 CACHE MANIFEST
 
-# Version: 0.10.1a
+# Version: 0.10.1b
 
+CACHE:
 dist/density-plot.js
 dist/bundle.js
 dist/webppl.min.js
@@ -27,3 +28,6 @@ fonts/Roboto-Medium.woff2
 fonts/Roboto-Regular.ttf
 fonts/Roboto-Regular.woff
 fonts/Roboto-Regular.woff2
+
+NETWORK:
+/models
