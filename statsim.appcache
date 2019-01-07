@@ -1,0 +1,29 @@
+CACHE MANIFEST
+
+# Version: 0.10.1a
+
+dist/density-plot.js
+dist/bundle.js
+dist/webppl.min.js
+dist/worker.js
+css/vue-material.css
+css/handsontable.full.min.css
+css/vue2-perfect-scrollbar.min.css
+css/roboto.css
+css/icons.css
+images/s.png
+fonts/MaterialIcons-Regular.ttf
+fonts/MaterialIcons-Regular.woff
+fonts/MaterialIcons-Regular.woff2
+fonts/Roboto-Bold.ttf
+fonts/Roboto-Bold.woff
+fonts/Roboto-Bold.woff2
+fonts/Roboto-Light.ttf
+fonts/Roboto-Light.woff
+fonts/Roboto-Light.woff2
+fonts/Roboto-Medium.ttf
+fonts/Roboto-Medium.woff
+fonts/Roboto-Medium.woff2
+fonts/Roboto-Regular.ttf
+fonts/Roboto-Regular.woff
+fonts/Roboto-Regular.woff2
