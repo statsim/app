@@ -259,6 +259,10 @@ module.exports = function (models, activeModel) {
             valueStr = b.value.trim()
           }
         }
+
+        // Fix too much recursion bug
+        valueStr = `JSON.parse('{"data": ${valueStr}}').data`
+
         if (b.dataType === 'vector') {
           valueStr = `Vector(${valueStr})`
         } else if (b.dataType === 'tensor' && b.dims && b.dims.length && !isNaN(parseInt(b.dims))) {
@@ -269,11 +273,11 @@ module.exports = function (models, activeModel) {
           // In external model check if data value is already defined as a parameter
           // Use inner model value as default value in case parameter is missing
           // model = `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n` + model
-          data += `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : JSON.parse('{"data": ${valueStr}}').data\n`
+          data += `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n`
         } else {
           // Active model: place data on top of model
           // model = `var ${b.name} = ${valueStr}\n` + model
-          data += `var ${b.name} = JSON.parse('{"data": ${valueStr}}').data\n`
+          data += `var ${b.name} = ${valueStr}\n`
         }
       } else if ((b.typeCode === 3) && b.value.length) {
         // --> ACCUMULATOR
