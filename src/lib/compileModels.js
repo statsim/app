@@ -228,7 +228,15 @@ module.exports = function (models, activeModel) {
           ) {
             // Comma separated values or array or vector or tensor type
             // And no brackets - add brackets
-            valueStr = `[${b.value.split(',').map(v => v.trim()).map(v => !isNaN(v) ? (v.length ? v : 'undefined') : `'${v}'`).join()}]`
+            valueStr = `[${
+              b.value.split(',')
+                .map(v => v.trim())
+                .map(v => !isNaN(v)
+                  ? (/* string-number */ v.length ? v : 'undefined')
+                  : (/* string-string */ v.includes('"') ? v : `"${v}"`)
+                )
+                .join()
+            }]`
           } else {
             // No brackets, no commas, no vector, no arrays, no tensors - check if it's a number or boolean
             if (
@@ -240,13 +248,13 @@ module.exports = function (models, activeModel) {
             ) {
               valueStr = b.value.trim()
             } else {
-              valueStr = `'${b.value.trim()}'`
+              valueStr = `"${b.value.trim()}"`
             }
           }
         } else {
           // Brackets exist - string or pass as it is
           if (b.dataType === 'string') {
-            valueStr = `'${b.value.trim()}'`
+            valueStr = `"${b.value.trim()}"`
           } else {
             valueStr = b.value.trim()
           }
@@ -261,11 +269,11 @@ module.exports = function (models, activeModel) {
           // In external model check if data value is already defined as a parameter
           // Use inner model value as default value in case parameter is missing
           // model = `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n` + model
-          data += `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : ${valueStr}\n`
+          data += `var ${b.name} = (typeof ${b.name} !== 'undefined') ? ${b.name} : JSON.parse('{"data": ${valueStr}}').data\n`
         } else {
           // Active model: place data on top of model
           // model = `var ${b.name} = ${valueStr}\n` + model
-          data += `var ${b.name} = ${valueStr}\n`
+          data += `var ${b.name} = JSON.parse('{"data": ${valueStr}}').data\n`
         }
       } else if ((b.typeCode === 3) && b.value.length) {
         // --> ACCUMULATOR
