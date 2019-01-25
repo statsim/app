@@ -589,10 +589,6 @@ textarea {
   z-index: 200;
 }
 
-#loader span {
-  background-color: rgba(240, 240, 240, 0.4)
-}
-
 .bottom-bar {
   position: fixed;
   bottom: 0;
