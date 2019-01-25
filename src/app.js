@@ -162,6 +162,10 @@ const networkOptions = {
     barnesHut: {
       gravitationalConstant: -2000
     }
+  },
+  interaction: {
+    zoomView: false,
+    navigationButtons: true
   }
 }
 

@@ -19,6 +19,11 @@ label {
   z-index: 2000;
 }
 
+.md-menu-backdrop {
+  position: fixed;
+  z-index: 1500;
+}
+
 .md-theme-default.md-boards > .md-boards-navigation .md-board-header {
    color: rgba(0, 0, 0, .2) !important;
 }
@@ -105,7 +110,7 @@ textarea {
 }
 
 .tool-bar {
-  z-index: 2;
+  z-index: 1000;
   position: fixed;
   top: 0;
   width: 27%;
@@ -124,10 +129,6 @@ textarea {
   background-color: #DDD;
   width: 27%;
   box-shadow: 0 0 30px rgba(0, 0, 0, .2);
-}
-
-.md-menu-backdrop {
-  z-index: 1500;
 }
 
 .side-bar:hover {
@@ -337,6 +338,10 @@ textarea {
   min-height: 500px;
   height: 100%;
   z-index: 1;
+}
+
+.vis-up, .vis-left, .vis-right, .vis-down {
+  display: none !important;
 }
 
 .content #m-end{
@@ -636,6 +641,10 @@ tile {
 }
 .dark h2 {
   color: #ddd;
+}
+.dark .vis-button {
+  -webkit-filter: invert(.9) hue-rotate(-180deg);
+  filter: invert(.9) hue-rotate(-180deg);
 }
 .dark .tool-bar {
   background: #161325 !important;

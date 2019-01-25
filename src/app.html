@@ -62,7 +62,7 @@
       </md-menu-content>
     </md-menu>
     <!-- <p class="logo-icon">{{ icon }}</p> -->
-    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.10.1</sup></h2>
+    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.10.2</sup></h2>
     <md-menu md-align-trigger md-size="4" md-direction="bottom left" class="editor-only">
       <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
         <md-icon>add</md-icon>
@@ -951,7 +951,7 @@
           ></d3-network>
         -->
         <!-- Model parameters input -->
-        <div class="parameters" v-if="models[activeModel].blocks.length || (models.length > 1)">
+        <div class="parameters">
           <div class="chips">
             <md-chip v-for="b in models[activeModel].blocks" :style="{background: colors[b.typeCode]}">{{ b.name || b.type }}</md-chip>
           </div>
