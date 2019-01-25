@@ -1,6 +1,6 @@
 CACHE MANIFEST
 
-# Version: 0.10.2a
+# Version: 0.10.2b
 
 CACHE:
 dist/density-plot.js
@@ -32,6 +32,7 @@ images/android-icon-192x192.png
 images/favicon-16x16.png
 images/favicon-32x32.png
 images/favicon-96x96.png
+images/favicon.ico
 images/s.png
 fonts/MaterialIcons-Regular.ttf
 fonts/MaterialIcons-Regular.woff
