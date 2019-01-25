@@ -1,6 +1,6 @@
 CACHE MANIFEST
 
-# Version: 0.10.1b
+# Version: 0.10.2a
 
 CACHE:
 dist/density-plot.js
@@ -12,6 +12,26 @@ css/handsontable.full.min.css
 css/vue2-perfect-scrollbar.min.css
 css/roboto.css
 css/icons.css
+css/vis-network.min.css
+css/img/network/acceptDeleteIcon.png
+css/img/network/addNodeIcon.png
+css/img/network/backIcon.png
+css/img/network/connectIcon.png
+css/img/network/cross2.png
+css/img/network/cross.png
+css/img/network/deleteIcon.png
+css/img/network/downArrow.png
+css/img/network/editIcon.png
+css/img/network/leftArrow.png
+css/img/network/minus.png
+css/img/network/plus.png
+css/img/network/rightArrow.png
+css/img/network/upArrow.png
+css/img/network/zoomExtends.png
+images/android-icon-192x192.png
+images/favicon-16x16.png
+images/favicon-32x32.png
+images/favicon-96x96.png
 images/s.png
 fonts/MaterialIcons-Regular.ttf
 fonts/MaterialIcons-Regular.woff
