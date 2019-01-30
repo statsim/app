@@ -59,39 +59,61 @@ self.addEventListener('install', function (event) {
         return cache.addAll(assets)
       })
       .then(function () {
-        console.log(`Service worker: Completed. Cached ${assets.length} assets`)
+        console.log(`Service worker: Installation completed. Cached ${assets.length} assets`)
+      })
+  )
+})
+
+self.addEventListener('activate', function (event) {
+  console.log('Service worker: Activation started')
+  event.waitUntil(
+    caches
+      .keys()
+      .then(function (keys) {
+        console.log('Service worker: Caches', keys)
+        return Promise.all(
+          keys
+            .filter(function (key) {
+              return !key.startsWith(version)
+            })
+            .map(function (key) {
+              console.log('Service worker: Remove cache', key)
+              return caches.delete(key)
+            })
+        )
+      })
+      .then(function () {
+        console.log('Service worker: Activation completed')
       })
   )
 })
 
 self.addEventListener('fetch', function (event) {
-  console.log('Service worker: fetch event', event)
   if (event.request.method !== 'GET') {
-    console.log('Service worker: event ignored', event.request.method, event.request.url)
+    console.log('Service worker: fetch event ignored', event.request.method, event.request.url)
     return
   }
   event.respondWith(
     caches
       .match(event.request)
       .then(function (cached) {
-        // Load from network anyway
         const networked = fetch(event.request)
           .then(fetchedFromNetwork, unableToResolve)
           .catch(unableToResolve)
 
-        console.log('Service worker: fetch', cached ? '(cached)' : '(network)', event.request.url)
+        console.log('Service worker: fetch result ', cached ? '(cached)' : '(network)', event.request.url)
         return cached || networked
 
         function fetchedFromNetwork (response) {
           const cacheCopy = response.clone()
-          console.log('Service worker: fetch response from network', event.request.url)
+          // console.log('Service worker: fetch response from network', event.request.url)
           caches
             .open(version)
             .then(function add (cache) {
               cache.put(event.request, cacheCopy)
             })
             .then(function () {
-              console.log('Service worker: fetch response stored in cache', event.request.url)
+              // console.log('Service worker: fetch response stored in cache', event.request.url)
             })
           return response
         }
