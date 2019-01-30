@@ -119,7 +119,7 @@ module.exports = {
     mu: {
       type: 'real'
     },
-    scale: {
+    sigma: {
       type: 'real',
       min: 0,
       max: Infinity
