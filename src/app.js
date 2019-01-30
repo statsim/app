@@ -757,8 +757,9 @@ const params = {
     },
     removeModel (confirm) {
       if (confirm === 'ok') {
-        this.models.splice(this.activeModel, 1)
-        this.switchModel(this.models.length - 1)
+        let i = this.activeModel
+        this.switchModel((i > 0) ? i - 1 : 0)
+        this.models.splice(i, 1)
       }
     },
     // Callback for autocomplete element
