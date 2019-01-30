@@ -1,4 +1,4 @@
-const version = 'v0.10.4d'
+const version = 'v0.10.4e'
 const assets = [
   'index.html',
   'dist/density-plot.js',
@@ -121,7 +121,7 @@ self.addEventListener('fetch', function (event) {
 
         function unableToResolve () {
           console.log('Service worker: fetch request failed in both cache and network')
-          return new Response('<h1>Service Unavailable</h1>', {
+          return new Response('<h1>StatSim: Service Unavailable</h1><p>The page is not cached. Check your network connection.</p>', {
             status: 503,
             statusText: 'Service Unavailable',
             headers: new Headers({
