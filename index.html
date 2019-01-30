@@ -24,5 +24,17 @@
     <div id="app"></div>
     <script src="dist/density-plot.js" charset="utf-8"></script>
     <script src="dist/bundle.js" charset="utf-8"></script>
+    <script charset="utf-8">
+      if ('serviceWorker' in navigator) {
+        console.log('Index: registering service worker')
+        navigator.serviceWorker.register('sw.js').then(function() {
+          console.log('Index: service worker registration complete')
+        }, function() {
+          console.log('Index: service worker registration failure')
+        });
+      } else {
+        console.log('Index: service worker is not supported')
+      }
+    </script>
   </body>
 </html>
