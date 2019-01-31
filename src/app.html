@@ -62,7 +62,7 @@
       </md-menu-content>
     </md-menu>
     <!-- <p class="logo-icon">{{ icon }}</p> -->
-    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.10.4</sup></h2>
+    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.10.5</sup></h2>
     <md-menu md-align-trigger md-size="4" md-direction="bottom left" class="editor-only">
       <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
         <md-icon>add</md-icon>
@@ -130,14 +130,6 @@
           <md-icon style="opacity: 0.3">more_horiz</md-icon>
         </md-button>
         <md-menu-content>
-          <md-menu-item v-on:selected="maximizeAllBlocks()">
-            <md-icon>crop_landscape</md-icon>
-            <span>Maximize all blocks</span>
-          </md-menu-item>
-          <md-menu-item v-on:selected="minimizeAllBlocks()">
-            <md-icon>remove</md-icon>
-            <span>Minimize all blocks</span>
-          </md-menu-item>
           <md-menu-item v-on:selected="createModel()">
             <md-icon>add</md-icon>
             <span>Add new model</span>
@@ -174,10 +166,16 @@
           >{{ m.modelParams.name }}
           </option>
         </select>
-        {{ models[activeModel].modelParams }}
       </div>
     </div>
-
+    <div style="text-align: center; opacity: 0.4" v-if="models[activeModel].blocks.length">
+      <md-button class="md-dense" @click="minimizeAllBlocks">
+        Hide all
+      </md-button>
+      <md-button class="md-dense" @click="maximizeAllBlocks">
+        Show all
+      </md-button>
+    </div>
     <!-- Add drag and drop -->
     <div
       class="block-container"
@@ -207,7 +205,7 @@
             -->
         </div>
         <md-button class="md-icon-button" v-if="block.minimized" v-on:click.native="toggle(blockIndex)">
-          <md-icon>crop_landscape</md-icon>
+          <md-icon>fullscreen</md-icon>
         </md-button>
         <md-button class="md-icon-button" v-if="!block.minimized" v-on:click.native="toggle(blockIndex)">
           <md-icon>remove</md-icon>
@@ -987,6 +985,15 @@
     <div class="charts-2d wl"></div>
     <div class="charts-extra wl"></div>
     <div class="archives wl"></div>
+    <md-button
+      v-if="Object.keys(samples).length > 0"
+      v-on:click.native="download()"
+      style="margin-left: 20px;"
+    >
+      <md-icon>save_alt</md-icon>
+      Download (CSV)
+    </md-button>
+
   </div>
 
   <!-- PARAMETERS BAR -->

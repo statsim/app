@@ -209,6 +209,7 @@ const params = {
     models: [], // Array of project models
     networkOptions, // Graph opts
     preview: false, // Preview mode?
+    samples: {}, // Simulation results
     reactiveDataTable: false, // Update data from table reactively?
     server: false, // Server-side processing
     serverAPI: '',
@@ -428,6 +429,27 @@ const params = {
     }
   },
   methods: {
+    download () {
+      // Download samples
+      console.log('Vue: Downloading samples')
+      let keys = Object.keys(this.samples)
+      let csv = keys.join() + '\n'
+      this.samples[keys[0]].forEach((s, i) => {
+        csv += keys
+          .map((key) => {
+            const sample = this.samples[key][i]
+            if ((typeof sample === 'object') || (typeof sample === 'string')) {
+              return '"' + sample + '"'
+            } else {
+              return sample
+            }
+          })
+          .join() + '\n'
+      })
+      // const blob = new Blob([JSON.stringify(this.samples, null, 2)], {type: 'text/plain;charset=utf-8'})
+      const blob = new Blob([csv], {type: 'text/plain;charset=utf-8'})
+      fileSaver.saveAs(blob, this.models[0].modelParams.name + '-results.csv')
+    },
     set (obj, param, value) {
       this.$set(obj, param, value)
     },
@@ -721,6 +743,7 @@ const params = {
     },
     switchModel (modelId) {
       console.log('Vue: switching to model', modelId)
+      this.samples = {} // Clear old samples
       this.error = ''
       if (modelId < 0 || modelId > this.models.length - 1) {
         this.error = 'Invalid model number. Switching to first model'
@@ -871,7 +894,7 @@ const params = {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
       this.message = 'Done!'
-      processResults(data, this.models[this.activeModel].blocks, this.models[this.activeModel].modelParams)
+      this.samples = processResults(data, this.models[this.activeModel].blocks, this.models[this.activeModel].modelParams)
     },
     run () {
       const errorHandler = (err) => {
@@ -886,6 +909,7 @@ const params = {
       document.querySelector('.archives').innerHTML = ''
       document.getElementById('loader').className = ''
 
+      this.samples = {} // clear samples
       this.loading = true
       this.link = ''
       this.message = ''

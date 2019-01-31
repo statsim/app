@@ -543,5 +543,7 @@ module.exports = function processResults (chains, blocks, modelParams) {
       }// *for
     }// *for
   }
-  console.log('Processor, PhD: Finished! Check the DOM!')
-}
+  console.log('Processor, PhD: Finished! Returning all samples object')
+
+  return allSamples
+} // *processResults

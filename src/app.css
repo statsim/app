@@ -99,7 +99,7 @@ textarea {
 }
 
 .logo {
-  font-weight: bold !important;
+  font-weight: 500 !important;
 }
 
 .logo-icon {
@@ -116,7 +116,7 @@ textarea {
   top: 0;
   width: 27%;
   left: 0;
-  background-color: #161325 !important;
+  background-color: #2a2543 !important;
 }
 
 .side-bar {
