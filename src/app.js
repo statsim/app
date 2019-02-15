@@ -7,7 +7,6 @@ const draggable = require('vuedraggable')
 const Table = require('handsontable')
 const Qty = require('js-quantities')
 const VueColor = require('vue-color')
-const Scrollbar = require('vue2-perfect-scrollbar')
 
 // Local deps
 const distributions = require('./lib/distributions')
@@ -189,8 +188,7 @@ const params = {
   components: {
     'color-picker': VueColor.Swatches,
     'draggable': draggable,
-    'network': VueVis.Network,
-    'scrollbar': Scrollbar.PerfectScrollbar
+    'network': VueVis.Network
   },
 
   /*

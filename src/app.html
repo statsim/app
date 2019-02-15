@@ -23,7 +23,7 @@
   <md-toolbar class="tool-bar md-dense">
     <input type="file" accept=".csv, .tsv, .txt" id="openDataFile" v-on:change="openDataFile" style="display: none;" />
     <input type="file" accept=".json, .ssp" id="openProjectFile" v-on:change="openProjectFile" style="display: none;" />
-    <md-menu md-align-trigger md-size="4">
+    <md-menu md-align-trigger md-size="4" class="hamburger">
       <md-button md-menu-trigger class="md-icon-button">
         <md-icon>menu</md-icon>
       </md-button>
@@ -62,7 +62,7 @@
       </md-menu-content>
     </md-menu>
     <!-- <p class="logo-icon">{{ icon }}</p> -->
-    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.10.5</sup></h2>
+    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.10.6</sup></h2>
     <md-menu md-align-trigger md-size="4" md-direction="bottom left" class="editor-only">
       <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
         <md-icon>add</md-icon>
@@ -116,7 +116,7 @@
 
 
   </md-toolbar>
-  <scrollbar id="side-bar" v-if="models && models.length" class="side-bar editor-only">
+  <div id="side-bar" v-if="models && models.length" class="side-bar editor-only">
     <!-- MODELS -->
     <div class="model-selector">
       <md-button
@@ -852,7 +852,7 @@
       <md-icon>delete_outlined</md-icon>
       Remove
     </md-button>
-  </scrollbar>
+  </div>
 
   <!-- CONTENT -->
   <div class="content">
