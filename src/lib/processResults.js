@@ -37,16 +37,17 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
 
 function drawHeader (name, value, description, units) {
   const headerContainer = document.createElement('div')
+  const newName = name.replace(/__/g, ' ')
   headerContainer.className = 'result-header'
   let h2 = document.createElement('h2')
   if (value === undefined) {
     // No value in the header
-    h2.innerText = name
+    h2.innerText = newName
     headerContainer.innerHTML = ''
     headerContainer.appendChild(h2)
   } else {
     // Value exist
-    h2.innerText = name + ': '
+    h2.innerText = newName + ': '
     let vSpan = document.createElement('span')
     vSpan.className = 'result-value'
     vSpan.innerText = (!isNaN(parseFloat(value)) && isFinite(value)) ? +value.toFixed(6) : value
@@ -88,7 +89,7 @@ function drawObject (obj, name, units) {
   summaryDiv.className = 'summary'
 
   let h3 = document.createElement('h3')
-  h3.innerText = name
+  h3.innerText = name.replace(/__/g, ' ')
 
   summaryDiv.appendChild(h3)
 

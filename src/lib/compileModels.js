@@ -40,13 +40,20 @@ module.exports = function (models, activeModel) {
     // we don't want it to be declared multiple times
     let indexFunctionDeclared = false
 
+    // List of all named blocks (needed to check for spaces in names)
+    let blockNames = []
+
     // Prepare lists of arrays...
-    const dataArrays = []
-    const dataTensors = []
-    const randomArrays = []
-    const randomTensors = []
+    let dataArrays = []
+    let dataTensors = []
+    let randomArrays = []
+    let randomTensors = []
 
     m.blocks.forEach(b => {
+      if (b.name && b.name.length) {
+        // Collect all trimed block names in the array blockNames
+        blockNames.push(b.name.trim())
+      }
       if (b.typeCode === 2) {
         let dataType = (b.dataType === undefined || b.dataType === '') ? 'auto' : b.dataType
         if (((dataType === 'auto') && (b.value.indexOf(',') >= 0)) || (dataType === 'array')) {
@@ -68,8 +75,8 @@ module.exports = function (models, activeModel) {
       }
     })
 
-    const allArrays = dataArrays.concat(randomArrays)
-    const allTensors = dataTensors.concat(randomTensors)
+    let allArrays = dataArrays.concat(randomArrays)
+    let allTensors = dataTensors.concat(randomTensors)
 
     // Convert RV distribution parameters object to string
     // If vectorIndex is passed, get arrays and tensors values by index
@@ -139,6 +146,10 @@ module.exports = function (models, activeModel) {
     let observers = ''
     let initializeNeuralNetConverters = false
 
+    // Is it a multistep (multiple iterations) model
+    const isMultistepModel = (m.modelParams.steps.length > 0) && (m.modelParams.steps !== '1')
+    console.log(`Mr. Compiler: Model "${m.modelParams.name}" has multiple steps (${isMultistepModel})`)
+
     const blocks = getBlocks(mi)
     console.log('Blocks:', blocks.map(b => b.name))
 
@@ -174,7 +185,7 @@ module.exports = function (models, activeModel) {
           rvStr = `var ${b.name} = ${sampleStr}\n`
         }
         // Check if we are inside the loop
-        if ((m.modelParams.steps > 1.5) && (!b.once)) {
+        if ((isMultistepModel) && (!b.once)) {
           step.body += rvStr
         } else {
           model += rvStr
@@ -183,7 +194,7 @@ module.exports = function (models, activeModel) {
         // --> EXPRESSION
 
         // Check if we are inside the loop
-        if (m.modelParams.steps > 1.5) {
+        if (isMultistepModel) {
           // Generate a list of accumulators
           step.list += (step.list.length) ? ', ' : ''
           step.list += b.name + ', _' + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
@@ -283,7 +294,7 @@ module.exports = function (models, activeModel) {
         // --> ACCUMULATOR
 
         // Check if we are inside the loop
-        if (m.modelParams.steps > 1.5) {
+        if (isMultistepModel) {
           // Generate a list of accumulators
           step.list += (step.list.length) ? ', ' : ''
           step.list += b.name + `, _` + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
@@ -485,7 +496,7 @@ if (typeof (${value}) === 'number') {
         } // *else - tensor or else
 
         // Add observer code later, if in the loop
-        if (m.modelParams.steps > 1.5) {
+        if (isMultistepModel) {
           observers += observer
         } else {
           model += observer
@@ -494,7 +505,7 @@ if (typeof (${value}) === 'number') {
         // --> CONDITION BLOCK
 
         const cond = `condition(${b.value})\n`
-        if (m.modelParams.steps > 1.5) {
+        if (isMultistepModel) {
           observers += cond
         } else {
           model += cond
@@ -510,17 +521,17 @@ if (typeof (${value}) === 'number') {
         (m.blocks.map(bl => bl.name).indexOf(b.name) >= 0) &&
         (
           // Multi step simulation - output only what we can
-          ((m.modelParams.steps > 1.5) && (((b.typeCode === 0) && b.once) || (b.typeCode === 1) || (b.typeCode === 2) || (b.typeCode === 3))) ||
+          ((isMultistepModel) && (((b.typeCode === 0) && b.once) || (b.typeCode === 1) || (b.typeCode === 2) || (b.typeCode === 3))) ||
           // One step - output all we want
-          (m.modelParams.steps < 1.5)
+          (!isMultistepModel)
         )
       ) { // Return variables
-        modelOutput += b.name + ', ' + ((b.history && m.modelParams.steps > 1.5) ? b.name + '_hist, ' : '')
+        modelOutput += b.name + ', ' + ((b.history && isMultistepModel) ? b.name + '_hist, ' : '')
       }
     }) // End of block iterator
 
     // Generate steps add observers after iterator
-    if (m.modelParams.steps > 1.5) {
+    if (isMultistepModel) {
       model +=
 `var step = function (n) {
 if (n > 0) {
@@ -534,7 +545,7 @@ ${step.initial}
 }
 }
 }
-var {${step.list}} = step(${Math.round(m.modelParams.steps)})
+var {${step.list}} = step(${m.modelParams.steps})
 `
       model += observers
     }
@@ -612,6 +623,15 @@ var {${step.list}} = step(${Math.round(m.modelParams.steps)})
     }
     code += inf
     code += (mi === activeModel) ? `` : `}` // Finish the function if it's not a main model
+
+    // Replace all spaces in block names with underscores
+    blockNames.forEach(blockName => {
+      if (blockName.length && blockName.includes(' ')) {
+        const newBlockName = blockName.replace(/\s/g, '__')
+        code = code.replace(new RegExp(blockName, 'g'), newBlockName)
+      }
+    })
+
     if (mi === activeModel) {
       modelCodes.push(code)
       finalCode += code + '\n'

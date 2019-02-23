@@ -328,17 +328,15 @@ const params = {
         const l = []
         if (typeof str === 'string') {
           this.models[this.activeModel].blocks.forEach((b, i) => {
-            if (b.name && (str.split(/[^A-Za-z0-9_]/g).indexOf(b.name) >= 0)) {
+            if (b.name && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(b.name.trim()) >= 0)) {
               l.push({
-                // tid: baseBlockIndex,
-                // sid: i,
                 to: baseBlockIndex,
                 from: i
               })
             }
           })
           this.shadowNodes.forEach((s, i) => {
-            if (s.label && (str.split(/[^A-Za-z0-9_]/g).indexOf(s.label) >= 0)) {
+            if (s.label && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(s.label.trim()) >= 0)) {
               l.push({
                 to: baseBlockIndex,
                 from: s.id
