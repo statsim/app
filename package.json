@@ -1,6 +1,6 @@
 {
   "name": "statsim",
-  "version": "0.10.6",
+  "version": "0.10.7",
   "description": "Web app for statistical simulations and bayesian inference",
   "main": "electron.js",
   "private": true,
@@ -11,7 +11,8 @@
     "build-dev": "browserify src/main.js -t [ vueify ] -o dist/bundle.js --debug",
     "watch": "nodemon --watch src --ext vue,js,css,html --exec 'npm run build-dev'",
     "electron": "electron .",
-    "test": "http-server -s -p 8085 & tape test.js | faucet && kill $!"
+    "test-server": "http-server -s -p 8085 & tape test.js | faucet && kill $!",
+    "test": "tape test.js | faucet"
   },
   "author": "Anton Zemlyansky",
   "license": "ISC",
@@ -27,6 +28,7 @@
     "html-escape": "^2.0.0",
     "is": "^3.2.1",
     "is-json": "^2.0.1",
+    "js-beautify": "^1.8.9",
     "js-quantities": "^1.7.2",
     "online-stats": "^1.3.0",
     "pdfast": "^0.2.0",
@@ -48,7 +50,7 @@
     "faucet": "0.0.1",
     "http-server": "^0.11.1",
     "nodemon": "^1.18.7",
-    "puppeteer": "^1.11.0",
+    "puppeteer": "^1.12.2",
     "tape": "^4.9.1",
     "uglify-es": "^3.3.10",
     "vueify": "^9.4.1"

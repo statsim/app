@@ -1,4 +1,6 @@
 const methods = require('./methods')
+const spacesToUnderscores = require('./spacesToUnderscores')
+const addIterationChecks = require('./addIterationChecks')
 
 module.exports = function (models, activeModel) {
   console.log(`Mr. Compiler: Oh, models again! Active model is ${activeModel} of ${models.length}`)
@@ -200,17 +202,10 @@ module.exports = function (models, activeModel) {
           step.list += b.name + ', _' + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
           step.innerList += (step.innerList.length) ? ', ' : ''
           step.innerList += '_' + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
-          // Calculate expression in the body
-          let value = b.value
-          blocks.forEach(bb => {
-            if ((bb.typeCode === 1) || (bb.typeCode === 3)) {
-              console.log('Check block name: ', bb.name)
-              const r = new RegExp(`\\b${bb.name}\\b`, 'g')
-              value = value.replace(r, `(typeof ${bb.name} !== 'undefined' ? ${bb.name} : _${bb.name})`)
-            }
-          })
-          console.log('Original: ', b.value)
-          console.log('Upd:', value)
+
+          // In recursive cycle previous values of expressions and accumulators are underscored (a -> _a)
+          // To make them work in code without _ we check if the variable is defined and if not add underscore
+          let value = addIterationChecks(b.value, blocks)
 
           step.body += `var ${b.name} = ${value}\n`
           // Generate accumulator expressions
@@ -301,14 +296,8 @@ module.exports = function (models, activeModel) {
           step.innerList += (step.innerList.length) ? ', ' : ''
           step.innerList += `_` + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
 
-          let value = b.value
-          blocks.forEach(bb => {
-            if ((bb.typeCode === 1) || (bb.typeCode === 3)) {
-              console.log('Check block name: ', bb.name)
-              const r = new RegExp(`\\b${bb.name}\\b`, 'g')
-              value = value.replace(r, `(typeof ${bb.name} !== 'undefined' ? ${bb.name} : _${bb.name})`)
-            }
-          })
+          // Check if expressions or accumulators are defined, if not use previous _value
+          let value = addIterationChecks(b.value, blocks)
 
           // Accumulate value in the step body
           step.body += `var ___${b.name} = ${value}\n`
@@ -625,12 +614,7 @@ var {${step.list}} = step(${m.modelParams.steps})
     code += (mi === activeModel) ? `` : `}` // Finish the function if it's not a main model
 
     // Replace all spaces in block names with underscores
-    blockNames.forEach(blockName => {
-      if (blockName.length && blockName.includes(' ')) {
-        const newBlockName = blockName.replace(/\s/g, '__')
-        code = code.replace(new RegExp(blockName, 'g'), newBlockName)
-      }
-    })
+    code = spacesToUnderscores(code, blockNames)
 
     if (mi === activeModel) {
       modelCodes.push(code)

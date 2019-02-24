@@ -7,6 +7,7 @@ const draggable = require('vuedraggable')
 const Table = require('handsontable')
 const Qty = require('js-quantities')
 const VueColor = require('vue-color')
+const beautify = require('js-beautify').js
 
 // Local deps
 const distributions = require('./lib/distributions')
@@ -817,7 +818,7 @@ const params = {
     generateWebPPL () {
       delay.call(this, 1000, () => {
         this.compile()
-        this.link = this.code
+        this.link = beautify(this.code, { indent_size: 2 })
       })
     },
     generateLink () {
