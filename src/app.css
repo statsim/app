@@ -465,7 +465,10 @@ textarea {
   right: 0 !important;
   left: inherit !important;
   position: absolute;
-  margin: 3px 10px !important;
+  margin: 0 !important;
+  background: rgba(255,255,255,.9);
+  padding: 5px 10px;
+  z-index: 100;
 }
 
 .content .dygraph-title {
@@ -762,6 +765,9 @@ tile {
   border: none;
 }
 .dark .content .parameters input, .dark .content .parameters .md-select {
+  background-color: #100f16;
+}
+.dark .content .dygraph-legend {
   background-color: #100f16;
 }
 .dark .graph-container {
