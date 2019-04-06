@@ -42,12 +42,16 @@ const stepSize = {
 
 
 module.exports = {
+  'auto': {
+    name: 'Default',
+    params: {}
+  },
   'deterministic': {
-    name: 'Deterministic',
+    name: 'Deterministic *',
     params: {}
   },
   'enumerate': {
-    name: 'Enumeration',
+    name: 'Enumeration *',
     params: {
       maxExecutions: {
         type: 'int',
@@ -65,7 +69,7 @@ module.exports = {
     }
   },
   'rejection': {
-    name: 'Rejection Sampling',
+    name: 'Rejection Sampling *',
     params: {
       samples,
       maxScore: {
@@ -100,8 +104,20 @@ module.exports = {
       onlyMAP
     }
   },
+  'NUTS': {
+    name: 'NUTS **',
+    params: {
+      samples,
+      burn,
+      steps,
+      stepSize,
+      lag,
+      onlyMAP
+    }
+  },
+
   'incrementalMH': {
-    name: 'Incremental MH',
+    name: 'Incremental MH *',
     params: {
       samples,
       burn,

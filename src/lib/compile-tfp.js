@@ -5,7 +5,19 @@ const addIterationChecks = require('./addIterationChecks')
 module.exports = function (models, activeModel) {
   console.log(`Mr. Compiler: Oh, models again! Active model is ${activeModel} of ${models.length}`)
 
-  let finalCode = ''
+  let finalCode =
+`# TFP. WORK IN PROGRESS
+
+import numpy as np
+import tensorflow as tf
+import tensorflow_probability as tfp
+tfd = tfp.distributions
+
+def evaluate(tensors):
+\tif tf.executing_eagerly():
+\t\treturn tf.contrib.framework.nest.pack_sequence_as(tensors, [t.numpy() if tf.contrib.framework.is_tensor(t) else t for t in tf.contrib.framework.nest.flatten(tensors)])
+\treturn sess.run(tensors)
+`
   let modelCodes = []
 
   // Iteratively get all blocks for the model from all the included models
@@ -133,7 +145,7 @@ module.exports = function (models, activeModel) {
     let data = ''
     let functionGen = '' // Table function generator
     let functions = '' // Code for all model functions
-    let model = 'var model = function () {\n'
+    let model = 'with pm.Model() as model:\n'
 
     // Step object needed when dealing with iterative models
     let step = {
@@ -178,13 +190,13 @@ module.exports = function (models, activeModel) {
           const arrayStr = `mapN(function (_j) { return ${sampleStr}}, ${size})`
           if (isMultiDim) {
             dims = (dims.indexOf('[') < 0) ? `[${dims}]` : dims
-            rvStr = `var ${b.name} = Tensor(${dims}, ${arrayStr})\n`
+            rvStr = `${b.name} = Tensor(${dims}, ${arrayStr})\n`
           } else {
-            rvStr = `var ${b.name} = ${arrayStr}\n`
+            rvStr = `${b.name} = ${arrayStr}\n`
           }
         } else {
           // Scalar
-          rvStr = `var ${b.name} = ${sampleStr}\n`
+          rvStr = `${b.name} = ${sampleStr}\n`
         }
         // Check if we are inside the loop
         if ((isMultistepModel) && (!b.once)) {

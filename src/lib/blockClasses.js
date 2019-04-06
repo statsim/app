@@ -27,6 +27,8 @@ module.exports = [
       this.show = true
       this.type = 'Expression'
       this.typeCode = 1
+      this.expressionType = 'Custom'
+      this.params = {}
       this.value = ''
       this.units = ''
     }

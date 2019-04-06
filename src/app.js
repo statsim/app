@@ -10,16 +10,19 @@ const VueColor = require('vue-color')
 const beautify = require('js-beautify').js
 
 // Local deps
-const distributions = require('./lib/distributions')
-const simulationMethods = require('./lib/methods')
-const compileModels = require('./lib/compileModels')
-const processResults = require('./lib/processResults')
-const createLink = require('./lib/createLink')
-const parseLink = require('./lib/parseLink')
-const icons = require('./lib/icons')
-const createBaseModel = require('./lib/createBaseModel')
-const guessUnits = require('./lib/guessUnits')
 const BlockClasses = require('./lib/blockClasses')
+const compileModels = require('./lib/compile-wppl')
+const compilePYMC3 = require('./lib/compile-pymc3')
+const compileTFP = require('./lib/compile-tfp')
+const createBaseModel = require('./lib/createBaseModel')
+const createLink = require('./lib/createLink')
+const distributions = require('./lib/distributions')
+const expressions = require('./lib/expressions')
+const guessUnits = require('./lib/guessUnits')
+const icons = require('./lib/icons')
+const parseLink = require('./lib/parseLink')
+const processResults = require('./lib/processResults')
+const simulationMethods = require('./lib/methods')
 
 // Access global objects
 const Blob = window['Blob']
@@ -202,6 +205,7 @@ const params = {
     colors, // Array of block colors
     error: '', // Error string, activates error bar
     icons, // List of icons with codes
+    expressions, // List of expression types with parameters
     link: '', // Generated URL
     loading: false, // Show loading indicator?
     message: '', // Any message in top bar
@@ -821,6 +825,18 @@ const params = {
         this.link = beautify(this.code, { indent_size: 2 })
       })
     },
+    generatePYMC3 () {
+      delay.call(this, 1000, () => {
+        this.compile('pymc3')
+        this.link = this.code
+      })
+    },
+    generateTFP () {
+      delay.call(this, 1000, () => {
+        this.compile('tfp')
+        this.link = this.code
+      })
+    },
     generateLink () {
       delay.call(this, 400, () => {
         this.link = createLink(this.models, this.preview, this.activeModel)
@@ -882,9 +898,16 @@ const params = {
       // Redraw data table if data removed
       if ((typeCode === 2) && this.reactiveDataTable && this.showDataTable) this.drawDataTable()
     },
-    compile () {
+    compile (target) {
       // Convert available models (this.models) to the probabilistic lang
-      this.code = compileModels(this.models, this.activeModel)
+      if (!target || (target === 'wppl')) {
+        this.code = compileModels(this.models, this.activeModel)
+      } else if (target === 'pymc3') {
+        this.code = compilePYMC3(this.models, this.activeModel)
+      } else if (target === 'tfp') {
+        this.code = compileTFP(this.models, this.activeModel)
+      }
+
       console.log('Vue: F* yeah! Got compiled code!')
     },
     process (data) {

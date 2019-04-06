@@ -327,15 +327,59 @@
             @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
-        <md-input-container>
-          <label>Value</label>
-          <md-input
-            :value="block.value"
-            @blur="set(block, 'value', $event)"
-            :id="'input-' + blockIndex"
-          ></md-input>
-        </md-input-container>
-        <!-- exp -->
+
+        <!-- Expression type selector -->
+        <md-whiteframe
+          md-elevation="11"
+          style="padding: 15px; margin: 5px 0 15px"
+        >
+          <md-input-container>
+            <label for="expressionType">Expression type:</label>
+            <!-- @change: reset distribution paramaters when distribution changed -->
+            <md-select
+              name="expressionType"
+              id="expressionType"
+              v-model="block.expressionType"
+            >
+              <md-option
+                v-for="(params, expressionType) in expressions"
+                :value="expressionType"
+                @selected="block.params = {}"
+              >{{ expressionType }}</md-option>
+            </md-select>
+          </md-input-container>
+
+          <!--
+            Use block.params to store values when special expression type is provided.
+          -->
+          <md-input-container
+            v-if="block.expressionType.length && (block.expressionType !== 'Custom')" 
+            v-for="param in expressions[block.expressionType]"
+            md-clearable
+          >
+            <label style="text-transform: capitalize">{{ param }}</label>
+            <md-input
+              v-model="block.params[param]"
+            ></md-input>
+          </md-input-container>
+
+          <!--
+            Keep old expression working.
+            Use block.value when Custom or type is not provided.
+          -->
+          <md-input-container v-if="(!block.expressionType) || (block.expressionType === 'Custom')">
+            <label>Value</label>
+            <md-input
+              :value="block.value"
+              @blur="set(block, 'value', $event)"
+              :id="'input-' + blockIndex"
+            ></md-input>
+          </md-input-container>
+        </md-whiteframe>
+
+        <!--
+          Expression helpers
+          Disable temporary
         <md-tabs class="md-transparent">
           <md-tab md-label="Base">
             <md-button
@@ -390,7 +434,8 @@
             <md-button @click.native="addExpression('T.cholesky()', blockIndex, -1)">cholesky</md-button>
           </md-tab>
         </md-tabs>
-	<!-- *exp -->
+        -->
+	<!-- *Expression helpers -->
 
         <!-- Units -->
         <div class="data-input">
@@ -404,6 +449,7 @@
               print-attribute="name"
             ></md-autocomplete>
             <md-button
+              v-if="!block.expressionType || (block.expressionType === 'Custom')"
               class="md-icon-button md-dense"
               @click.native="guessUnits(block.value, blockIndex)"
             >
@@ -865,6 +911,12 @@
       <md-button class="desktop editor-only" v-on:click.native="generateWebPPL">
         WPPL
       </md-button>
+      <md-button class="desktop editor-only" v-on:click.native="generatePYMC3">
+        PYMC3
+      </md-button>
+      <md-button class="desktop editor-only" v-on:click.native="generateTFP">
+        TFP
+      </md-button>
       <md-button class="desktop editor-only" v-on:click.native="generateJSON">
         JSON
       </md-button>
@@ -1017,6 +1069,10 @@
             :value="method">{{ methodObj.name }}</md-option>
         </md-select>
       </md-input-container>
+      <small>
+        * - available in WebPPL only<br>
+        ** - available in PyMC3 only (server-side)
+      </small>
 
       <!-- Time start-->
       <md-input-container class="simulation-param">

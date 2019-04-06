@@ -48,6 +48,11 @@ module.exports = {
       max: Infinity
     }
   },
+  'Delta': {
+    v: {
+      type: 'real'
+    }
+  },
   'Dirichlet': {
     alpha: {
       type: 'vector'
