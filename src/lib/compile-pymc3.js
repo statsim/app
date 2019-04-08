@@ -3,6 +3,7 @@ const spacesToUnderscores = require('./spacesToUnderscores')
 const addIterationChecks = require('./addIterationChecks')
 
 const dict = {
+  // Distributions
   'Beta_a': 'alpha',
   'Beta_b': 'beta',
   'Cauchy_location': 'alpha',
@@ -21,8 +22,14 @@ const dict = {
   'Laplace_location': 'mu',
   'Laplace_scale': 'b',
   'LogitNormal_sigma': 'sd',
+  'Multinomial_ps': 'p',
+  'MultivariateGaussian': 'MvNormal',
   'Uniform_a': 'lower',
-  'Uniform_b': 'upper'
+  'Uniform_b': 'upper',
+  // Inference
+  'steps': 'draws',
+  'MCMC': 'Metropolis',
+  'HMC': 'HamiltonianMC'
 }
 
 function translate (s, dist) {
@@ -530,7 +537,10 @@ ${step.body}\t\t\treturn (${step.accum})
     }
 
     // Sampling
+    /*
     model += '\t' + `trace = pm.sample()\n`
+    */
+
     code += data + functionGen + functions + model
 
     // Add helper functions
@@ -560,46 +570,53 @@ ${step.body}\t\t\treturn (${step.accum})
       code = fIn + fOut + code
     }
 
-    // Inference
-    /*
+    // Sampling (Inference)
     let inf = (mi === activeModel) ? '' : 'return '
-    if (m.modelParams.method === 'deterministic') {
-      inf += `model()\n`
+    if (
+      (m.modelParams.method === 'deterministic') ||
+      ((m.modelParams.method === 'auto') && (!m.blocks.find(b => [0, 4, 5, 6].includes(b.typeCode))))
+    ) {
+      inf += `result = model()\n`
+    } else if (['auto', 'enumerate', 'rejection', 'incrementalMH', 'forward'].includes(m.modelParams.method)) {
+      // Fallback to automatic inference
+      inf += `result = pm.sample(model=model)\n`
     } else {
       let paramStr = ''
-      let kernelStr = ''
-      let kernelParamStr = ''
-      let realMethod = (m.modelParams.method === 'HMC') ? 'MCMC' : m.modelParams.method
 
       // Iterate over all method params
       Object.keys(m.methodParams).forEach(key => {
-        // Check if param is not empty
-        if (m.methodParams[key] && m.methodParams[key] !== '' && methods[m.modelParams.method].params.hasOwnProperty(key)) {
-          if (((key === 'steps') && (m.modelParams.method === 'HMC')) || key === 'stepSize') {
-            kernelParamStr += (kernelParamStr.length) ? ', ' : ''
-            kernelParamStr += `${key}: ${m.methodParams[key]}`
-          } else if (key !== 'optMethod') {
-            paramStr += `, ${key}: ${m.methodParams[key]}`
-          }
+        // Check if param is not empty and needed for current method
+        if (
+          m.methodParams[key] &&
+          (m.methodParams[key] !== '') &&
+          methods[m.modelParams.method].params.hasOwnProperty(key) &&
+          !((m.modelParams.method === 'optimize') && (key === 'samples'))
+        ) {
+          paramStr += `, ${translate(key)}=${m.methodParams[key]}`
         }
       })
+      /*
       if (m.modelParams.method === 'HMC') {
         kernelStr = (kernelParamStr.length) ? `, kernel: {HMC: {${kernelParamStr}}}` : `, kernel: 'HMC'`
       } else if (m.modelParams.method === 'optimize') {
         kernelStr = (kernelParamStr.length) ? `, optMethod: {${m.methodParams.optMethod || 'adam'}: {${kernelParamStr}}}` : `, optMethod: '${m.methodParams.optMethod || 'adam'}'`
       }
-      inf += `Infer({model, method: '${realMethod}'${kernelStr + paramStr}})\n`
+      */
+      if (m.modelParams.method === 'optimize') {
+        inf += `result = pm.fit(model=model${paramStr}).sample(${m.methodParams.samples})\n`
+      } else {
+        inf += `result = pm.sample(model=model, step=pm.${translate(m.modelParams.method)}()${paramStr})\n`
+      }
     }
     code += inf
     code += (mi === activeModel) ? `` : `}` // Finish the function if it's not a main model
-    */
 
     // Traceplot
     if (modelOutput.length) {
       modelOutput = modelOutput.slice(0, -1)
-      code += `pm.traceplot(trace, varnames=['${modelOutput.split(',').join('\',\'')}']);\n`
+      code += `pm.traceplot(result, varnames=['${modelOutput.split(',').join('\',\'')}']);\n`
     } else {
-      code += `pm.traceplot(trace);\n`
+      code += `pm.traceplot(result);\n`
     }
 
     // Replace all spaces in block names with underscores
@@ -632,6 +649,6 @@ ${step.body}\t\t\treturn (${step.accum})
     })
   }
 
-  console.log(`Mr. Compiler: I've finished. Here's your WebPPL code:%c\n${finalCode}`, `color: #2C893A; font-size:10px;`)
+  console.log(`Mr. Compiler: I've finished. Here's your PYMC3 code:%c\n${finalCode}`, `color: #2C893A; font-size:10px;`)
   return finalCode
 }

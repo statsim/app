@@ -40,10 +40,9 @@ const stepSize = {
   description: 'The size of each step'
 }
 
-
 module.exports = {
   'auto': {
-    name: 'Default',
+    name: 'Automatic',
     params: {}
   },
   'deterministic': {

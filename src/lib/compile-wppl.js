@@ -619,8 +619,13 @@ var {${step.list}} = step(${m.modelParams.steps})
 
     // Inference
     let inf = (mi === activeModel) ? '' : 'return '
-    if (m.modelParams.method === 'deterministic') {
+    if (
+      (m.modelParams.method === 'deterministic') ||
+      ((m.modelParams.method === 'auto') && (!m.blocks.find(b => [0, 4, 5, 6].includes(b.typeCode))))
+    ) {
       inf += `model()\n`
+    } else if (m.modelParams.method === 'auto') {
+      inf += `Infer({model})\n`
     } else {
       let paramStr = ''
       let kernelStr = ''

@@ -136,6 +136,9 @@ module.exports = {
       type: 'real'
     }
   },
+  /*
+  // Currently unavailable
+  // It takes an array of distributions, but we can't generate
   'Mixture': {
     dists: {
       type: 'vector'
@@ -144,6 +147,7 @@ module.exports = {
       type: 'vector'
     }
   },
+  */
   'Multinomial': {
     ps: {
       type: 'vector'
