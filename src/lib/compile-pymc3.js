@@ -24,6 +24,7 @@ const dict = {
   'LogitNormal_sigma': 'sd',
   'Multinomial_ps': 'p',
   'MultivariateGaussian': 'MvNormal',
+  'StudentT_sigma': 'sd',
   'Uniform_a': 'lower',
   'Uniform_b': 'upper',
   // Inference
