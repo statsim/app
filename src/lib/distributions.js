@@ -184,6 +184,21 @@ module.exports = {
       max: Infinity
     }
   },
+  'StudentT': {
+    nu: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    },
+    mu: {
+      type: 'real'
+    },
+    sigma: {
+      type: 'real',
+      min: 0,
+      max: Infinity
+    }
+  },
   'TensorGaussian': {
     mu: {
       type: 'real'
