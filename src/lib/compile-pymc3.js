@@ -28,7 +28,8 @@ const dict = {
   'Uniform_a': 'lower',
   'Uniform_b': 'upper',
   // Inference
-  'steps': 'draws',
+  'samples': 'draws',
+  'burn': 'tune',
   'MCMC': 'Metropolis',
   'HMC': 'HamiltonianMC'
 }
@@ -495,8 +496,8 @@ return ${b.y.trim()}
         }
       } else if ((b.typeCode === 5) && (b.value) && (b.value.length)) {
         // --> CONDITION BLOCK
-
-        const cond = `condition(${b.value})\n`
+        console.log(b)
+        const cond = `\tpm.Potential('cond-${b.id}', pm.math.switch(${b.value}, 0, -100))\n`
         if (isMultistepModel) {
           observers += cond
         } else {
@@ -577,10 +578,10 @@ ${step.body}\t\t\treturn (${step.accum})
       (m.modelParams.method === 'deterministic') ||
       ((m.modelParams.method === 'auto') && (!m.blocks.find(b => [0, 4, 5, 6].includes(b.typeCode))))
     ) {
-      inf += `result = model()\n`
+      inf += `\tresult = model()\n`
     } else if (['auto', 'enumerate', 'rejection', 'incrementalMH', 'forward'].includes(m.modelParams.method)) {
       // Fallback to automatic inference
-      inf += `result = pm.sample(model=model)\n`
+      inf += `\tresult = pm.sample(model=model)\n`
     } else {
       let paramStr = ''
 
@@ -589,11 +590,16 @@ ${step.body}\t\t\treturn (${step.accum})
         // Check if param is not empty and needed for current method
         if (
           m.methodParams[key] &&
+          !['lag'].includes(key) && // PyMC3 doesn't use lags
           (m.methodParams[key] !== '') &&
           methods[m.modelParams.method].params.hasOwnProperty(key) &&
-          !((m.modelParams.method === 'optimize') && (key === 'samples'))
+          !((m.modelParams.method === 'optimize') && (key === 'samples')) // we don't pass samples to optimizer
         ) {
           paramStr += `, ${translate(key)}=${m.methodParams[key]}`
+          // Instead of providing a lag argument, calculate number of samples
+          if ((key === 'samples') && m.methodParams.lag && (parseInt(m.methodParams.lag) > 0)) {
+            paramStr += '*' + m.methodParams.lag
+          }
         }
       })
       /*
@@ -604,9 +610,9 @@ ${step.body}\t\t\treturn (${step.accum})
       }
       */
       if (m.modelParams.method === 'optimize') {
-        inf += `result = pm.fit(model=model${paramStr}).sample(${m.methodParams.samples})\n`
+        inf += `\tresult = pm.fit(model=model${paramStr}).sample(${m.methodParams.samples})\n`
       } else {
-        inf += `result = pm.sample(model=model, step=pm.${translate(m.modelParams.method)}()${paramStr})\n`
+        inf += `\tresult = pm.sample(model=model, step=pm.${translate(m.modelParams.method)}()${paramStr})\n`
       }
     }
     code += inf
