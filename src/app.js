@@ -23,6 +23,7 @@ const icons = require('./lib/icons')
 const parseLink = require('./lib/parseLink')
 const processResults = require('./lib/processResults')
 const simulationMethods = require('./lib/methods')
+const copyText = require('./lib/copy')
 
 // Access global objects
 const Blob = window['Blob']
@@ -430,6 +431,17 @@ const params = {
     }
   },
   methods: {
+    downloadCode () {
+      // Download code
+      console.log('Vue: Downloading code')
+      const blob = new Blob([this.link], {type: 'text/plain;charset=utf-8'})
+      fileSaver.saveAs(blob, '')
+    },
+    copyCode () {
+      // Copy code block to the clipboard
+      console.log('Vue: Copying to the clipboard')
+      copyText(this.link)
+    },
     download () {
       // Download samples
       console.log('Vue: Downloading samples')

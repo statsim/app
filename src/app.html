@@ -971,7 +971,15 @@
     <!-- Generated links and code -->
     <div class="links wl" v-if="link.length">
       <div class="control-buttons">
-        <md-button class="md-dense" @click="link = ''">
+        <md-button class="md-dense" @click.native="downloadCode">
+          <md-icon>arrow_downward</md-icon>
+          Download
+        </md-button>
+        <md-button class="md-dense" @click.native="copyCode">
+          <md-icon>inbox</md-icon>
+          Copy to clipboard
+        </md-button>
+        <md-button class="md-dense" @click.native="link = ''">
           <md-icon>close</md-icon>
           Close
         </md-button>
