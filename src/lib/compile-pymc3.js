@@ -486,7 +486,15 @@ return ${b.y.trim()}
         if (isVector(value) && (value.indexOf('[') < 0)) {
           value = `np.array([${value.trim()}])`
         }
-        observer += `obs = pm.${translate(b.distribution)}('obs', ${params}, observed=${value})\n`
+
+        // Find index of the observer block (they don't have names in StatSim, but do have in PyMC3)
+        let observers = blocks.filter(block => (block.typeCode === 4))
+        let observerIndex = (observers.length > 1)
+          ? 1 + observers.findIndex(block => block.id === b.id)
+          : ''
+
+        // Generate observer code
+        observer += `observer${observerIndex} = pm.${translate(b.distribution)}('observer${observerIndex}', ${params}, observed=${value})\n`
 
         // Add observer code later, if in the loop
         if (isMultistepModel) {
