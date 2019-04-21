@@ -449,12 +449,21 @@ const params = {
       // Download code
       console.log('Vue: Downloading code')
       const blob = new Blob([this.link], {type: 'text/plain;charset=utf-8'})
-      fileSaver.saveAs(blob, '')
+      let ext = 'txt'
+      if (this.link.includes('modelParams')) {
+        ext = 'json'
+      } else if (this.link.includes('pymc3')) {
+        ext = 'py'
+      } else if (this.link.includes('return')) {
+        ext = 'wppl'
+      }
+      fileSaver.saveAs(blob, 'model.' + ext)
     },
     copyCode () {
       // Copy code block to the clipboard
       console.log('Vue: Copying to the clipboard')
       copyText(this.link)
+      this.notify('Copied to clipboard')
     },
     download () {
       // Download samples
@@ -690,6 +699,7 @@ const params = {
         this.switchModel(0)
         // Clean models
         this.models = [createBaseModel('Main')]
+        this.notify('New project created')
       })
     },
     openFile (fileType) {
@@ -767,6 +777,7 @@ const params = {
     createModel () {
       this.models.push(createBaseModel('Model' + this.models.length))
       this.switchModel(this.models.length - 1)
+      this.notify('New model created')
     },
     switchModel (modelId) {
       console.log('Vue: switching to model', modelId)
@@ -804,6 +815,7 @@ const params = {
       let newModel = JSON.parse(JSON.stringify(this.models[this.activeModel]))
       newModel.modelParams.name += 'Copy'
       this.models.push(newModel)
+      this.notify('New model created (duplicate)')
     },
     removeModel (confirm) {
       if (confirm === 'ok') {

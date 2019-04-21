@@ -926,21 +926,21 @@
         Link
       </md-button>
       <md-button
-        class="md-icon-button editor-only"
+        class="md-icon-button md-raised editor-only"
         v-if="!showDataTable"
         @click.native="showDataTable = true; link = ''; drawDataTable()"
       >
         <md-icon>grid_on</md-icon>
       </md-button>
       <md-button
-        class="md-icon-button editor-only"
+        class="md-icon-button md-raised editor-only"
         v-if="showDataTable"
         @click.native="showDataTable = false"
       >
         <md-icon>grid_off</md-icon>
       </md-button>
 
-      <md-button class="md-icon-button editor-only" @click="toggleRightSidenav">
+      <md-button class="md-icon-button md-raised editor-only" @click="toggleRightSidenav">
         <md-icon>tune</md-icon>
       </md-button>
 
