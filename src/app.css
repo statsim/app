@@ -373,9 +373,9 @@ textarea {
   margin: 0 21px 0 0;
 }
 .content .control-buttons .md-button{
-  background-color: #a9a9a933;
+  background-color: #e0e0e0;
   margin: 0;
-  min-height: 25px;
+  min-height: 32px;
   line-height: 25px;
   font-size: 12px;
 }
