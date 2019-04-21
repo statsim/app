@@ -875,10 +875,10 @@
         <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks can be constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
       <md-board id="slide2">
-        <p><b>Update block settings.</b> Each block has its own settings. They determine how the program evaluates a block and its future usage. Almost each block has the <i>Show in results</i> checkbox. It determines if the block is shown in the output.</p>
+        <p><b>Update blocks.</b> Each block has its own parameters. They determine how the program evaluates a block and its future usage. Almost each block has the <i>Show in results</i> checkbox. It determines if the block is shown in the output.</p>
       </md-board>
       <md-board id="slide3">
-        <p><b>Set simulation <span style="border: 1px solid #e91e63; background-color: #e91e63; color: white; padding: 3px 4px;">Params</span>.</b> After you created and set all the blocks it's time to choose a simulation method. The simple rule is if you don't use random variables select <i>Deterministic</i>. For simulations choose <i>Rejection Sampling</i> or <i>MCMC</i>, for ML select <i>Optimization</i>. </p>
+        <p><b>Set simulation <span style="border: 1px solid white; background-color: white; color: black; padding: 3px 4px;">Settings</span>.</b> After you created and set all the blocks it's time to choose a simulation method. The simple rule is if you don't use random variables select <i>Deterministic</i>. For simulations choose <i>Rejection Sampling</i> or <i>MCMC</i>, for ML select <i>Optimization</i>. </p>
       </md-board>
       <md-board id="slide4">
         <p><b><span style="border: 1px solid #3f51b5; background-color: #3f51b5; color: white; padding: 3px 4px;">&nbsp;Run&nbsp;</span> your model</b> after saving it. If you don't use a server for simulations StatSim may become unresponsive and you may lose your data. In case everything went right you get some informative charts or scalar values as a result. Compile your model to binaries if you want to use it as a separate app.</p>
@@ -1062,7 +1062,7 @@
   <md-sidenav v-if="models && models.length" class="param-bar md-right editor-only" ref="rightSidenav">
     <md-toolbar class="md-dense">
       <div class="md-toolbar-container">
-        <h3 class="md-title" style="flex: 1">Simulation parameters</h3>
+        <h3 class="md-title" style="flex: 1">Project settings</h3>
         <md-button class="md-icon-button" @click="closeRightSidenav">
           <md-icon>close</md-icon>
         </md-button>
@@ -1225,14 +1225,23 @@
       <p>Time steps: {{ models[activeModel].modelParams.steps }}</p>
       <p v-if="(['MCMC','rejection', 'HMC'].indexOf(models[activeModel].modelParams.method) >= 0) &&  models[activeModel].methodParams.samples">Samples: {{ models[activeModel].methodParams.samples }}</p>
     </div>
-    <md-button class="md-raised md-accent params-button editor-only" @click="toggleRightSidenav">
+    <md-button class="md-raised params-button editor-only" @click="toggleRightSidenav">
       <md-icon>tune</md-icon>
-      <span class="desktop">Params</span>
+      <span class="desktop">Settings</span>
     </md-button>
     <md-button class="run-button md-raised md-primary" :disabled="models[activeModel].blocks.length < 1" v-on:click.native="run()">
       <md-icon>play_arrow</md-icon>
       <span class="desktop editor-only">Compile & </span>Run
     </md-button>
   </md-bottom-bar>
+
+  <!-- Loader -->
   <div id="loader" class="hidden"><span><md-icon>hourglass_empty</md-icon> Processing..</span></div>
+
+  <!-- Notification / Snackbar -->
+  <md-snackbar md-position="bottom center" ref="snackbar" md-duration="10000">
+    <span>{{ notifyMessage }}</span>
+    <md-button class="md-accent" md-theme="light-blue" @click.native="$refs.snackbar.close()">Close</md-button>
+  </md-snackbar>
+
 </div>

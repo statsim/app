@@ -631,6 +631,11 @@ textarea {
   display: none;
 }
 
+.md-snackbar {
+  margin-bottom: 55px !important;
+  opacity: .9;
+}
+
 /* 2D Plots */
 tile {
   shape-rendering: crispEdges;
@@ -901,6 +906,10 @@ tile {
 }
 
 @media only screen and (max-width: 860px) {
+  .md-snackbar-container {
+    width: 100%;
+    max-width: 100%;
+  }
   .mobile {
     display: initial;
   }

@@ -182,6 +182,18 @@ function delay (time, cb) {
   }, time)
 }
 
+// Show bottom notification
+function notify (message, type) {
+  const app = this
+  app.notifyMessage = message
+  let color = '#5db53b'
+  if (type === 'error') {
+    color = '#e91e63'
+  }
+  app.$refs.snackbar.$el.firstElementChild.style.backgroundColor = color
+  app.$refs.snackbar.open()
+}
+
 // Future HotTable object
 // Need it here to easily call from any app method
 let table
@@ -212,6 +224,7 @@ const params = {
     message: '', // Any message in top bar
     models: [], // Array of project models
     networkOptions, // Graph opts
+    notifyMessage: '',
     preview: false, // Preview mode?
     samples: {}, // Simulation results
     reactiveDataTable: false, // Update data from table reactively?
@@ -422,7 +435,7 @@ const params = {
           })
         },
         (err) => {
-          this.error = err
+          this.notify(err, 'error')
         }
       )
     } else { // *if window.location.search is not empty
@@ -431,6 +444,7 @@ const params = {
     }
   },
   methods: {
+    notify,
     downloadCode () {
       // Download code
       console.log('Vue: Downloading code')
@@ -759,7 +773,7 @@ const params = {
       this.samples = {} // Clear old samples
       this.error = ''
       if (modelId < 0 || modelId > this.models.length - 1) {
-        this.error = 'Invalid model number. Switching to first model'
+        this.notify('Invalid model number. Switching to first model', 'error')
         modelId = 0
       }
       const m = this.models[modelId]
@@ -835,12 +849,14 @@ const params = {
       delay.call(this, 1000, () => {
         this.compile()
         this.link = beautify(this.code, { indent_size: 2 })
+        this.notify('Compiled to WebPPL')
       })
     },
     generatePYMC3 () {
       delay.call(this, 1000, () => {
         this.compile('pymc3')
         this.link = this.code
+        this.notify('Compiled to PyMC3')
       })
     },
     generateTFP () {
@@ -852,11 +868,13 @@ const params = {
     generateLink () {
       delay.call(this, 400, () => {
         this.link = createLink(this.models, this.preview, this.activeModel)
+        this.notify('Link generated')
       })
     },
     generateJSON () {
       delay.call(this, 600, () => {
         this.link = JSON.stringify(this.models, null, 2) // indent with 2 spaces
+        this.notify('JSON generated')
       })
     },
     toggle (blockIndex) {
@@ -925,14 +943,14 @@ const params = {
     process (data) {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
-      this.message = 'Done!'
       this.samples = processResults(data, this.models[this.activeModel].blocks, this.models[this.activeModel].modelParams)
+      this.notify('Done!')
     },
     run () {
       const errorHandler = (err) => {
         this.loading = false
         document.getElementById('loader').className = 'hidden'
-        this.error = err.message
+        this.notify(err.message, 'error')
       }
 
       document.querySelector('.charts').innerHTML = ''
