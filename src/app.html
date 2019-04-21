@@ -231,6 +231,10 @@
               <md-icon>keyboard_capslock</md-icon>
               <span>Move to top</span>
             </md-menu-item>
+            <md-menu-item v-on:selected="cloneBlock(blockIndex)">
+              <md-icon>flip_to_front</md-icon>
+              <span>Clone block</span>
+            </md-menu-item>
             <md-menu-item v-on:selected="removeBlock(blockIndex)">
               <md-icon>delete</md-icon>
               <span>Delete block</span>
@@ -892,7 +896,7 @@
     <!-- Model control -->
     <md-button v-on:click.native="duplicateModel()">
       <md-icon>flip_to_front</md-icon>
-      Duplicate
+      Clone model
     </md-button>
     <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">
       <md-icon>delete_outlined</md-icon>
