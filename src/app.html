@@ -170,10 +170,12 @@
     </div>
     <div style="text-align: center; opacity: 0.4" v-if="models[activeModel].blocks.length">
       <md-button class="md-dense" @click="minimizeAllBlocks">
-        Hide all
+        <md-icon>remove</md-icon>
+        Minimize
       </md-button>
       <md-button class="md-dense" @click="maximizeAllBlocks">
-        Show all
+        <md-icon>fullscreen</md-icon>
+        Maximize
       </md-button>
     </div>
     <!-- Add drag and drop -->
@@ -206,9 +208,11 @@
         </div>
         <md-button class="md-icon-button" v-if="block.minimized" v-on:click.native="toggle(blockIndex)">
           <md-icon>fullscreen</md-icon>
+          <md-tooltip md-direction="bottom">Maximize</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-if="!block.minimized" v-on:click.native="toggle(blockIndex)">
           <md-icon>remove</md-icon>
+          <md-tooltip md-direction="bottom">Minimize</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-on:click.native="moveBlockUp(blockIndex)">
           <md-icon>expand_less</md-icon>
