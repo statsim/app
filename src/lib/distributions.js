@@ -185,15 +185,15 @@ module.exports = {
     }
   },
   'StudentT': {
-    nu: {
+    df: {
       type: 'real',
       min: 0,
       max: Infinity
     },
-    mu: {
+    location: {
       type: 'real'
     },
-    sigma: {
+    scale: {
       type: 'real',
       min: 0,
       max: Infinity
