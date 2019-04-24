@@ -365,8 +365,11 @@ module.exports = function (models, activeModel) {
         } else {
           model += `var ${b.name} = ${b.initialValue} + ${b.value}\n`
         }
-      } else if ((b.typeCode === 7) && b.name && b.name.length && b.x && b.x.length && b.y && b.y.length) {
+      } else if ((b.typeCode === 7) && b.name && b.name.length) {
+        // --> FUNCTION
+
         if (b.tableFunction) {
+          // Table function
           if (functionGen === '') {
             functionGen = `
 var functionGen = function(xarr, yarr) {
@@ -394,14 +397,20 @@ var functionGen = function(xarr, yarr) {
 var ${b.name.trim()} = functionGen([${b.x}],[${b.y}])
 `
         } else {
+          // Simple function
+          const transformedValue = (!b.expressionType || (b.expressionType === 'Custom'))
+            ? b.y
+            : generateExpression(b.expressionType, b.params)
+
           functions += `
 var ${b.name.trim()} = function (${b.x.trim()}) {
-return ${b.y.trim()}
+return ${transformedValue}
 }
 `
         }
       } else if ((b.typeCode === 6) && b.layers.length) {
         // --> NEURAL NET
+
         var layers = ''
         b.layers.slice().reverse().forEach((l, li) => {
           if (li > 0) {

@@ -385,66 +385,6 @@
           </md-input-container>
         </md-whiteframe>
 
-        <!--
-          Expression helpers
-          Disable temporary
-        <md-tabs class="md-transparent">
-          <md-tab md-label="Base">
-            <md-button
-              v-for="b, bi in models[activeModel].blocks"
-              v-if="([0, 1, 2].indexOf(b.typeCode) >= 0) && (bi !== blockIndex)"
-              @click.native="addExpression(b.name, blockIndex, 1)"
-            >{{ b.name }}</md-button>
-            <hr>
-            <md-button
-              v-for="n in [0,1,2,3,4,5,6,7,8,9]"
-              @click.native="addExpression(n + '', blockIndex, 0)"
-            >{{ n }}</md-button>
-            <md-button @click.native="addExpression('.', blockIndex, 0)">.</md-button>
-          </md-tab>
-          <md-tab md-label="Math">
-            <md-button @click.native="addExpression('+', blockIndex, 0)">+</md-button>
-            <md-button @click.native="addExpression('-', blockIndex, 0)">-</md-button>
-            <md-button @click.native="addExpression('*', blockIndex, 0)">*</md-button>
-            <md-button @click.native="addExpression('/', blockIndex, 0)">/</md-button>
-            <md-button @click.native="addExpression('Math.sqrt()', blockIndex, -1)">x<sup>2</sup></md-button>
-            <md-button @click.native="addExpression('Math.pow(,)', blockIndex, -2)">x<sup>y</sup></md-button>
-            <md-button @click.native="addExpression('Math.PI', blockIndex, 1)">&#960;</md-button>
-            <md-button @click.native="addExpression('Math.E', blockIndex, 1)">e</md-button>
-          </md-tab>
-          <md-tab md-label="Arrays">
-            <md-button @click.native="addExpression('sum()', blockIndex, -1)">sum</md-button>
-            <md-button @click.native="addExpression('product()', blockIndex, -1)">product</md-button>
-            <md-button @click.native="addExpression('listMean()', blockIndex, -1)">mean</md-button>
-            <md-button @click.native="addExpression('listVar()', blockIndex, -1)">var</md-button>
-            <md-button @click.native="addExpression('listStdev()', blockIndex, -1)">std</md-button>
-            <md-button @click.native="addExpression('all()', blockIndex, -1)">all</md-button>
-            <md-button @click.native="addExpression('any()', blockIndex, -1)">any</md-button>
-            <md-button @click.native="addExpression('filter(function(x) {},)', blockIndex, -2)">filter</md-button>
-            <md-button @click.native="addExpression('find(function(x) {},)', blockIndex, -2)">find</md-button>
-            <md-button @click.native="addExpression('remove(,)', blockIndex, -2)">remove</md-button>
-            <md-button @click.native="addExpression('sort()', blockIndex, -1)">sort</md-button>
-            <md-button @click.native="addExpression('map(function(x) {},)', blockIndex, -2)">map</md-button>
-            <md-button @click.native="addExpression('map2(function(x,y) {},,)', blockIndex, -3)">map2</md-button>
-            <md-button @click.native="addExpression('mapN(function(x) {},)', blockIndex, -3)">mapN</md-button>
-            <md-button @click.native="addExpression('reduce(function(x, acc) {},,)', blockIndex, -3)">reduce</md-button>
-          </md-tab>
-          <md-tab md-label="Tensors">
-            <md-button @click.native="addExpression('T.sumreduce()', blockIndex, -1)">sum</md-button>
-            <md-button @click.native="addExpression('T.get(,)', blockIndex, -2)">get</md-button>
-            <md-button @click.native="addExpression('T.toScalars()', blockIndex, -1)">toScalars</md-button>
-            <md-button @click.native="addExpression('T.fromScalars()', blockIndex, -1)">fromScalars</md-button>
-            <md-button @click.native="addExpression('T.transpose()', blockIndex, -1)">transpose</md-button>
-            <md-button @click.native="addExpression('T.diagonal()', blockIndex, -1)">diagonal</md-button>
-            <md-button @click.native="addExpression('T.inverse()', blockIndex, -1)">inverse</md-button>
-            <md-button @click.native="addExpression('T.determinant()', blockIndex, -1)">determinant</md-button>
-            <md-button @click.native="addExpression('T.dot(,)', blockIndex, -2)">dot</md-button>
-            <md-button @click.native="addExpression('T.cholesky()', blockIndex, -1)">cholesky</md-button>
-          </md-tab>
-        </md-tabs>
-        -->
-	<!-- *Expression helpers -->
-
         <!-- Units -->
         <div class="data-input">
           <md-input-container>
@@ -603,15 +543,63 @@
             @blur="set(block, 'x', $event)"
           ></md-input>
         </md-input-container>
-        <md-input-container md-clearable>
-          <label v-if="block.tableFunction">Y</label>
-          <label v-else>Return value</label>
+
+        <!-- Expression type selector -->
+        <md-whiteframe
+          v-if="!block.tableFunction"
+          md-elevation="11"
+          style="padding: 15px; margin: 5px 0 15px"
+        >
+          <md-input-container>
+            <label for="expressionType">Return type:</label>
+            <!-- @change: reset distribution paramaters when distribution changed -->
+            <md-select
+              name="expressionType"
+              v-model="block.expressionType"
+            >
+              <md-option
+                v-for="(params, expressionType) in expressions"
+                :value="expressionType"
+                @selected="block.params = {}"
+              >{{ expressionType }}</md-option>
+            </md-select>
+          </md-input-container>
+
+          <!--
+            Use block.params to store values when special expression type is provided.
+          -->
+          <md-input-container
+            v-if="block.expressionType.length && (block.expressionType !== 'Custom')" 
+            v-for="param in expressions[block.expressionType]"
+            md-clearable
+          >
+            <label style="text-transform: capitalize">{{ param }}</label>
+            <md-input
+              v-model="block.params[param]"
+            ></md-input>
+          </md-input-container>
+
+          <!--
+            Keep old expression working.
+            Use block.value when Custom or type is not provided.
+          -->
+          <md-input-container v-if="(!block.expressionType) || (block.expressionType === 'Custom')">
+            <label>Value</label>
+            <md-input
+              :value="block.y"
+              @blur="set(block, 'y', $event)"
+            ></md-input>
+          </md-input-container>
+        </md-whiteframe>
+
+        <md-input-container v-if="block.tableFunction" md-clearable>
+          <label>Y</label>
           <md-input
             :value="block.y"
             @blur="set(block, 'y', $event)"
           ></md-input>
         </md-input-container>
-        <div style="display: flex">
+        <div style="display: flex" v-if="block.tableFunction">
           <md-input-container style="width: 95%; margin-right: 5%;">
             <label>Min</label>
             <md-input
