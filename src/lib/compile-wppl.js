@@ -6,6 +6,8 @@ function generateExpression (expressionType, params) {
   switch (expressionType) {
     case 'If..Else':
       return `((${params.condition}) ? ${params.true} : ${params.false})`
+    case 'Length':
+      return `${params.array}.length`
     case 'Sum':
       return `sum(${params.array})`
     case 'Product':
