@@ -381,7 +381,15 @@ const params = {
             }
             break
           case 1: // Expression
-            links = links.concat(check(b.value, i))
+            if (b.expressionType && b.expressionType !== 'Custom') {
+              // Check custom expression params
+              this.expressions[b.expressionType].forEach(k => {
+                links = links.concat(check(b.params[k], i))
+              })
+            } else {
+              // Check only value field
+              links = links.concat(check(b.value, i))
+            }
             break
           case 3: // Accum
             links = links.concat(check(b.value, i))
@@ -392,6 +400,11 @@ const params = {
               links = links.concat(check(b.params[k], i))
             })
             links = links.concat(check(b.value, i))
+            if (b.customLoop) {
+              links = links
+                .concat(check(b.loopStart, i))
+                .concat(check(b.loopEnd, i))
+            }
             break
           case 5:
             links = links.concat(check(b.value, i))
