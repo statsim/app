@@ -526,7 +526,7 @@
 
       </md-card-content>
 
-      <!-- Function -->
+      <!-- ** Function ** -->
       <md-card-content v-if="(block.typeCode === 7) && !block.minimized">
         <md-input-container md-clearable>
           <label>Name</label>
@@ -620,7 +620,7 @@
         </md-checkbox>
       </md-card-content>
 
-      <!-- Accumulator -->
+      <!-- ** Accumulator ** -->
       <md-card-content v-if="(block.typeCode === 3) && !block.minimized">
         <md-input-container md-clearable>
           <label>Name</label>
@@ -695,7 +695,7 @@
 
       </md-card-content>
 
-      <!-- Neural net -->
+      <!-- ** Neural net ** -->
       <md-card-content v-if="(block.typeCode === 6) && !block.minimized">
         <md-input-container md-clearable>
           <label>Network name</label>
@@ -766,7 +766,7 @@
       </md-card-content>
 
 
-      <!-- Observer -->
+      <!-- ** Observer ** -->
       <md-card-content v-if="(block.typeCode === 4) && !block.minimized">
         <md-input-container>
           <label>Observed data (scalar, vector or tensor)</label>
@@ -815,6 +815,30 @@
             Values stored in <b>_v</b>
           </p>
         </md-whiteframe>
+        <!-- Custom loop parameters -->
+        <div style="display: flex" v-if="block.customLoop">
+          <md-input-container style="width: 95%; margin-right: 5%;">
+            <label>Loop start</label>
+            <md-input
+              :value="block.loopStart"
+              @blur="set(block, 'loopStart', $event)"
+            ></md-input>
+          </md-input-container>
+          <md-input-container>
+            <label>Loop end</label>
+            <md-input
+              :value="block.loopEnd"
+              @blur="set(block, 'loopEnd', $event)"
+            ></md-input>
+          </md-input-container>
+        </div>
+
+        <md-checkbox 
+          v-model="block.customLoop"
+          class="md-primary"
+        >
+          Custom loop
+        </md-checkbox>
       </md-card-content>
 
       <!-- Condition -->

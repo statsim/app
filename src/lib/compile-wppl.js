@@ -470,7 +470,14 @@ return ${transformedValue}
         let value = b.value.trim()
 
         // Check if the value is scalar or vector
-        if (isNumber(value) || isScalarData(value)) {
+        if (b.customLoop && b.loopStart.length && b.loopEnd.length) {
+          let params = getParams(b)
+          observer += `
+mapN(function (__j) {
+  var _j = __j + ${b.loopStart}
+  observe(${b.distribution}(${params}), ${b.value})
+}, ${b.loopEnd} - ${b.loopStart})\n`
+        } else if (isNumber(value) || isScalarData(value)) {
           // Scalar
           // Convert observer distribution params to string
           let params = getParams(b)

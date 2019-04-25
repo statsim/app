@@ -72,7 +72,10 @@ module.exports = [
   class Observer extends Block {
     constructor (counter) {
       super()
+      this.customLoop = false
       this.distribution = 'Gaussian'
+      this.loopStart = ''
+      this.loopEnd = ''
       this.params = {}
       this.type = 'Observer'
       this.typeCode = 4
