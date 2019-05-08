@@ -208,19 +208,15 @@
         </div>
         <md-button class="md-icon-button" v-if="block.minimized" v-on:click.native="toggle(blockIndex)">
           <md-icon>fullscreen</md-icon>
-          <md-tooltip md-direction="bottom">Maximize</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-if="!block.minimized" v-on:click.native="toggle(blockIndex)">
           <md-icon>remove</md-icon>
-          <md-tooltip md-direction="bottom">Minimize</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-on:click.native="moveBlockUp(blockIndex)">
           <md-icon>expand_less</md-icon>
-          <md-tooltip md-direction="bottom">Move up</md-tooltip>
         </md-button>
         <md-button class="md-icon-button" v-on:click.native="moveBlockDown(blockIndex)">
           <md-icon>expand_more</md-icon>
-          <md-tooltip md-direction="bottom">Move down</md-tooltip>
         </md-button>
         <md-menu md-align-trigger md-size="4" md-direction="bottom left" style="margin-right: 10px;">
           <md-button md-menu-trigger class="md-icon-button md-dense">
