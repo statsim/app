@@ -877,6 +877,11 @@
     </draggable>
     </div>
 
+    <!-- Custom code block-->
+    <div style="padding: 10px;">
+      <textarea v-model="models[activeModel].modelParams.customCode" placeholder="Custom code..." rows="5"></textarea>
+    </div>
+
     <!-- Model output -->
     <div class="block">
       <h3 v-if="models[activeModel].blocks.length > 0" style="margin: 35px 0 0 0">Model output:</h3>
@@ -1245,7 +1250,7 @@
       <md-icon>tune</md-icon>
       <span class="desktop">Settings</span>
     </md-button>
-    <md-button class="run-button md-raised md-primary" :disabled="models[activeModel].blocks.length < 1" v-on:click.native="run()">
+    <md-button class="run-button md-raised md-primary" v-on:click.native="run()">
       <md-icon>play_arrow</md-icon>
       <span class="desktop editor-only">Compile & </span>Run
     </md-button>

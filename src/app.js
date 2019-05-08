@@ -1013,10 +1013,16 @@ const params = {
       setTimeout(() => {
         try {
           // Precheck models
-          if (!this.models[this.activeModel].blocks.length) {
+          if (!(
+            this.models[this.activeModel].blocks.length ||
+            (this.models[this.activeModel].modelParams.customCode && this.models[this.activeModel].modelParams.customCode.length)
+          )) {
             throw new Error('Empty model! Click ADD BLOCK to start designing the model!')
           }
-          if (!this.models[this.activeModel].blocks.reduce((acc, b) => acc || b.show, false)) {
+          if (!(
+            this.models[this.activeModel].blocks.reduce((acc, b) => acc || b.show, false) ||
+            (this.models[this.activeModel].modelParams.customCode && this.models[this.activeModel].modelParams.customCode.includes('return'))
+          )) {
             throw new Error('No output! Choose blocks to show in results')
           }
           if (this.models[this.activeModel].modelParams.steps > 1000000) {

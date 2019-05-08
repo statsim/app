@@ -593,6 +593,11 @@ var {${step.list}} = step(${m.modelParams.steps})
       model += observers
     }
 
+    // Add custome code block
+    if (m.modelParams.customCode && m.modelParams.customCode.length) {
+      model += m.modelParams.customCode + '\n'
+    }
+
     // Generate output
     if (modelOutput.length > 0) {
       modelOutput = modelOutput.slice(0, -2) // Remove last comma from return object
@@ -601,10 +606,13 @@ var {${step.list}} = step(${m.modelParams.steps})
       } else {
         model += `return {${modelOutput}}\n`
       }
-    } else {
+    }
+    /*
+    else {
       // Model returns nothing
       model += `return 0\n`
     }
+    */
     model += '}\n'
     code += data + functionGen + functions + model
 
