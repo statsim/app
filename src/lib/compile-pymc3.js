@@ -24,7 +24,9 @@ const dict = {
   'LogitNormal_sigma': 'sd',
   'Multinomial_ps': 'p',
   'MultivariateGaussian': 'MvNormal',
-  'StudentT_sigma': 'sd',
+  'StudentT_df': 'nu',
+  'StudentT_location': 'mu',
+  'StudentT_scale': 'sd',
   'Uniform_a': 'lower',
   'Uniform_b': 'upper',
   // Inference
@@ -384,8 +386,11 @@ import numpy as np
         } else {
           model += `${b.name} = ${b.initialValue} + ${b.value}\n`
         }
-      } else if ((b.typeCode === 7) && b.name && b.name.length && b.x && b.x.length && b.y && b.y.length) {
+      } else if ((b.typeCode === 7) && b.name && b.name.length) {
+        // --> FUNCTION
+
         if (b.tableFunction) {
+        // Table function
           if (functionGen === '') {
             functionGen = `
 var functionGen = function(xarr, yarr) {
@@ -413,10 +418,14 @@ var functionGen = function(xarr, yarr) {
 var ${b.name.trim()} = functionGen([${b.x}],[${b.y}])
 `
         } else {
+          // Simple function
+          const transformedValue = (!b.expressionType || (b.expressionType === 'Custom'))
+            ? b.y
+            : generateExpression(b.expressionType, b.params)
+
           functions += `
-var ${b.name.trim()} = function (${b.x.trim()}) {
-return ${b.y.trim()}
-}
+def ${b.name.trim()} (${b.x.trim()}):
+\treturn ${transformedValue}
 `
         }
       } else if ((b.typeCode === 6) && b.layers.length) {

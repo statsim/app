@@ -41,7 +41,7 @@
           <span>Save project</span>
         </md-menu-item>
         <md-menu-item v-on:selected="openFile('Data')" style="border-bottom: 1px solid #DDD">
-          <md-icon style="">border_outer</md-icon>
+          <md-icon style="">input</md-icon>
           <span>Import data</span>
         </md-menu-item>
         <md-menu-item v-if="!preview" v-on:selected="preview = true; showDataTable = false">
@@ -123,7 +123,10 @@
         v-for="(model, modelId) in models"
         :class="{'md-dense': true, 'md-raised': (modelId === activeModel)}"
         v-on:click.native="switchModel(modelId)"
-      >{{ model.modelParams.name }}
+      >
+        <span style="color: #3f51b5; font-size: 90%" v-if="model.modelParams.type && (model.modelParams.type === 'dataframe')">♦</span>
+        <span style="color: #5db53b" v-else>⚫</span>
+        {{ model.modelParams.name }}
       </md-button>
       <md-menu md-align-trigger md-size="4" md-direction="bottom left" style="float: right">
         <md-button md-menu-trigger class="md-icon-button md-dense">
@@ -132,7 +135,11 @@
         <md-menu-content>
           <md-menu-item v-on:selected="createModel()">
             <md-icon>add</md-icon>
-            <span>Add new model</span>
+            <span>New model</span>
+          </md-menu-item>
+          <md-menu-item v-on:selected="createDataframe()">
+            <md-icon>add</md-icon>
+            <span>New dataframe</span>
           </md-menu-item>
         </md-menu-content>
       </md-menu>
@@ -141,7 +148,8 @@
     <!-- MODEL INFO -->
     <div style="padding: 10px;">
       <md-input-container md-clearable>
-        <label>Model name</label>
+        <label v-if="models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe')">Dataframe name</label>
+        <label v-else>Model name</label>
         <md-input
           v-model="models[activeModel].modelParams.name"
         ></md-input>
@@ -149,7 +157,7 @@
       <div>
         <textarea v-model="models[activeModel].modelParams.description" placeholder="Description..." rows="5"></textarea>
       </div>
-      <div style="margin: 10px 0" v-if="models.length > 1">
+      <div style="margin: 10px 0" v-if="(models.length > 1) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
         <label for="include">Include </label><br>
         <select
           name="include"
@@ -168,6 +176,255 @@
         </select>
       </div>
     </div>
+
+
+    <!--
+      Data processing
+    <div class="phone-viewport">
+      <md-toolbar md-theme="white">
+      <span class="md-title">Preprocessing</span>
+      </md-toolbar>
+      <md-list>
+      <md-list-item>
+        <md-icon>whatshot</md-icon>
+        <span>News</span>
+        <md-list-expand>
+        <md-list>
+          <md-list-item class="md-inset">World</md-list-item>
+          <md-list-item class="md-inset">Americas</md-list-item>
+          <md-list-item class="md-inset">Europe</md-list-item>
+        </md-list>
+        </md-list-expand>
+      </md-list-item>
+      <md-list-item>
+        <md-icon>videogame_asset</md-icon>
+        <span>Games</span>
+        <md-list-expand>
+        <md-list>
+          <md-list-item class="md-inset">Console</md-list-item>
+          <md-list-item class="md-inset">PC</md-list-item>
+          <md-list-item class="md-inset">Phone</md-list-item>
+        </md-list>
+        </md-list-expand>
+      </md-list-item>
+      <md-list-item>
+        <md-icon>video_library</md-icon>
+        <span>Video</span>
+        <md-list-expand>
+        <md-list>
+          <md-list-item class="md-inset">Humor</md-list-item>
+          <md-list-item class="md-inset">Movies</md-list-item>
+          <md-list-item class="md-inset">TV Shows</md-list-item>
+        </md-list>
+        </md-list-expand>
+      </md-list-item>
+      <md-list-item>
+        <md-icon>shopping_basket</md-icon>
+        <span>Shop</span>
+      </md-list-item>
+      </md-list>
+    </div>
+    -->
+    <!-- *Data processing -->
+
+
+    <!-- Data processing -->
+    <div class="data-tools" v-if="models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe')">
+      <md-list>
+        <md-list-item>
+          <div style="width:100%">
+            <md-input-container class="simulation-method-container">
+              <label for="data-source">Load data from source:</label>
+              <md-select name="data-source" id="data-source" v-model="models[activeModel].pipeline.source.type">
+                <md-option value="none">None</md-option>
+                <md-option value="file">File</md-option>
+                <md-option value="url">URL</md-option>
+                <md-option value="dataframe">Dataframe</md-option>
+              </md-select>
+            </md-input-container>
+            <md-input-container v-if="models[activeModel].pipeline && models[activeModel].pipeline.source && models[activeModel].pipeline.source.type && (models[activeModel].pipeline.source.type === 'file')">
+              <label>Select file:</label>
+              <md-file placeholder="Select CSV file" @change.native="init($event.target.files, activeModel)" v-model="models[activeModel].pipeline.source.file"></md-file>
+            </md-input-container>
+            <md-input-container v-if="models[activeModel].pipeline && models[activeModel].pipeline.source && models[activeModel].pipeline.source.type && (models[activeModel].pipeline.source.type === 'url')">
+               <label>Enter URL:</label>
+               <md-input @blur.native="init(models[activeModel].pipeline.source.url, activeModel)" v-model="models[activeModel].pipeline.source.url"></md-input>
+            </md-input-container>
+            <md-input-container v-if="models[activeModel].pipeline && models[activeModel].pipeline.source && models[activeModel].pipeline.source.type && (models[activeModel].pipeline.source.type === 'dataframe')">
+              <label>Select dataframe:</label>
+              <md-select @change="preprocessDataframe(activeModel)" v-model="models[activeModel].pipeline.source.dataframe">
+                <md-option v-for="(m, mi) in models" v-if="m.modelParams.type && (m.modelParams.type === 'dataframe')" :value="mi">{{m.modelParams.name}}</md-option>
+              </md-select>
+            </md-input-container>
+          </div>
+        </md-list-item>
+
+        <div v-if="(models[activeModel].pipeline.source.type !== 'none') && (models[activeModel].pipeline.source.file || models[activeModel].pipeline.source.url || (models[activeModel].pipeline.source.dataframe !== ''))">
+
+          <!-- [ Parsing ] -->
+          <md-list-item v-if="models[activeModel].pipeline && models[activeModel].pipeline.source && ((models[activeModel].pipeline.source.type == 'file') || (models[activeModel].pipeline.source.type == 'url'))">
+            <md-icon>memory</md-icon>
+            <span>Parse</span>
+            <md-list-expand>
+              <md-card>
+                <md-card-content>
+                  <md-input-container>
+                    <label>Delimiter</label>
+                    <md-input v-model="models[activeModel].pipeline.parse.delimiter"></md-input>
+                  </md-input-container>
+                  <md-input-container>
+                    <label>Comment character</label>
+                    <md-input v-model="models[activeModel].pipeline.parse.comment"></md-input>
+                  </md-input-container>
+                  <md-checkbox id="my-test2" name="my-test2" v-model="models[activeModel].pipeline.parse.hasHeader" @change="preprocessDataframe(activeModel)" class="md-primary">Has headers</md-checkbox>
+                  <md-input-container>
+                    <label>Custom header (comma-delimited)</label>
+                    <md-input v-model="models[activeModel].pipeline.parse.customHeader" @blur.native="preprocessDataframe(activeModel)"></md-input>
+                  </md-input-container>
+                </md-card-content>
+              </md-card>
+            </md-list-expand>
+          </md-list-item>
+
+          <!-- [ Filters ]-->
+          <md-list-item>
+            <md-icon>filter_list</md-icon>
+            <span>Filter</span>
+            <md-list-expand>
+              <md-card>
+                <md-card-content>
+                  <!-- (Add new filter) -->
+                  <md-button v-on:click.native="addFilter(activeModel)">
+                    <md-icon>add</md-icon>Add new filter
+                  </md-button>
+                  <!-- (Filter block) -->
+                  <md-card class="item-card md-primary" v-for="(filter, i) in models[activeModel].pipeline.filters" :key="models[activeModel].modelParams.name + 'filter' + i">
+
+                    <!-- Filter name and remove button -->
+                    <md-card-header>
+                      <md-card-header-text>
+                        <div class="md-subhead"> {{ (filter.range) ?  'Range: ' + filter.from + ' -> ' + filter.to : 'Search: ' + filter.value }} </div>
+                      </md-card-header-text>
+                      <md-menu md-size="4" md-direction="bottom left">
+                        <md-button class="md-icon-button" md-menu-trigger>
+                          <md-icon>more_vert</md-icon>
+                        </md-button>
+                        <md-menu-content>
+                          <md-menu-item v-on:click.native="source.removeFilter(i)">
+                            <span>Remove filter</span>
+                            <md-icon>delete</md-icon>
+                          </md-menu-item>
+                        </md-menu-content>
+                      </md-menu>
+                    </md-card-header>
+
+                    <!-- Filter params -->
+                    <md-card-content>
+                      <md-switch v-model="models[activeModel].pipeline.filters[i].range" class="md-warn">Range</md-switch>
+                      <md-input-container v-if="!models[activeModel].pipeline.filters[i].range">
+                        <label>Search string</label>
+                        <md-input v-model="models[activeModel].pipeline.filters[i].value"></md-input>
+                      </md-input-container>
+                      <md-input-container v-if="models[activeModel].pipeline.filters[i].range">
+                        <label>From: </label>
+                        <md-input type="number" v-model="models[activeModel].pipeline.filters[i].from"></md-input>
+                      </md-input-container>
+                      <md-input-container v-if="models[activeModel].pipeline.filters[i].range">
+                        <label>To: </label>
+                        <md-input type="number" v-model="models[activeModel].pipeline.filters[i].to"></md-input>
+                      </md-input-container>
+                      <md-input-container>
+                        <label for="search-column">Search in columns</label>
+                        <md-select
+                          name="search-column"
+                          v-model="models[activeModel].pipeline.filters[i].column">
+                          <md-option v-for="column in models[activeModel].pipeline.source.columns" :value="column" :key="column">{{ column }}</md-option>
+                        </md-select>
+                      </md-input-container>
+                      <md-checkbox name="casesensitive" v-if="!models[activeModel].pipeline.filters[i].range" v-model="models[activeModel].pipeline.filters[i].casesensitive" class="md-primary">Case sensitive</md-checkbox>
+                      <md-checkbox name="strict" v-if="!models[activeModel].pipeline.filters[i].range" v-model="models[activeModel].pipeline.filters[i].strict" class="md-primary">Strict search</md-checkbox>
+                    </md-card-content>
+                  </md-card> 
+                  <!-- *Filter block-->
+                </md-card-content>
+              </md-card>
+            </md-list-expand>
+          </md-list-item>
+
+          <md-list-item>
+            <md-icon>device_hub</md-icon>
+            <span>Structure</span>
+            <md-list-expand>
+              <md-card>
+                <md-card-content>
+                  <!-- Process all columns -->
+                  <md-checkbox name="columns-showall" v-model="models[activeModel].pipeline.structure.showAll" class="md-primary">Keep all columns</md-checkbox>
+                  <!-- OR select ones to keep -->
+                  <div
+                    v-if="!models[activeModel].pipeline.structure.showAll"
+                    v-for="column in models[activeModel].pipeline.source.columns"
+                  >
+                    <input 
+                      type="checkbox"
+                      :id="column + i"
+                      :name="column + i"
+                      :value="column"
+                      :key="column"
+                      v-model="models[activeModel].pipeline.structure.columns"
+                    />
+                    <label :for="column + i">{{ column }}</label>
+                  </div>
+                </md-card-content>
+              </md-card>
+            </md-list-expand>
+          </md-list-item>
+          <md-list-item>
+            <md-icon>videogame_asset</md-icon>
+            <span>Statistics</span>
+            <md-list-expand>
+            <md-list>
+              <md-list-item class="md-inset">Console</md-list-item>
+              <md-list-item class="md-inset">PC</md-list-item>
+              <md-list-item class="md-inset">Phone</md-list-item>
+            </md-list>
+            </md-list-expand>
+          </md-list-item>
+          <md-list-item>
+            <md-icon>file_download</md-icon>
+            <span>Output</span>
+            <md-list-expand>
+              <md-card>
+                <md-card-content>
+                  <md-checkbox v-model="models[activeModel].pipeline.output.toMemory" class="md-primary">
+                    Store output in memory
+                  </md-checkbox><br>
+                  <md-checkbox v-model="models[activeModel].pipeline.output.toStream" class="md-primary">
+                    Stream to file (Chrome, Opera)
+                  </md-checkbox>
+                  <md-input-container v-if="models[activeModel].pipeline.output.toStream">
+                    <label>Output format</label>
+                    <md-select v-model="models[activeModel].pipeline.output.format">
+                      <md-option value="csv">CSV</md-option>
+                      <md-option value="xml">XML</md-option>
+                      <md-option value="json">JSON</md-option>
+                    </md-select>
+                  </md-input-container>
+                </md-card-content>
+              </md-card>
+            </md-list-expand>
+          </md-list-item>
+
+          <md-list-item>
+          <md-button class="md-raised md-primary" style="width: 100%; margin: 10px 0 0 0;" v-on:click.native="processDataframe(activeModel)">
+            <md-icon style="color: white">arrow_downward</md-icon>
+            Load
+          </md-button>
+          </md-list-item>
+        </div> <!-- *data-source params -->
+      </md-list>
+    </div> <!-- *data-tools -->
+    <!-- *Data processing -->
+
     <div style="text-align: center; opacity: 0.4" v-if="models[activeModel].blocks.length">
       <md-button class="md-dense" @click="minimizeAllBlocks">
         <md-icon>remove</md-icon>
@@ -878,12 +1135,12 @@
     </div>
 
     <!-- Custom code block-->
-    <div style="padding: 10px;">
+    <div style="padding: 10px;" v-if="!(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
       <textarea v-model="models[activeModel].modelParams.customCode" placeholder="Custom code..." rows="5"></textarea>
     </div>
 
     <!-- Model output -->
-    <div class="block">
+    <div class="block" v-if="!(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
       <h3 v-if="models[activeModel].blocks.length > 0" style="margin: 35px 0 0 0">Model output:</h3>
       <md-checkbox v-for="block in models[activeModel].blocks" v-if="block.hasOwnProperty('show')" v-model="block.show" class="md-primary" style="width: 100%; margin: 10px 0 5px 0;">
         <strong>{{ block.name }}</strong> ({{ block.type }})
@@ -891,7 +1148,7 @@
     </div>
 
     <!-- Empty model button -->
-    <md-boards v-if="!models[activeModel].blocks.reduce((a, b) => b.show || a, false)":md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
+    <md-boards v-if="!models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" :md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
       <md-board id="slide1">
         <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks can be constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
@@ -906,14 +1163,15 @@
       </md-board>
     </md-boards>
 
-
-    <div class="stat-seal" style="text-align: center;">
-    <img src="images/s.png" style="width: 90px; height: auto; opacity: 0.35; margin: 15px 0px"></img>
+    <!-- Totem -->
+    <div v-if="!models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" class="stat-seal" style="text-align: center;">
+      <img src="images/s.png" style="width: 90px; height: auto; opacity: 0.35; margin: 15px 0px"></img>
     </div>
+
     <!-- Model control -->
     <md-button v-on:click.native="duplicateModel()">
       <md-icon>flip_to_front</md-icon>
-      Clone model
+      Clone
     </md-button>
     <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">
       <md-icon>delete_outlined</md-icon>
@@ -1009,7 +1267,7 @@
     </div>
 
     <!-- Needed for graph -->
-    <div v-if="models && models.length" style="position: relative" class="graph-container">
+    <div v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" style="position: relative" class="graph-container">
       <div class="wl">
         <network
           class="net"

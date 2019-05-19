@@ -21,9 +21,12 @@ const expressions = require('./lib/expressions')
 const guessUnits = require('./lib/guessUnits')
 const icons = require('./lib/icons')
 const parseLink = require('./lib/parseLink')
+const preprocessDataframe = require('./lib/preprocessDataframe')
+const processDataframe = require('./lib/processDataframe')
 const processResults = require('./lib/processResults')
 const simulationMethods = require('./lib/methods')
 const copyText = require('./lib/copy')
+// const getXmlStreamStructure = require('./lib/get-xml-stream-structure.js') // Get XML nodes and repeated node
 
 // Access global objects
 const Blob = window['Blob']
@@ -197,6 +200,38 @@ function notify (message, type) {
 // Future HotTable object
 // Need it here to easily call from any app method
 let table
+
+const regCSV = RegExp('\\.csv', 'i')
+const regTSV = RegExp('\\.tsv', 'i')
+const regXML = RegExp('\\.xml', 'i')
+
+function init (files, modelId) {
+  const model = this.models[modelId]
+  let fileName = files
+  console.log('[Init] Files: ', files)
+  if (typeof files === 'string') {
+    // URL
+    fileName = files
+    // model.pipeline.source.url = fileName
+  } else if ((typeof files === 'object') && (files !== null)) {
+    // File List
+    fileName = files[0].name
+    model.pipeline.source.fileList = files
+  }
+  if (regCSV.test(fileName) || regTSV.test(fileName)) {
+    model.pipeline.source.format = 'csv'
+  } else if (regXML.test(fileName)) {
+    model.pipeline.source.format = 'xml'
+  } else {
+    model.pipeline.source.format = 'text'
+  }
+
+  // Check if filename is not empty, then launch preprocessing
+  if (fileName) {
+    console.log('[Init] Launch preprocess')
+    this.preprocessDataframe(modelId)
+  }
+}
 
 const params = {
   /*
@@ -457,6 +492,23 @@ const params = {
     }
   },
   methods: {
+    init,
+    preprocessDataframe,
+    processDataframe,
+    addFilter (modelId) {
+      const model = this.models[modelId]
+      if (model.pipeline && model.pipeline.filters) {
+        model.pipeline.filters.push({
+          column: '',
+          value: '',
+          strict: false,
+          casesensitive: false,
+          range: false,
+          from: 0,
+          to: 0
+        })
+      }
+    },
     cloneBlock (blockIndex) {
       const block = this.models[this.activeModel].blocks[blockIndex]
       const newBlock = JSON.parse(JSON.stringify(block))
@@ -734,6 +786,7 @@ const params = {
     openDataFile (e) {
       const reader = new FileReader()
       const file = e.target.files[0]
+      const filename = file.name.split('.')[0]
       reader.readAsText(file)
       reader.onload = () => {
         const data = reader.result
@@ -741,13 +794,21 @@ const params = {
           if (!err) {
             if (output.length > 1) {
               // CSV
+
+              // Create a new dataframe-model
+              this.models.push(createBaseModel(filename, 'dataframe'))
+
+              // Fill it with columns from CSV file
               output[0].forEach((h, hi) => {
-                this.models[this.activeModel].blocks.push(new BlockClasses[2](
+                this.models[this.models.length - 1].blocks.push(new BlockClasses[2](
                   h,
                   // Filter out the first line
                   output.filter((_, i) => i > 0).map(v => v[hi])
                 ))
               })
+
+              // Switch to new model
+              this.switchModel(this.models.length - 1)
             } else {
               // Comma-separated line
               this.models[this.activeModel].blocks.push(new BlockClasses[2](file.name.split('.')[0], output))
@@ -801,9 +862,18 @@ const params = {
       this.$refs[ref].open()
     },
     createModel () {
-      this.models.push(createBaseModel('Model' + this.models.length))
+      const index = 1 + this.models.filter(m => !(m.modelParams.type && (m.modelParams.type === 'dataframe'))).length
+      this.models.push(createBaseModel('Model' + index))
       this.switchModel(this.models.length - 1)
       this.notify('New model created')
+    },
+    createDataframe () {
+      const index = 1 + this.models.filter(m => (m.modelParams.type && (m.modelParams.type === 'dataframe'))).length
+      this.models.push(createBaseModel('Data' + index, 'dataframe'))
+      this.switchModel(this.models.length - 1)
+      this.showDataTable = true
+      this.drawDataTable()
+      this.notify('New dataframe created')
     },
     switchModel (modelId) {
       console.log('Vue: switching to model', modelId)
@@ -813,19 +883,26 @@ const params = {
         this.notify('Invalid model number. Switching to first model', 'error')
         modelId = 0
       }
+
+      // Get target model
       const m = this.models[modelId]
+
       this.link = '' // clean code
       this.message = ''
+
+      // Clean charts
       const chartContainer = document.querySelector('.charts')
       if (chartContainer) {
         chartContainer.innerHTML = ''
         document.querySelector('.charts-2d').innerHTML = ''
       }
+
+      // Minimize all blocks of the target model "m"
       m.blocks.forEach(b => {
         this.$set(b, 'minimized', true)
       })
 
-      // Get current positions
+      // Get current positions of the graph and save them
       if (this.$refs.network) {
         this.models[this.activeModel].blocks.forEach((b, bi) => {
           console.log('Network: get pos')
@@ -834,8 +911,15 @@ const params = {
       }
 
       this.activeModel = modelId
+
+      this.showDataTable = false
       // Update table
-      if (this.reactiveDataTable && this.showDataTable) this.drawDataTable()
+      // if (this.reactiveDataTable && this.showDataTable) {
+      /*
+      if (this.showDataTable) {
+        this.drawDataTable()
+      }
+      */
     },
     duplicateModel () {
       let newModel = JSON.parse(JSON.stringify(this.models[this.activeModel]))

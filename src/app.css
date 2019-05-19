@@ -231,6 +231,15 @@ textarea {
 }
 
 
+.side-bar .data-tools {
+  padding: 0 10px;
+}
+
+.side-bar .data-tools .md-list {
+  border-radius: 3px;
+  box-shadow: 0 2px 3px rgba(0,0,0,.2);
+}
+
 /* Random variable */
 .side-bar .block-0 {
   border-top: 4px solid #fab85a;
