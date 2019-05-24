@@ -1,6 +1,8 @@
 const ReadStream = require('filestream').read
 const http = require('stream-http')
-// const Readable = require('stream').Readable
+const Readable = require('stream').Readable
+// const Dat = require('dat-js')
+const WebTorrent = require('webtorrent')
 
 // Creates a stream based on file object or url
 
@@ -16,6 +18,22 @@ function createStream (f) {
       stream = new ReadStream(f, {chunkSize: 102400})
       stream.setEncoding('utf8')
       resolve(stream)
+    } else if (f.length && f.includes('dat')) {
+      const dat = new Dat({gateway: 'ws://gateway.mauve.moe:3000'})
+      console.log(`[Create stream] Dat: ${f}`)
+      var archive = dat.get(f)
+      archive.readFile('/Renewable_energy_location_and_contracted_capacities.csv', 'utf-8', (err, data) => {
+        console.log(`It's still there: ${data}`, err)
+      })
+    } else if (f.length && (f.includes('magnet') || !f.includes('.'))) {
+      const client = new WebTorrent()
+      console.log(`[Create stream] Torrent: ${f}`)
+      client.add(f, function (torrent) {
+        console.log('[Create stream] Torrent files:', torrent.files)
+        const stream = torrent.files[0].createReadStream()
+        stream.setEncoding('utf8')
+        resolve(stream)
+      })
     } else if (f.length) {
       // const request =
       // 1st request
@@ -49,7 +67,7 @@ function createStream (f) {
           // reject(new Error(res2.statusMessage))
         })
       })
-    } /* else if (f.modelParams) {
+    } else if (f.modelParams) {
       // Dataframe
       const model = f
       console.log(`[Create stream] Dataframe: ${model.modelParams.name}`)
@@ -61,6 +79,6 @@ function createStream (f) {
         if (c > 'z'.charCodeAt(0)) stream.push(null)
       }
       resolve(stream)
-    } */
+    }
   })
 }

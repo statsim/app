@@ -14,7 +14,9 @@ h2 {
 label {
  /* text-transform: capitalize; */
 }
-
+.md-button {
+  padding: 0 10px 0 10px;
+}
 .md-button.md-raised:not([disabled]) {
   box-shadow: 0 0px 1px rgba(0, 0, 0, 0.35);
 }
@@ -34,6 +36,11 @@ label {
 
 .md-theme-default.md-boards > .md-boards-navigation .md-board-header.md-active, .md-theme-default.md-boards > .md-boards-navigation .md-board-header:active {
    color: #3f51b5 !important;
+}
+
+.md-select:not(.md-select-icon)::after {
+  right: 4px;
+  transform: translateY(-50%) scaleY(0.35) scaleX(0.55);
 }
 
 #loader span {
@@ -125,19 +132,16 @@ textarea {
 }
 
 .side-bar {
-  position: fixed;
-  padding: 5px;
-  top: 55px;
-  left: 0;
-  bottom: 55px;
-  overflow-y: auto;
-  /*
-  overflow-y: hidden;
-  overflow-x: hidden;
-  */
   background-color: #DDD;
-  width: 27%;
+  bottom: 55px;
   box-shadow: 0 0 30px rgba(0, 0, 0, .2);
+  left: 0;
+  overflow-y: auto;
+  padding: 5px;
+  position: fixed;
+  top: 55px;
+  width: 27%;
+  z-index: 1000;
 }
 
 .side-bar:hover {
@@ -172,14 +176,21 @@ textarea {
   background: linear-gradient(to bottom, #c0c0c0 1%,#adadad 100%);
   margin: -5px;
   padding: 0 16px;
+  overflow: hidden;
 }
 
 .side-bar .model-selector button {
-  margin: 17px 0 -1px 0;
+  margin: 17px 2px -1px 0;
+  padding-left: 8px;
+  padding-right: 8px;
+  background-color: #ccc;
   box-shadow: none !important;
   border-radius: 0px;
   border-top-left-radius: 3px;
   border-top-right-radius: 3px;
+  font-weight: 400;
+  min-width: 20px;
+  text-transform: none;
 }
 
 .side-bar .model-selector button.md-raised {
@@ -240,6 +251,12 @@ textarea {
   box-shadow: 0 2px 3px rgba(0,0,0,.2);
 }
 
+
+.side-bar .data-tools .md-subhead {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 15px;
+}
 /* Random variable */
 .side-bar .block-0 {
   border-top: 4px solid #fab85a;
@@ -648,6 +665,13 @@ textarea {
 .md-snackbar {
   margin-bottom: 55px !important;
   opacity: .9;
+}
+
+.model-summary {
+  font-size: 13px;
+  line-height: 8px;
+  padding-right: 26px;
+  padding-left: 10px;
 }
 
 /* 2D Plots */

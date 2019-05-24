@@ -8,6 +8,7 @@ module.exports = function (name, type) {
         method: 'deterministic',
         include: [],
         customCode: '',
+        table: true,
         type
       },
       blocks: [],
@@ -16,9 +17,11 @@ module.exports = function (name, type) {
       pipeline: {
         source: {
           type: 'none',
+          format: '',
           url: '',
           file: '',
-          dataframe: ''
+          dataframe: '',
+          stream: null
         },
         parse: {
           delimiter: '',
@@ -35,8 +38,28 @@ module.exports = function (name, type) {
           toMemory: true,
           toStream: false,
           format: 'csv'
-        }
+        },
+        processed: 0,
+        progress: 0
       },
+      methodParams: {
+        chains: 1,
+        samples: 1000
+      }
+    }
+  } else if (type && (type === 'tf')) {
+    return {
+      modelParams: {
+        name,
+        description: '',
+        steps: 1,
+        method: 'deterministic',
+        include: [],
+        table: false,
+        customCode: '',
+        type
+      },
+      blocks: [],
       methodParams: {
         chains: 1,
         samples: 1000
@@ -50,6 +73,7 @@ module.exports = function (name, type) {
         steps: 1,
         method: 'deterministic',
         include: [],
+        table: false,
         customCode: ''
       },
       blocks: [],

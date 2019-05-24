@@ -18,9 +18,9 @@ module.exports = function (models, isPreview, activeModel) {
   let shortModels = []
   models.forEach(m => {
     let sm = {
-      b: [], // blocks
-      mod: {}, // modelParams
-      met: {} // methodParams
+      mod: {} // modelParams
+      // ,b: [] // blocks
+      // ,met: {} // methodParams
     }
 
     // Shortening model params
@@ -31,27 +31,36 @@ module.exports = function (models, isPreview, activeModel) {
     })
 
     // Method params
-    Object.keys(m.methodParams).forEach(k => {
-      sm.met[getAbbr(k)] = m.methodParams[k]
-    })
-
-    // Blocks
-    m.blocks.forEach(b => {
-      let sb = {}
-      Object.keys(b).forEach(bk => {
-        if (
-          // Ignore fields 'type', 'id', 'minimized'
-          (['type', 'minimized', 'id', 'pos'].indexOf(bk) < 0) &&
-          // Ignore fields with no values
-          !((['units', 'dataType', 'dataCategories'].indexOf(bk) >= 0) && (b[bk] === '')) &&
-          // Ignore categories if data is not category
-          !((bk === 'dataCategories') && (b.dataType !== 'category'))
-        ) {
-          sb[getAbbr(bk)] = b[bk]
-        }
+    if (m.modelParams.type && (m.modelParams.type === 'dataframe')) {
+      // Dataframe
+      sm.data = m.data
+      sm.pipeline = m.pipeline
+    } else {
+      // Probabilistic model
+      sm.met = {}
+      Object.keys(m.methodParams).forEach(k => {
+        sm.met[getAbbr(k)] = m.methodParams[k]
       })
-      sm.b.push(sb)
-    })
+
+      // Blocks
+      sm.b = []
+      m.blocks.forEach(b => {
+        let sb = {}
+        Object.keys(b).forEach(bk => {
+          if (
+            // Ignore fields 'type', 'id', 'minimized'
+            (['type', 'minimized', 'id', 'pos'].indexOf(bk) < 0) &&
+            // Ignore fields with no values
+            !((['units', 'dataType', 'dataCategories'].indexOf(bk) >= 0) && (b[bk] === '')) &&
+            // Ignore categories if data is not category
+            !((bk === 'dataCategories') && (b.dataType !== 'category'))
+          ) {
+            sb[getAbbr(bk)] = b[bk]
+          }
+        })
+        sm.b.push(sb)
+      })
+    }
 
     shortModels.push(sm)
   })

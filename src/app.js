@@ -14,6 +14,7 @@ const BlockClasses = require('./lib/blockClasses')
 const compileModels = require('./lib/compile-wppl')
 const compilePYMC3 = require('./lib/compile-pymc3')
 const compileTFP = require('./lib/compile-tfp')
+const compileTFJS = require('./lib/compile-tfjs')
 const createBaseModel = require('./lib/createBaseModel')
 const createLink = require('./lib/createLink')
 const distributions = require('./lib/distributions')
@@ -266,7 +267,7 @@ const params = {
     server: false, // Server-side processing
     serverAPI: '',
     serverURL: '',
-    showDataTable: false, // Show or not data table?
+    // showDataTable: false, // Show or not data table?
     simulationMethods, // Array of simulation methods
     theme: 'light', // Current theme
     units: Qty.getUnits().map(u => ({ name: u })) // All units
@@ -309,7 +310,7 @@ const params = {
       let sn = []
       // Check for shadow nodes only if multiple models
       if (this.models.length > 1) {
-        console.log('Shadow pirate: Start searching!')
+        console.log('[Shadow nodes] Start searching!')
         let blockString = JSON.stringify(this.models[this.activeModel].blocks).split(/[^A-Za-z0-9_]/g).filter(el => el.length)
         // Iterate over all non active models
         this.models.filter((_, i) => i !== this.activeModel).forEach((m, mi) => {
@@ -328,19 +329,33 @@ const params = {
               }
             })
           }
-          // Check model blocks (shadow blocks)
+          // Check included model blocks and columns (shadow blocks)
           if (this.models[this.activeModel].modelParams.include && this.models[this.activeModel].modelParams.include.length) {
-            m.blocks.forEach((b, bi) => {
-              if (b.name && (blockString.indexOf(b.name) >= 0)) {
+            let names
+            if (m.modelParams.type && (m.modelParams.type === 'dataframe')) {
+              // Dataframe
+              if (m.data && m.data[0] && m.data[0].length) {
+                names = m.data[0]
+              } else {
+                names = m.pipeline.source.columns
+              }
+            } else {
+              // Regular model
+              names = m.blocks.map(b => b.name)
+            }
+
+            // Iterate over names
+            names.forEach((n, ni) => {
+              if (n && (blockString.indexOf(n) >= 0)) {
                 sn.push({
-                  id: m.modelParams.name + bi,
-                  label: b.name,
+                  id: n + ni,
+                  label: n,
                   group: 'shadow'
                 })
               }
             })
           }
-        })
+        }) // *iterate over all other models
       }
       // console.log(new Date(), 'Shadow nodes', sn)
       return sn
@@ -426,6 +441,9 @@ const params = {
               links = links.concat(check(b.value, i))
             }
             break
+          case 2: // Data
+            links = links.concat(check(b.value, i))
+            break
           case 3: // Accum
             links = links.concat(check(b.value, i))
             links = links.concat(check(b.initialValue, i))
@@ -495,6 +513,30 @@ const params = {
     init,
     preprocessDataframe,
     processDataframe,
+    stopStream (modelId) {
+      const app = this
+      const model = app.models[app.activeModel]
+      app.link = ''
+
+      model.pipeline.source.stream.pause()
+      if (model.pipeline.source.stream.destroy) {
+        console.log('[Stop stream] Destroying stream')
+        model.pipeline.source.stream.destroy()
+      }
+
+      if (model.pipeline.output.toMemory) {
+        console.log('[Process] Finished, length: ', model.data.length)
+        console.log('[Process] First 3 rows: ', [model.data[0], model.data[1], model.data[2]])
+        if (model.modelParams.table) {
+          console.log('[Process] Render table')
+          app.renderDataTable()
+        }
+      }
+
+      // Indicate that source is not loading anymore
+      model.loading = false
+      app.notify('Read stream stopped')
+    },
     addFilter (modelId) {
       const model = this.models[modelId]
       if (model.pipeline && model.pipeline.filters) {
@@ -615,6 +657,7 @@ const params = {
         // Check if table exist
         if (table) {
           let data = table.getData()
+          console.log('[Table] Data:', data)
           // Get headers stored in the first line
           let headers = data.shift(1)
           // Remove blocks not present in the table
@@ -649,24 +692,58 @@ const params = {
         } // *if table exist
       }) // *delay
     },
-    drawDataTable () {
+    disableDataTable () {
+      console.log('[Vue] Disable table')
+      const app = this
+      const model = app.models[app.activeModel]
+      model.modelParams.table = false
+      app.removeDataTable()
+    },
+    removeDataTable () {
+      console.log('[Vue] Destroying table')
+      // const app = this
+      // const model = app.models[app.activeModel]
+      console.log(table)
+      if (table && !table.isDestroyed) {
+        table.destroy()
+      }
+    },
+    enableDataTable () {
+      console.log('[Vue] Show table')
+      const app = this
+      const model = app.models[app.activeModel]
+      model.modelParams.table = true
+      app.renderDataTable()
+    },
+    renderDataTable () {
+      console.log('[Vue] Render table')
+      const app = this
+      const model = app.models[app.activeModel]
+
       // Draw table only if the corresponding flag is set
-      if (this.showDataTable) {
-        delay.call(this, 300, () => {
-          const app = this
-
-          // Function called on each table update
-          function upd () {
-            if (app.reactiveDataTable) {
-              app.updateData()
-            }
+      delay.call(this, 300, () => {
+        // Function called on each table update
+        function upd () {
+          if (!(model.modelParams.type && (model.modelParams.type === 'dataframe'))) {
+            console.log('[Table] Detected changes. Update model data')
+            app.updateData()
           }
+        }
 
-          let dataBlocks = this.models[this.activeModel].blocks.filter(b => b.typeCode === 2)
+        let data
+
+        if (model.modelParams.type && model.modelParams.type === 'dataframe') {
+          // Dataframe
+          console.log('[Table] Getting data directly from dataframe')
+          data = model.data
+        } else {
+          // Regular model
+          let dataBlocks = model.blocks.filter(b => b.typeCode === 2)
+          console.log(`[Table] Getting data from ${dataBlocks.length} datablocks`)
 
           // Create data array in the table-friendly format
           // First row contain headers
-          let data = [dataBlocks.map(b => b.name)]
+          data = [dataBlocks.map(b => b.name)]
 
           // Now add values
           dataBlocks.forEach((b, bi) => {
@@ -678,67 +755,74 @@ const params = {
                 data[vi + 1][bi] = v
               })
           })
+        } // *else
 
-          // Fill extra cells 10x20 for better user experience
-          let length = Math.max(20, data.length)
-          for (let i = 0; i <= length; i++) {
-            if (!Array.isArray(data[i])) {
-              data[i] = []
-            }
-            for (let j = 0; j <= 10; j++) {
-              if (!data[i][j]) data[i][j] = ''
-            }
+        // Fill extra cells 10x20 for better user experience
+        let length = Math.max(10, data.length)
+        for (let i = 0; i <= length; i++) {
+          if (!Array.isArray(data[i])) {
+            data[i] = []
           }
+          for (let j = 0; j <= 10; j++) {
+            if (!data[i][j]) data[i][j] = ''
+          }
+        }
 
-          var container = document.querySelector('.table-wrapper')
-          // Clear old table
-          container.innerHTML = ''
-          // Create a new table
-          table = new Table(container, {
-            data,
-            contextMenu: true,
-            observeChanges: false,
-            afterChange: upd,
-            afterColumnMove: upd,
-            afterColumnSort: upd,
-            afterCut: upd,
-            afterMergeCells: upd,
-            afterPaste: upd,
-            afterRemoveCol: upd,
-            afterRemoveRow: upd,
-            afterRowMove: upd,
-            afterRowResize: upd,
-            afterUndo: upd,
-            allowInsertColumn: true,
-            allowRemoveColumn: true,
-            allowInsertRow: true,
-            allowRemoveRow: true,
-            autoColumnSize: {
-              samplingRatio: 23
-            },
-            dropdownMenu: true,
-            fixedRowsTop: 1,
-            manualRowMove: true,
-            manualColumnMove: true,
-            rowHeaders: function (index) {
-              return (index > 0) ? index : ''
-            },
-            stretchH: 'all',
-            cells: function (row, col) {
-              let cellProperties = {}
-              if (row === 0) {
-                cellProperties.renderer = function firstRowRenderer (instance, td, row, col, prop, value, cellProperties) {
-                  Table.renderers.TextRenderer.apply(this, arguments)
-                  td.style.fontWeight = 'bold'
-                  td.style.color = 'black'
-                  td.style.background = '#EEE'
-                }
+        var container = document.querySelector('.table-wrapper')
+        console.log('[Vue] Table container: ', container)
+        // Clear old table
+        container.innerHTML = ''
+        // Create a new table
+        table = new Table(container, {
+          data,
+          contextMenu: true,
+          observeChanges: false,
+          afterChange: upd,
+          afterColumnMove: upd,
+          afterColumnSort: upd,
+          afterCut: upd,
+          afterMergeCells: upd,
+          afterPaste: upd,
+          afterRemoveCol: upd,
+          afterRemoveRow: upd,
+          afterRowMove: upd,
+          afterRowResize: upd,
+          afterUndo: upd,
+          allowInsertColumn: true,
+          allowRemoveColumn: true,
+          allowInsertRow: true,
+          allowRemoveRow: true,
+          autoColumnSize: {
+            samplingRatio: 23
+          },
+          dropdownMenu: true,
+          fixedRowsTop: 1,
+          manualRowMove: true,
+          manualColumnMove: true,
+          minCols: 10,
+          minRows: 30,
+          minSpareCols: 1,
+          minSpareRows: 1,
+          rowHeaders: function (index) {
+            return (index > 0) ? index : ''
+          },
+          startCols: 10,
+          startRows: 10,
+          stretchH: 'all',
+          cells: function (row, col) {
+            let cellProperties = {}
+            if (row === 0) {
+              cellProperties.renderer = function firstRowRenderer (instance, td, row, col, prop, value, cellProperties) {
+                Table.renderers.TextRenderer.apply(this, arguments)
+                td.style.fontWeight = 'bold'
+                td.style.color = 'black'
+                td.style.background = '#EEE'
               }
-              return cellProperties
             }
-          }) // *table cosntructor
-        }) // *delay
-      } // *if showDataTable
+            return cellProperties
+          }
+        }) // *table cosntructor
+      }) // *delay
     },
     addLayer (blockIndex) {
       const block = this.models[this.activeModel].blocks[blockIndex]
@@ -767,7 +851,6 @@ const params = {
       document.cookie = 'theme=' + theme
     },
     newProject () {
-      this.showDataTable = false
       delay.call(this, 500, () => {
         // Switch to edit mode
         this.preview = false
@@ -796,9 +879,12 @@ const params = {
               // CSV
 
               // Create a new dataframe-model
-              this.models.push(createBaseModel(filename, 'dataframe'))
+              let model = createBaseModel(filename, 'dataframe')
+              this.models.push(model)
 
               // Fill it with columns from CSV file
+              /*
+              // Old solution with blocks
               output[0].forEach((h, hi) => {
                 this.models[this.models.length - 1].blocks.push(new BlockClasses[2](
                   h,
@@ -806,6 +892,15 @@ const params = {
                   output.filter((_, i) => i > 0).map(v => v[hi])
                 ))
               })
+              */
+
+              model.data = output.slice(0)
+              model.pipeline.source.type = 'file'
+              model.pipeline.source.format = 'csv'
+              model.pipeline.source.fileList = e.target.files
+              model.pipeline.source.file = file.name
+              model.pipeline.source.columns = output[0]
+              model.pipeline.parse.delimiter = ','
 
               // Switch to new model
               this.switchModel(this.models.length - 1)
@@ -814,7 +909,7 @@ const params = {
               this.models[this.activeModel].blocks.push(new BlockClasses[2](file.name.split('.')[0], output))
             }
             // Update table
-            if (this.reactiveDataTable && this.showDataTable) this.drawDataTable()
+            this.renderDataTable()
           } else {
             console.log(err)
           }
@@ -822,7 +917,6 @@ const params = {
       }
     },
     openProjectFile (e) {
-      this.showDataTable = false
       const reader = new FileReader()
       const file = e.target.files[0]
       reader.readAsText(file)
@@ -867,12 +961,17 @@ const params = {
       this.switchModel(this.models.length - 1)
       this.notify('New model created')
     },
+    createTFModel () {
+      const index = 1 + this.models.filter(m => !(m.modelParams.type && (m.modelParams.type === 'dataframe'))).length
+      this.models.push(createBaseModel('Model' + index, 'tf'))
+      this.switchModel(this.models.length - 1)
+      this.notify('New TF model created')
+    },
     createDataframe () {
       const index = 1 + this.models.filter(m => (m.modelParams.type && (m.modelParams.type === 'dataframe'))).length
       this.models.push(createBaseModel('Data' + index, 'dataframe'))
       this.switchModel(this.models.length - 1)
-      this.showDataTable = true
-      this.drawDataTable()
+      this.renderDataTable()
       this.notify('New dataframe created')
     },
     switchModel (modelId) {
@@ -885,41 +984,50 @@ const params = {
       }
 
       // Get target model
-      const m = this.models[modelId]
+      const currentModel = this.models[this.activeModel]
+      const targetModel = this.models[modelId]
 
       this.link = '' // clean code
       this.message = ''
 
-      // Clean charts
-      const chartContainer = document.querySelector('.charts')
-      if (chartContainer) {
-        chartContainer.innerHTML = ''
-        document.querySelector('.charts-2d').innerHTML = ''
+      if (currentModel.modelParams.type && (currentModel.modelParams.type === 'dataframe')) {
+        // Current: Dataframe
+      } else {
+        // Current: Model
+        const chartContainer = document.querySelector('.charts')
+
+        if (chartContainer) {
+          chartContainer.innerHTML = ''
+          document.querySelector('.charts-2d').innerHTML = ''
+        }
+
+        // Get current positions of the graph and save them
+        if (this.$refs.network) {
+          currentModel.blocks.forEach((b, bi) => {
+            console.log('Network: get pos')
+            b.pos = this.$refs.network.getPositions([bi])[bi]
+          })
+        }
       }
 
-      // Minimize all blocks of the target model "m"
-      m.blocks.forEach(b => {
-        this.$set(b, 'minimized', true)
-      })
-
-      // Get current positions of the graph and save them
-      if (this.$refs.network) {
-        this.models[this.activeModel].blocks.forEach((b, bi) => {
-          console.log('Network: get pos')
-          b.pos = this.$refs.network.getPositions([bi])[bi]
+      if (targetModel.modelParams.type && (targetModel.modelParams.type === 'dataframe')) {
+        // Target: Dataframe
+      } else {
+        // Target: Model
+        targetModel.blocks.forEach(b => {
+          this.$set(b, 'minimized', true)
         })
       }
 
+      // Change activeModel index to target model
       this.activeModel = modelId
 
-      this.showDataTable = false
-      // Update table
-      // if (this.reactiveDataTable && this.showDataTable) {
-      /*
-      if (this.showDataTable) {
-        this.drawDataTable()
+      // Update table if needed
+      if (targetModel.modelParams.table) {
+        this.renderDataTable()
+      } else {
+        this.removeDataTable()
       }
-      */
     },
     duplicateModel () {
       let newModel = JSON.parse(JSON.stringify(this.models[this.activeModel]))
@@ -974,6 +1082,13 @@ const params = {
         this.notify('Compiled to WebPPL')
       })
     },
+    generateTFJS () {
+      delay.call(this, 1000, () => {
+        this.compile('tfjs')
+        this.link = beautify(this.code, { indent_size: 2 })
+        this.notify('Compiled to TFJS')
+      })
+    },
     generatePYMC3 () {
       delay.call(this, 1000, () => {
         this.compile('pymc3')
@@ -1018,8 +1133,8 @@ const params = {
       block.id = 'b' + Math.round(Math.random() * 100000000)
       this.models[this.activeModel].blocks.push(block)
       // If data added, update table
-      if ((blockClassNumber === 2) && this.reactiveDataTable && this.showDataTable) {
-        this.drawDataTable()
+      if ((blockClassNumber === 2) && this.models[this.activeModel].modelParams.table) {
+        this.renderDataTable()
       } else if ((blockClassNumber === 0) && (this.models[this.activeModel].modelParams.method === 'deterministic') && (this.models[this.activeModel].blocks.filter(b => b.typeCode === 0).length === 1)) {
         // Random variable added
         // Should we check the simulation method?
@@ -1048,7 +1163,7 @@ const params = {
       const typeCode = this.models[this.activeModel].blocks[blockIndex].typeCode
       this.models[this.activeModel].blocks.splice(blockIndex, 1)
       // Redraw data table if data removed
-      if ((typeCode === 2) && this.reactiveDataTable && this.showDataTable) this.drawDataTable()
+      if ((typeCode === 2) && this.models[this.activeModel].modelParams.table) this.renderDataTable()
     },
     compile (target) {
       // Convert available models (this.models) to the probabilistic lang
@@ -1058,8 +1173,9 @@ const params = {
         this.code = compilePYMC3(this.models, this.activeModel)
       } else if (target === 'tfp') {
         this.code = compileTFP(this.models, this.activeModel)
+      } else if (target === 'tfjs') {
+        this.code = compileTFJS(this.models, this.activeModel)
       }
-
       console.log('Vue: F* yeah! Got compiled code!')
     },
     process (data) {
@@ -1069,6 +1185,9 @@ const params = {
       this.notify('Done!')
     },
     run () {
+      const app = this
+      const model = app.models[app.activeModel]
+
       const errorHandler = (err) => {
         this.loading = false
         document.getElementById('loader').className = 'hidden'
@@ -1091,7 +1210,11 @@ const params = {
       document.cookie = 'api=' + this.serverAPI
       document.cookie = 'server=' + this.server
 
-      this.compile()
+      if (model.modelParams.type === 'tf') {
+        app.compile('tfjs')
+      } else {
+        app.compile()
+      }
 
       // Add some delay to finish display update
       setTimeout(() => {
@@ -1174,7 +1297,14 @@ const params = {
             for (let i = 0; i < nw; i++) {
               workers.push(
                 new Promise((resolve, reject) => {
-                  let w = new Worker('dist/worker.js')
+                  let w
+                  if (this.models[this.activeModel].modelParams.type && (this.models[this.activeModel].modelParams.type === 'tf')) {
+                    // Tensorflow worker
+                    w = new Worker('dist/worker-tf.js')
+                  } else {
+                    // WebPPL worker
+                    w = new Worker('dist/worker.js')
+                  }
                   w.postMessage(this.code)
                   w.onmessage = (msg) => {
                     console.log(`Vue: Received reply from Worker ${i}`)

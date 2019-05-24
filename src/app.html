@@ -51,7 +51,8 @@
         <md-menu-item v-else="preview" v-on:selected="preview = false">
           <md-icon style="">edit</md-icon>
           <span>Editor mode</span>
-        </md-menu-item>        <md-menu-item v-if="theme === 'dark'" v-on:selected="setTheme('light')">
+        </md-menu-item>
+        <md-menu-item v-if="theme === 'dark'" v-on:selected="setTheme('light')">
           <md-icon style="">brightness_5</md-icon>
           <span>Light theme</span>
         </md-menu-item>
@@ -63,11 +64,16 @@
     </md-menu>
     <!-- <p class="logo-icon">{{ icon }}</p> -->
     <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.11.0b</sup></h2>
-    <md-menu md-align-trigger md-size="4" md-direction="bottom left" class="editor-only">
+    <md-menu
+      md-align-trigger
+      md-size="4"
+      md-direction="bottom left"
+      class="editor-only"
+      v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))"
+    >
       <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
         <md-icon>add</md-icon>
         Add Block
-        <md-tooltip md-direction="bottom">Add new element to the model</md-tooltip>
       </md-button>
       <md-menu-content>
         <md-menu-item v-on:click.native="addBlock(2)">
@@ -123,19 +129,26 @@
         v-for="(model, modelId) in models"
         :class="{'md-dense': true, 'md-raised': (modelId === activeModel)}"
         v-on:click.native="switchModel(modelId)"
+        :title="model.modelParams.name"
       >
-        <span style="color: #3f51b5; font-size: 90%" v-if="model.modelParams.type && (model.modelParams.type === 'dataframe')">♦</span>
-        <span style="color: #5db53b" v-else>⚫</span>
-        {{ model.modelParams.name }}
-      </md-button>
-      <md-menu md-align-trigger md-size="4" md-direction="bottom left" style="float: right">
-        <md-button md-menu-trigger class="md-icon-button md-dense">
-          <md-icon style="opacity: 0.3">more_horiz</md-icon>
+        <span v-if="(modelId === activeModel) || models.length < 8">
+          <span style="color: #3f51b5; font-size: 85%; position: relative; bottom: 2px;" v-if="model.modelParams.type && (model.modelParams.type === 'dataframe')">◆</span>
+          <span style="color: #ddba00" v-else-if="model.modelParams.type && (model.modelParams.type === 'tf')">⚫</span>
+          <span style="color: #5db53b" v-else>⚫</span>
+        </span>
+        <span v-if="(modelId === activeModel) || models.length < 4">{{ (model.modelParams.name.length > 9) ? model.modelParams.name.substring(0, 6) + "..." : model.modelParams.name }}</span>
+      </md-button><md-menu md-align-trigger md-size="4" md-direction="bottom right">
+        <md-button md-menu-trigger class="md-icon-button md-dense" style="background:none;">
+          <md-icon style="opacity: 0.3">add</md-icon>
         </md-button>
         <md-menu-content>
           <md-menu-item v-on:selected="createModel()">
             <md-icon>add</md-icon>
             <span>New model</span>
+          </md-menu-item>
+          <md-menu-item v-on:selected="createTFModel()">
+            <md-icon>add</md-icon>
+            <span>New TF model</span>
           </md-menu-item>
           <md-menu-item v-on:selected="createDataframe()">
             <md-icon>add</md-icon>
@@ -256,11 +269,16 @@
                 <md-option v-for="(m, mi) in models" v-if="m.modelParams.type && (m.modelParams.type === 'dataframe')" :value="mi">{{m.modelParams.name}}</md-option>
               </md-select>
             </md-input-container>
+            <div class="md-subhead" v-if="models[activeModel].pipeline && models[activeModel].pipeline.source && models[activeModel].pipeline.source.fileList">
+              Source size: {{ (models[activeModel].pipeline.source.fileList[0].size / (1024 ** 2)).toFixed(2) }}Mb<br>
+              <span v-if="models[activeModel].pipeline.source.fileList[0].lastModified">
+                Modified: {{ (new Date(models[activeModel].pipeline.source.fileList[0].lastModified)).toUTCString() }}<br>
+              </span>
+            </div>
           </div>
         </md-list-item>
 
         <div v-if="(models[activeModel].pipeline.source.type !== 'none') && (models[activeModel].pipeline.source.file || models[activeModel].pipeline.source.url || (models[activeModel].pipeline.source.dataframe !== ''))">
-
           <!-- [ Parsing ] -->
           <md-list-item v-if="models[activeModel].pipeline && models[activeModel].pipeline.source && ((models[activeModel].pipeline.source.type == 'file') || (models[activeModel].pipeline.source.type == 'url'))">
             <md-icon>memory</md-icon>
@@ -413,13 +431,22 @@
               </md-card>
             </md-list-expand>
           </md-list-item>
-
+          <!--
           <md-list-item>
-          <md-button class="md-raised md-primary" style="width: 100%; margin: 10px 0 0 0;" v-on:click.native="processDataframe(activeModel)">
-            <md-icon style="color: white">arrow_downward</md-icon>
-            Load
-          </md-button>
+            <md-card>
+              <md-card-content>
+                <p>Processed: {{ models[activeModel].pipeline.processed }} </p>
+                <p>Progress: {{ models[activeModel].pipeline.progress }} </p>
+              </md-card-content>
+            </md-card>
           </md-list-item>
+          <md-list-item>
+            <md-button class="md-raised md-primary" style="width: 100%; margin: 10px 0 0 0;" v-on:click.native="processDataframe(activeModel)">
+              <md-icon style="color: white">arrow_downward</md-icon>
+              Load
+            </md-button>
+          </md-list-item>
+          -->
         </div> <!-- *data-source params -->
       </md-list>
     </div> <!-- *data-tools -->
@@ -734,6 +761,7 @@
               v-model="block.dataType"
             >
               <md-option value="auto">Auto (default)</md-option>
+              <md-option value="proxy">Proxy</md-option>
               <md-option value="boolean">Boolean</md-option>
               <md-option value="integer">Integer</md-option>
               <md-option value="float">Float</md-option>
@@ -1187,6 +1215,9 @@
         {{ (message.length && !error.length) ? message : '' }}
       </h3>
       <md-button disabled class="desktop">Generate: </md-button>
+      <md-button class="desktop editor-only" v-on:click.native="generateTFJS" v-if="models[activeModel].type && (models[activeModel].type === 'tf')">
+        TFJS
+      </md-button>
       <md-button class="desktop editor-only" v-on:click.native="generateWebPPL">
         WPPL
       </md-button>
@@ -1206,46 +1237,41 @@
       </md-button>
       <md-button
         class="md-icon-button md-raised editor-only"
-        v-if="!showDataTable"
-        @click.native="showDataTable = true; link = ''; drawDataTable()"
+        v-if="models.length && !models[activeModel].modelParams.table"
+        @click.native="enableDataTable"
       >
         <md-icon>grid_on</md-icon>
       </md-button>
       <md-button
         class="md-icon-button md-raised editor-only"
-        v-if="showDataTable"
-        @click.native="showDataTable = false"
+        v-if="models.length && models[activeModel].modelParams.table"
+        @click.native="disableDataTable"
       >
         <md-icon>grid_off</md-icon>
       </md-button>
 
+      <!-- Model params -->
       <md-button class="md-icon-button md-raised editor-only" @click="toggleRightSidenav">
         <md-icon>tune</md-icon>
       </md-button>
 
-    </md-toolbar>
 
-    <!-- Data table -->
-    <div class="tables wl" v-if="showDataTable">
-      <div class="control-buttons">
-        <div style="float: left">
-          <md-switch v-model="reactiveDataTable" name="reactive-table" class="md-primary">Reactive updates</md-switch>
-        </div>
-        <md-button class="md-dense" @click.native="updateData" :disabled="reactiveDataTable">
-          <md-icon>check</md-icon>
-          Save changes
-        </md-button>
-        <md-button class="md-dense" @click.native="drawDataTable" :disabled="reactiveDataTable">
-          <md-icon>refresh</md-icon>
-          Reload
-        </md-button>
-        <md-button class="md-dense" @click.native="showDataTable = false">
-          <md-icon>close</md-icon>
-          Close
-        </md-button>
-      </div>
-      <div class="table-wrapper"></div>
-    </div>
+      <!-- Preview mode -->
+      <md-button
+        class="md-icon-button md-raised"
+        v-if="!preview"
+        @click.native="preview = true"
+      >
+        <md-icon>visibility</md-icon>
+      </md-button>
+      <md-button
+        class="md-icon-button md-raised"
+        v-else="preview"
+        @click.native="preview = false"
+      >
+        <md-icon>edit</md-icon>
+      </md-button>
+    </md-toolbar>
 
     <!-- Generated links and code -->
     <div class="links wl" v-if="link.length">
@@ -1264,6 +1290,22 @@
         </md-button>
       </div>
       <pre id="link">{{ link }}</pre>
+    </div>
+
+    <!-- TABLE -->
+    <div class="tables wl" v-if="models.length && models[activeModel].modelParams.table">
+      <!--<div class="control-buttons" v-if="false && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">-->
+      <div class="control-buttons" v-if="!preview">
+        <md-button class="md-dense" @click.native="renderDataTable">
+          <md-icon>refresh</md-icon>
+          Reload
+        </md-button>
+        <md-button class="md-dense" @click.native="disableDataTable">
+          <md-icon>close</md-icon>
+          Close
+        </md-button>
+      </div>
+      <div class="table-wrapper"></div>
     </div>
 
     <!-- Needed for graph -->
@@ -1299,25 +1341,37 @@
           <p class="model-description">{{ models[activeModel].modelParams.description }}</p>
           <md-input-container v-for="b in models[activeModel].blocks" v-if="b.typeCode === 2 && b.useAsParameter">
             <label>{{ b.name + ((b.units && b.units.length) ? ', ' + b.units : '') }}</label>
-            <md-input
-              v-model="b.value"
-              v-if="(b.dataType !== 'boolean') && (b.dataType !== 'category')"
-              :type="(b.dataType === 'float' || b.dataType === 'integer') ? 'number' : ''"
-              :step="(b.dataType === 'integer') ? 1 : 0.1"
-              ></md-input>
+            <!-- True/False -->
             <md-select
-              v-else-if="b.dataType === 'boolean'"
+              v-if="b.dataType === 'boolean'"
               v-model="b.value"
             >
               <md-option value="true">True</md-option>
               <md-option value="false">False</md-option>
             </md-select>
+            <!-- Categorical -->
             <md-select
               v-else-if="b.dataType === 'category'"
               v-model="b.value"
             >
               <md-option v-for="c in b.dataCategories ? b.dataCategories.split(',').map(cat => cat.trim()) : ['']" :value="c" >{{ c }}</md-option>
             </md-select>
+            <!-- Proxy -->
+            <md-select
+              v-else-if="b.dataType === 'proxy'"
+              v-model="b.value"
+            >
+              <div v-for="mod in models.filter(m => (m.modelParams.type && (m.modelParams.type === 'dataframe')))" v-if="mod.data">
+                <md-option v-for="c in mod.data[0].reduce((a, c) => a.concat(c), [])" :value="mod.modelParams.name + '.' + c" >{{ mod.modelParams.name + '.' + c }}</md-option>
+              </div>
+            </md-select>
+            <!-- Regular input -->
+            <md-input
+              v-model="b.value"
+              v-else
+              :type="(b.dataType === 'float' || b.dataType === 'integer') ? 'number' : ''"
+              :step="(b.dataType === 'integer') ? 1 : 0.1"
+            ></md-input>
           </md-input-container>
         </div>
       </div>
@@ -1478,7 +1532,20 @@
 
   <!-- BOTTOM BAR-->
   <md-progress class="progress" v-if="loading" md-indeterminate></md-progress>
-  <md-bottom-bar v-if="models && models.length" class="bottom-bar">
+  <!-- DATAFRAME CONTROLS-->
+  <md-bottom-bar v-if="models && models.length && models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe')" class="bottom-bar">
+    <div class="model-summary">
+      <p><b>Processed:</b> {{ (models[activeModel].pipeline.processed/ (1024 ** 2)).toFixed(2) }}Mb </p>
+      <p><b>Progress:</b> {{ models[activeModel].pipeline.progress }}% </p>
+    </div>
+    <md-button v-if="!models[activeModel].loading" class="run-button md-raised md-primary" v-on:click.native="processDataframe(activeModel)">
+      <md-icon>play_arrow</md-icon>
+      Load & process
+    </md-button>
+    <md-button v-if="models[activeModel].loading" v-on:click.native="stopStream(activeModel)" class="md-raised md-accent control-button"><md-icon>stop</md-icon> Stop</md-button>
+  </md-bottom-bar>
+    <!-- MODEL CONTROLS-->
+  <md-bottom-bar v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" class="bottom-bar">
     <!-- Time steps-->
     <md-input-container class="simulation-param desktop">
       <label for="time-steps">Iterations</label>

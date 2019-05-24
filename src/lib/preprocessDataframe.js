@@ -43,7 +43,7 @@ module.exports = async function preprocessDataframe (modelId) {
     } else if ((model.pipeline.source.type === 'dataframe') && (model.pipeline.source.dataframe !== '')) {
       // Stream from Dataframe
       console.log('[Preprocess] Dataframe source:', model.pipeline.source.dataframe)
-      stream = await createStream(app.models[model.pipeline.source.dataframe])
+      // stream = await createStream(app.models[model.pipeline.source.dataframe])
     } else {
       console.log('[Preprocess] No sources provided')
     }
@@ -53,10 +53,15 @@ module.exports = async function preprocessDataframe (modelId) {
 
   console.log('[Preprocess] Created stream: ', stream)
 
+  model.pipeline.source.stream = stream
+
   // Init structure object
   let structure
 
-  if (model.pipeline.source.format === 'csv') {
+  if (model.pipeline.source.type === 'dataframe') {
+    model.pipeline.source.columns = app.models[model.pipeline.source.dataframe].data[0].slice(0)
+    console.log('[Preprocess] Source columns (from dataframe):', model.pipeline.source.columns)
+  } else if (model.pipeline.source.format === 'csv') {
     // Guessing CSV source stream structure
     // Detect header (columns) and extra params
     // Returns {columns: [], delimiter: ''} or in case of XML {columns: [], item: ''}

@@ -22,7 +22,7 @@ function fixBrackets (str) {
 }
 
 module.exports = function (models, activeModel) {
-  console.log(`Mr. Compiler: Oh, models again! Active model is ${activeModel} of ${models.length}`)
+  console.log(`[TFJS Compiler]: Hi! Active model is ${activeModel} of ${models.length}`)
 
   let finalCode = ''
   let modelCodes = []

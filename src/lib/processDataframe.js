@@ -94,10 +94,16 @@ module.exports = async function processDataframe (modelId) {
   let app = this
   let model = app.models[modelId]
 
-  console.log('[Process] Processng dataframe: ', model.modelParams.name)
+  console.log('[Process] Processing dataframe: ', model.modelParams.name)
 
   // Reset dataframe blocks
-  model.blocks = []
+  // model.blocks = []
+  app.set(model, 'blocks', [])
+  // model.data = []
+  app.set(model, 'data', [])
+  model.loading = true
+  model.pipeline.progress = 0
+  model.pipeline.processed = 0
 
   // Detect correct columns
   let columns = (model.pipeline.structure.showAll || !model.pipeline.structure)
@@ -107,13 +113,14 @@ module.exports = async function processDataframe (modelId) {
   console.log('[Process] Columns: ', columns)
 
   // Create new blocks
+  /*
   let blocks = {}
   columns.forEach((c) => {
     let block = new BlockClasses[2](c)
     model.blocks.push(block)
     blocks[c] = block
   })
-
+  */
   // source.loading = true // Currently stream is loading
   // source.progress = 0 // Nullify the progress
   // source.processed = 0 // Nullify the processed byte counter
@@ -131,34 +138,51 @@ module.exports = async function processDataframe (modelId) {
 
   // Create a new readable stream
   let stream
+  let byteStep
+  let size
+
   try {
-    stream = await createStream((model.pipeline.source.fileList) ? model.pipeline.source.fileList[0] : model.pipeline.source.url)
+    if ((model.pipeline.source.type === 'file') && model.pipeline.source.file) {
+      // Stream from file
+      console.log('[Process] Local file source:', model.pipeline.source.file)
+      stream = await createStream(model.pipeline.source.fileList[0])
+      size = model.pipeline.source.fileList[0].size
+      console.log('[Processor] Size:', size)
+      byteStep = (size < 100000000) ? size / 500 : 200000
+      console.log('[Processor] Byte step:', byteStep)
+    } else if ((model.pipeline.source.type === 'url') && model.pipeline.source.url && model.pipeline.source.url.length) {
+      // Stream from URL
+      console.log('[Process] Url source:', model.pipeline.source.url)
+      stream = await createStream(model.pipeline.source.url)
+      byteStep = 1024
+    } else if ((model.pipeline.source.type === 'dataframe') && (model.pipeline.source.dataframe !== '')) {
+      // Stream from Dataframe
+      console.log('[Process] Dataframe source:', model.pipeline.source.dataframe)
+      stream = await createStream(app.models[model.pipeline.source.dataframe])
+    } else {
+      console.log('[Process] No sources provided')
+    }
   } catch (e) {
     this.notify(e.message, 'error')
   }
 
-  // let size = model.pipeline.source.fileList[0].size
-  let byteStep = 1024
-  // source.size / 500
-  // byteStep = (byteStep < 200000) ? byteStep : 200000
-  console.log('[Processor] Byte step:', byteStep)
+  // Make link to stream in a pipeline to stop it if needed
+  model.pipeline.source.stream = stream
 
   // Create main stream, calculate progress, split on pieces
-
   let mainStream = stream
-  /*   .pipe(through2(function (chunk, enc, callback) {
-      source.processed += chunk.length
-      if (source.size) {
+    .pipe(through2(function (chunk, enc, callback) {
+      model.pipeline.processed += chunk.length
+      if (size) {
         let prevBytes = 0
-        if ((source.processed - prevBytes) > byteStep) {
-          source.progress = ((source.processed / source.size) * 100).toFixed(1)
-          prevBytes = app.processed
+        if ((model.pipeline.processed - prevBytes) > byteStep) {
+          model.pipeline.progress = ((model.pipeline.processed / size) * 100).toFixed(1)
+          prevBytes = model.pipeline.processed
         }
       }
       this.push(chunk)
       callback()
     }), { end: false })
-    */
     .pipe(splitStream(model.pipeline.source.format, '' /* XML item */), { end: false }) // Split text stream into text blocks (one for each record)
 
   // -> Hard filters ->
@@ -253,7 +277,7 @@ module.exports = async function processDataframe (modelId) {
 
   // Manual processing
   mainStream.on('data', function (obj) {
-    console.log('[Stream] Line: ', obj)
+    // console.log('[Stream] Line: ', obj)
     // Here the pipeline throws parsed, filtered, not flat objects
     // Plot stream
     /*
@@ -270,9 +294,8 @@ module.exports = async function processDataframe (modelId) {
     // if ((N && model.pipeline.parse.hasHeader) || (!model.pipeline.parse.hasHeader)) {
     // Check if we need to store results
     // if (true || source.pipeline.charts.length || source.pipeline.output.toTable || source.pipeline.output.toMemory) {
-    {
+    // {
       const flatObj = flat(obj)
-      console.log(flatObj)
       let line = []
       for (let prop in flatObj) {
         // The only value that will be converted to '' is NaN
@@ -281,18 +304,22 @@ module.exports = async function processDataframe (modelId) {
         line[columns.indexOf(prop)] = value
       }
       model.data.push(line)
-      model.length += 1
-    }
+      // model.length += 1
+    // }
     // }
     // N += 1
   })
 
   stream.on('end', () => {
     // Finalize collection
+    app.link = ''
     if (model.pipeline.output.toMemory) {
-      console.log('[Process] Update table')
-      // ht.loadData(collection.values)
-      // ht.render()
+      console.log('[Process] Finished, length: ', model.data.length)
+      console.log('[Process] First 3 rows: ', [model.data[0], model.data[1], model.data[2]])
+      if (model.modelParams.table) {
+        console.log('[Process] Render table')
+        app.renderDataTable()
+      }
     }
 
     // Finalize output file stream
