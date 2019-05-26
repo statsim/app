@@ -1215,7 +1215,7 @@
         {{ (message.length && !error.length) ? message : '' }}
       </h3>
       <md-button disabled class="desktop">Generate: </md-button>
-      <md-button class="desktop editor-only" v-on:click.native="generateTFJS" v-if="models[activeModel].type && (models[activeModel].type === 'tf')">
+      <md-button class="desktop editor-only" v-on:click.native="generateTFJS" v-if="models && models.length && models[activeModel].type && (models[activeModel].type === 'tf')">
         TFJS
       </md-button>
       <md-button class="desktop editor-only" v-on:click.native="generateWebPPL">
@@ -1306,6 +1306,7 @@
         </md-button>
       </div>
       <div class="table-wrapper"></div>
+      <div class="table-gradient" v-if="models[activeModel].preview"></div>
     </div>
 
     <!-- Needed for graph -->
@@ -1362,7 +1363,7 @@
               v-model="b.value"
             >
               <div v-for="mod in models.filter(m => (m.modelParams.type && (m.modelParams.type === 'dataframe')))" v-if="mod.data">
-                <md-option v-for="c in mod.data[0].reduce((a, c) => a.concat(c), [])" :value="mod.modelParams.name + '.' + c" >{{ mod.modelParams.name + '.' + c }}</md-option>
+                <md-option v-for="c in mod.data[0].filter(c => c).reduce((a, c) => a.concat(c), [])" :value="mod.modelParams.name + '.' + c" >{{ mod.modelParams.name + '.' + c }}</md-option>
               </div>
             </md-select>
             <!-- Regular input -->

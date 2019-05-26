@@ -11,10 +11,12 @@ const beautify = require('js-beautify').js
 
 // Local deps
 const BlockClasses = require('./lib/blockClasses')
+const cleanModels = require('./lib/cleanModels')
 const compileModels = require('./lib/compile-wppl')
 const compilePYMC3 = require('./lib/compile-pymc3')
 const compileTFP = require('./lib/compile-tfp')
 const compileTFJS = require('./lib/compile-tfjs')
+const copyText = require('./lib/copy')
 const createBaseModel = require('./lib/createBaseModel')
 const createLink = require('./lib/createLink')
 const distributions = require('./lib/distributions')
@@ -23,10 +25,10 @@ const guessUnits = require('./lib/guessUnits')
 const icons = require('./lib/icons')
 const parseLink = require('./lib/parseLink')
 const preprocessDataframe = require('./lib/preprocessDataframe')
+const previewDataframe = require('./lib/previewDataframe')
 const processDataframe = require('./lib/processDataframe')
 const processResults = require('./lib/processResults')
 const simulationMethods = require('./lib/methods')
-const copyText = require('./lib/copy')
 // const getXmlStreamStructure = require('./lib/get-xml-stream-structure.js') // Get XML nodes and repeated node
 
 // Access global objects
@@ -512,6 +514,7 @@ const params = {
   methods: {
     init,
     preprocessDataframe,
+    previewDataframe,
     processDataframe,
     stopStream (modelId) {
       const app = this
@@ -715,6 +718,13 @@ const params = {
       model.modelParams.table = true
       app.renderDataTable()
     },
+    updateDataTable () {
+      const app = this
+      const model = app.models[app.activeModel]
+
+      table.loadData(model.data)
+      table.render()
+    },
     renderDataTable () {
       console.log('[Vue] Render table')
       const app = this
@@ -757,14 +767,14 @@ const params = {
           })
         } // *else
 
-        // Fill extra cells 10x20 for better user experience
+        // Fill extra cells 10x10 for better user experience
         let length = Math.max(10, data.length)
         for (let i = 0; i <= length; i++) {
           if (!Array.isArray(data[i])) {
             data[i] = []
           }
           for (let j = 0; j <= 10; j++) {
-            if (!data[i][j]) data[i][j] = ''
+            if (!data[i][j]) data[i][j] = null
           }
         }
 
@@ -801,7 +811,7 @@ const params = {
           manualColumnMove: true,
           minCols: 10,
           minRows: 30,
-          minSpareCols: 1,
+          minSpareCols: 0,
           minSpareRows: 1,
           rowHeaders: function (index) {
             return (index > 0) ? index : ''
@@ -900,6 +910,8 @@ const params = {
               model.pipeline.source.fileList = e.target.files
               model.pipeline.source.file = file.name
               model.pipeline.source.columns = output[0]
+              model.pipeline.processed = file.size
+              model.pipeline.progress = 100
               model.pipeline.parse.delimiter = ','
 
               // Switch to new model
@@ -948,7 +960,7 @@ const params = {
       this.models[this.activeModel].blocks.forEach((b, bi) => {
         b.pos = this.$refs.network.getPositions([bi])[bi]
       })
-      const blob = new Blob([JSON.stringify(this.models, null, 2)], {type: 'text/plain;charset=utf-8'})
+      const blob = new Blob([JSON.stringify(cleanModels(this.models), null, 2)], {type: 'text/plain;charset=utf-8'})
       fileSaver.saveAs(blob, this.models[0].modelParams.name + '.json')
     },
     // Open remove model dialog
@@ -1104,13 +1116,13 @@ const params = {
     },
     generateLink () {
       delay.call(this, 400, () => {
-        this.link = createLink(this.models, this.preview, this.activeModel)
+        this.link = createLink(cleanModels(this.models), this.preview, this.activeModel)
         this.notify('Link generated')
       })
     },
     generateJSON () {
       delay.call(this, 600, () => {
-        this.link = JSON.stringify(this.models, null, 2) // indent with 2 spaces
+        this.link = JSON.stringify(cleanModels(this.models), null, 2) // indent with 2 spaces
         this.notify('JSON generated')
       })
     },

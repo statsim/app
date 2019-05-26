@@ -14,6 +14,7 @@ module.exports = function (name, type) {
       blocks: [],
       data: [],
       loading: false,
+      preview: false,
       pipeline: {
         source: {
           type: 'none',

@@ -1,10 +1,25 @@
+const parseStream = require('./parseStream')
+const splitStream = require('./splitStream')
+const isExactlyNaN = require('./isExactlyNaN')
+
 /*
   PREVIEW SOURCE
 */
 module.exports = function preview (modelId) {
-  log('[Preview] Got model!')
+  console.log('[Preview] Got model!')
   const app = this
   const model = app.models[app.activeModel]
+
+  app.set(model, 'data', [])
+
+  model.preview = true
+
+  // Detect correct columns
+  let columns = (model.pipeline.structure.showAll || !model.pipeline.structure)
+    ? model.pipeline.source.columns
+    : model.pipeline.structure.columns
+
+  let counter = 0
 
   if (model.modelParams.table) {
     console.log('[Process] Render table')
@@ -14,41 +29,43 @@ module.exports = function preview (modelId) {
   // We need extra stream (previewStream) to be able pause/resume it.
   // If we just pause readable stream that is piped to transform streams,
   // it will miss huge buffer chunks
-  model.pipeline.source.stream = model.pipeline.source.stream
-    .pipe(splitStream(source.type, source.item), { end: false }) // Split text stream into text blocks (one for each record)
-    .pipe(parseStream(source.type, {
-      header: (!source.params.isHeader) && source.columns, // Send false if we load header from file, array of column names otherwise
-      delimiter: source.params.delimiter,
-      comment: source.params.comment
+  const previewStream = model.pipeline.source.stream
+    .pipe(splitStream(model.pipeline.source.format, ''), { end: false }) // Split text stream into text blocks (one for each record)
+    .pipe(parseStream(model.pipeline.source.format, {
+      header: model.pipeline.source.columns, // Send false if we load header from file, array of column names otherwise
+      delimiter: model.pipeline.parse.delimiter,
+      comment: model.pipeline.parse.comment
     }), { end: false }) // 'end' <boolean> End the writer when the reader ends. Defaults to true
+  /*
     .pipe(flatObjectStream(), { end: false })
+*/
 
-  source.previewStream.on('data', function (obj) {
+  previewStream.on('data', function (obj) {
     // If stream sends data read it anyway. Not to miss between line
-    console.log(obj)
     let line = []
     for (let prop in obj) {
-      line[collection.columns.indexOf(prop)] = obj[prop]
+      // The only value that will be converted to '' is NaN
+      const value = (!isExactlyNaN(obj[prop])) ? obj[prop] : ''
+      // blocks[prop].value += (blocks[prop].value.length ? ',' : '') + value + ''
+      line[columns.indexOf(prop)] = value
     }
-    collection.values.push(line)
-    collection.length += 1
+    model.data.push(line)
 
     // Check counter
-    if (source.counter < 49) {
-      source.counter += 1
+    if (counter < 49) {
+      counter += 1
     } else {
-      ht.loadData(collection.values)
-      ht.render()
-      source.previewStream.pause()
+      console.log('[Preview] Pausing stream')
+      previewStream.pause()
+      app.updateDataTable()
     }
   })
 
-  source.stream.on('end', () => {
-    log('[Preview] Stream ended, update the table with values:', collection.values)
-    ht.loadData(collection.values)
-    ht.render()
+  model.pipeline.source.stream.on('end', () => {
+    console.log('[Preview] Stream ended, update the table with values')
+    model.preview = false
+    app.updateDataTable()
   })
 
-  app.notify('Preview opened. Scroll to load more...')
+  app.notify('Preview mode...')
 }
-

@@ -149,6 +149,6 @@ module.exports = async function preprocessDataframe (modelId) {
   } else {
     // By default open each source in the preview mode
     console.log('[Preprocess] Start preview()')
-    app.preview(modelId)
+    app.previewDataframe(modelId)
   }
 }
