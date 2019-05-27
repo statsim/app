@@ -203,6 +203,7 @@ function notify (message, type) {
 // Future HotTable object
 // Need it here to easily call from any app method
 let table
+let tableTempHeader // for sorting
 
 const regCSV = RegExp('\\.csv', 'i')
 const regTSV = RegExp('\\.tsv', 'i')
@@ -785,7 +786,63 @@ const params = {
         // Create a new table
         table = new Table(container, {
           data,
-          contextMenu: true,
+          // contextMenu: true,
+          contextMenu: {
+            items: {
+                    "colors": { // Own custom option
+                              name: 'Colors...',
+                              submenu: {
+                                          // Custom option with submenu of items
+                                          items: [
+                                            {
+                                                            // Key must be in the form "parent_key:child_key"
+                                                            key: 'colors:red',
+                                                            name: 'Red',
+                                                            callback: function(key, selection, clickEvent) {
+                                                                              setTimeout(function() {
+                                                                                                  alert('You clicked red!');
+                                                                                                }, 0);
+                                                                            }
+                                                          },
+                                                        { key: 'colors:green', name: 'Green' },
+                                                        { key: 'colors:blue', name: 'Blue' }
+                                                      ]
+                                        }
+                            },
+              'export': {
+                name: 'Export to CSV',
+                callback: function (key, options) {
+                  /*
+                  let start = options[0].start
+                  let end = options[0].end
+                  for (let ri = start.row; ri <= end.row; ri++) {
+                    for (let ci = start.col; ci <= end.col; ci++) {
+                      data[ri][ci] = 9
+                    }
+                  }
+                  table.render()
+                  console.log(key, options)
+                  */
+                  this.getPlugin('exportFile').downloadFile('csv', {
+                    filename: 'MyFile'
+                  })
+                }
+              },
+              'sep0': {name: '---'},
+              'row_above': true,
+              'row_below': true,
+              'remove_row': true,
+              'sep1': {name: '---'},
+              'col_left': true,
+              'col_right': true,
+              'remove_col': true,
+              'sep2': {name: '---'},
+              'make_read_only': true,
+              'alignment': true,
+              'undo': true,
+              'redo': true
+            }
+          },
           observeChanges: false,
           afterChange: upd,
           afterColumnMove: upd,
@@ -808,11 +865,49 @@ const params = {
           dropdownMenu: true,
           fixedRowsTop: 1,
           manualRowMove: true,
+          manualColumnResize: true,
           manualColumnMove: true,
           minCols: 10,
           minRows: 30,
           minSpareCols: 0,
           minSpareRows: 1,
+          columnSorting: {
+            indicator: true,
+            headerAction: true
+          },
+          beforeColumnSort: function (currentSortConfig, destinationSortConfigs) {
+            // let data = this.getData()
+            const columnSortPlugin = this.getPlugin('columnSorting')
+            columnSortPlugin.setSortConfig(destinationSortConfigs)
+
+            let config = destinationSortConfigs[0]
+            if (config) {
+              let col = config.column
+              let order = +(config.sortOrder === 'asc')
+
+              console.log(order)
+
+              console.log(currentSortConfig, destinationSortConfigs)
+
+              let header = model.data.shift(1)
+              model.data.sort((a, b) => {
+                if ((b[col] === null) || (b[col] === '')) return -1
+                let ac = isNaN(a[col]) ? a[col] : +a[col]
+                let bc = isNaN(b[col]) ? b[col] : +b[col]
+                if (ac < bc) return 1 - 2 * order
+                else if (ac > bc) return 2 * order - 1
+                else return 0
+              })
+
+              model.data.unshift(header)
+
+              console.log(model.data)
+              table.render()
+            }
+
+            return false // The blockade for the default sort action.
+          },
+          colHeaders: true,
           rowHeaders: function (index) {
             return (index > 0) ? index : ''
           },
