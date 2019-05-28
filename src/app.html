@@ -1260,14 +1260,14 @@
       <md-button
         class="md-icon-button md-raised"
         v-if="!preview"
-        @click.native="preview = true"
+        @click.native="previewMode(true)"
       >
         <md-icon>visibility</md-icon>
       </md-button>
       <md-button
         class="md-icon-button md-raised"
         v-else="preview"
-        @click.native="preview = false"
+        @click.native="previewMode(false)"
       >
         <md-icon>edit</md-icon>
       </md-button>

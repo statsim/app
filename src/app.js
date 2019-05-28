@@ -513,6 +513,15 @@ const params = {
     }
   },
   methods: {
+    previewMode (b) {
+      const app = this
+      app.preview = b
+      if (table) {
+        delay.call(app, 300, () => {
+          table.render()
+        })
+      }
+    },
     init,
     preprocessDataframe,
     previewDataframe,
