@@ -1,13 +1,60 @@
 <div :class="{dark: theme === 'dark', preview}">
   <!-- Confirm model removal-->
   <md-dialog-confirm
-    md-title="Remove model?"
-    md-content-html="To delete current model with all its elements select <b>REMOVE</b><br>To cancel click anywhere outside of this white block or choose CANCEL"
+    md-title="Remove"
+    md-content-html="To delete current model or dataframe select <b>REMOVE</b><br>To cancel click anywhere outside of this white block or choose CANCEL"
     md-ok-text="Remove"
     md-cancel-text="Cancel"
-    @close="removeModel"
+    @close="removeModelConfirmed"
     ref="remove-dialog">
   </md-dialog-confirm>
+
+  <!-- Confirm model removal-->
+  <md-dialog-confirm
+    md-title="Create new project"
+    md-content-html="If you create a new project all existing models and data will be removed.<br>Click <b>NEW PROJECT</b> to remove all assets and start a new project"
+    md-ok-text="New project"
+    md-cancel-text="Cancel"
+    @close="newProject"
+    ref="new-project-dialog">
+  </md-dialog-confirm>
+
+  <!-- Create link dialog -->
+  <md-dialog
+    md-open-from="#generate-link"
+    md-close-to="#generate-link"
+    ref="generate-link-dialog"
+    v-if="models && models.length"
+  >
+    <md-dialog-title>Generate link</md-dialog-title>
+    <md-dialog-content>
+      <md-checkbox v-model="linkParams.preview" class="md-primary">Preview mode</md-checkbox><br>
+      <md-checkbox v-if="models.findIndex((m) => m.modelParams.type && (m.modelParams.type === 'dataframe')) >= 0" v-model="linkParams.includeDataframes" class="md-primary">Include dataframes</md-checkbox><br>
+      <md-checkbox v-if="models.findIndex((m) => m.modelParams.type && (m.modelParams.type === 'dataframe') && (m.pipeline.source.type !== 'none')) >= 0" v-model="linkParams.sourcesOnly" class="md-primary">Include only data sources</md-checkbox><br>
+      <md-checkbox v-if="models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe') && (models[activeModel].pipeline.source.type === 'url') && (models[activeModel].pipeline.source.url.length)" v-model="linkParams.dataUrl" class="md-primary">Make clean URL</md-checkbox>
+    </md-dialog-content>
+    <md-dialog-actions>
+      <md-button class="md-primary" @click="closeDialog('generate-link-dialog')">Cancel</md-button>
+      <md-button class="md-primary" @click="generateLink(); closeDialog('generate-link-dialog')">Create link</md-button>
+    </md-dialog-actions>
+  </md-dialog>
+
+  <!-- Onboarding -->
+  <md-dialog
+    ref="onboarding"
+  >
+    <md-dialog-title>Hi. Welcome to StatSim!</md-dialog-title>
+    <md-dialog-content>
+      <b>It's easy to get started!</b> We initialized a new empty model for you.<br>
+      If you want to load data or open existing project use buttons below.<br>
+      Just close this message to start experimenting...
+    </md-dialog-content>
+    <md-dialog-actions>
+      <md-button class="md-primary" @click="closeDialog('onboarding')">Close</md-button>
+      <md-button class="md-primary" @click="openFile('Data')">Load data</md-button>
+      <md-button class="md-primary" @click="openFile('Project')">Open project</md-button>
+    </md-dialog-actions>
+  </md-dialog>
 
   <div class="icons" v-if="chooseIconForBlock >= 0">
     <div style="text-align: right;">
@@ -23,12 +70,12 @@
   <md-toolbar class="tool-bar md-dense">
     <input type="file" accept=".csv, .tsv, .txt" id="openDataFile" v-on:change="openDataFile" style="display: none;" />
     <input type="file" accept=".json, .ssp" id="openProjectFile" v-on:change="openProjectFile" style="display: none;" />
-    <md-menu md-align-trigger md-size="4" class="hamburger">
+    <md-menu md-align-trigger md-size="4" class="hamburger" @open="noScroll" @close="scroll">
       <md-button md-menu-trigger class="md-icon-button">
         <md-icon>menu</md-icon>
       </md-button>
       <md-menu-content>
-        <md-menu-item v-on:selected="newProject">
+        <md-menu-item v-on:selected="openDialog('new-project-dialog')">
           <md-icon style="">insert_drive_file</md-icon>
           <span>New project</span>
         </md-menu-item>
@@ -68,8 +115,9 @@
       md-align-trigger
       md-size="4"
       md-direction="bottom left"
-      class="editor-only"
       v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))"
+      :class="'editor-only ' + (models[activeModel].blocks.length ? '' : 'onboarding-menu')"
+      @open="noScroll" @close="scroll"
     >
       <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
         <md-icon>add</md-icon>
@@ -125,19 +173,27 @@
   <div id="side-bar" v-if="models && models.length" class="side-bar editor-only">
     <!-- MODELS -->
     <div class="model-selector">
-      <md-button
+      <div
+        class="model-button-container"
         v-for="(model, modelId) in models"
-        :class="{'md-dense': true, 'md-raised': (modelId === activeModel)}"
-        v-on:click.native="switchModel(modelId)"
-        :title="model.modelParams.name"
       >
-        <span v-if="(modelId === activeModel) || models.length < 8">
-          <span style="color: #3f51b5; font-size: 85%; position: relative; bottom: 2px;" v-if="model.modelParams.type && (model.modelParams.type === 'dataframe')">◆</span>
-          <span style="color: #ddba00" v-else-if="model.modelParams.type && (model.modelParams.type === 'tf')">⚫</span>
-          <span style="color: #5db53b" v-else>⚫</span>
-        </span>
-        <span v-if="(modelId === activeModel) || models.length < 4">{{ (model.modelParams.name.length > 9) ? model.modelParams.name.substring(0, 6) + "..." : model.modelParams.name }}</span>
-      </md-button><md-menu md-align-trigger md-size="4" md-direction="bottom right">
+        <md-button
+          :class="{'md-dense': true, 'md-raised': (modelId === activeModel)}"
+          v-on:click.native="switchModel(modelId)"
+          :title="model.modelParams.name"
+        >
+          <span v-if="(modelId === activeModel) || models.length < 8">
+            <span class="model-bullet" style="color: #3f51b5;" v-if="model.modelParams.type && (model.modelParams.type === 'dataframe')">&#9670;</span>
+            <span class="model-bullet" style="color: #ddba00;" v-else-if="model.modelParams.type && (model.modelParams.type === 'tf')">&#9679;</span>
+            <span class="model-bullet" style="color: #5db53b;" v-else>&#9679;</span>
+          </span>
+          <span v-if="(modelId === activeModel) || models.length < 4">{{ (model.modelParams.name.length > 9) ? model.modelParams.name.substring(0, 6) + "..." : model.modelParams.name }}</span>
+        </md-button>
+        <md-button class="model-close-button md-icon-button md-dense" v-on:click.native="removeModel(modelId)" :disabled="(models.length <= 1)">
+          <md-icon style="opacity: 0.3">close</md-icon>
+        </md-button>
+      </div>
+      <md-menu md-align-trigger md-size="4" md-direction="bottom right" @open="noScroll" @close="scroll">
         <md-button md-menu-trigger class="md-icon-button md-dense" style="background:none;">
           <md-icon style="opacity: 0.3">add</md-icon>
         </md-button>
@@ -146,10 +202,12 @@
             <md-icon>add</md-icon>
             <span>New model</span>
           </md-menu-item>
+          <!--
           <md-menu-item v-on:selected="createTFModel()">
             <md-icon>add</md-icon>
             <span>New TF model</span>
           </md-menu-item>
+          -->
           <md-menu-item v-on:selected="createDataframe()">
             <md-icon>add</md-icon>
             <span>New dataframe</span>
@@ -323,7 +381,7 @@
                       <md-card-header-text>
                         <div class="md-subhead"> {{ (filter.range) ?  'Range: ' + filter.from + ' -> ' + filter.to : 'Search: ' + filter.value }} </div>
                       </md-card-header-text>
-                      <md-menu md-size="4" md-direction="bottom left">
+                      <md-menu md-size="4" md-direction="bottom left" @open="noScroll" @close="scroll">
                         <md-button class="md-icon-button" md-menu-trigger>
                           <md-icon>more_vert</md-icon>
                         </md-button>
@@ -452,7 +510,7 @@
     </div> <!-- *data-tools -->
     <!-- *Data processing -->
 
-    <div style="text-align: center; opacity: 0.4" v-if="models[activeModel].blocks.length">
+    <div style="text-align: center; opacity: 0.4" v-if="models[activeModel].blocks && models[activeModel].blocks.length">
       <md-button class="md-dense" @click="minimizeAllBlocks">
         <md-icon>remove</md-icon>
         Minimize
@@ -466,6 +524,7 @@
     <div
       class="block-container"
       v-for="(model, modelIndex) in models"
+      v-if="!(model.modelParams.type && (model.modelParams.type === 'dataframe'))"
       :style="'display:' + ((modelIndex === activeModel) ? 'block' : 'none')"
     >
     <draggable
@@ -502,7 +561,7 @@
         <md-button class="md-icon-button" v-on:click.native="moveBlockDown(blockIndex)">
           <md-icon>expand_more</md-icon>
         </md-button>
-        <md-menu md-align-trigger md-size="4" md-direction="bottom left" style="margin-right: 10px;">
+        <md-menu md-align-trigger md-size="4" md-direction="bottom left" style="margin-right: 10px;" @open="noScroll" @close="scroll">
           <md-button md-menu-trigger class="md-icon-button md-dense">
             <md-icon>more_horiz</md-icon>
           </md-button>
@@ -1176,7 +1235,7 @@
     </div>
 
     <!-- Empty model button -->
-    <md-boards v-if="!models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" :md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
+    <md-boards v-if="models[activeModel].blocks && !models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" :md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
       <md-board id="slide1">
         <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks can be constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
@@ -1192,108 +1251,147 @@
     </md-boards>
 
     <!-- Totem -->
-    <div v-if="!models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" class="stat-seal" style="text-align: center;">
-      <img src="images/s.png" style="width: 90px; height: auto; opacity: 0.35; margin: 15px 0px"></img>
+    <div v-if="models[activeModel].blocks && !models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" class="stat-seal" style="text-align: center;">
+      <img src="images/s.png" style="width: 110px; height: auto; opacity: 0.3; margin: 15px 0px 20px 0"></img>
     </div>
 
     <!-- Model control -->
-    <md-button v-on:click.native="duplicateModel()">
-      <md-icon>flip_to_front</md-icon>
-      Clone
-    </md-button>
-    <md-button v-on:click.native="openDialog('remove-dialog')" :disabled="(models.length <= 1)" class="md-accent">
-      <md-icon>delete_outlined</md-icon>
-      Remove
-    </md-button>
+    <div style="text-align: center;">
+      <md-button v-on:click.native="duplicateModel()">
+        <md-icon>flip_to_front</md-icon>
+        Duplicate
+      </md-button>
+      <md-button v-on:click.native="removeModel(activeModel)" :disabled="(models.length <= 1)" class="md-accent">
+        <md-icon>close</md-icon>
+        Remove <span>{{ (models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe')) ? 'data' : 'model' }}</span>
+      </md-button>
+    </div>
   </div>
+
+  <!-- MODEL BAR -->
+  <md-toolbar id="model-bar" class="model-bar message-bar md-dense md-transparent">
+    <div style="flex: 1" v-if="models.length > 1">
+      <md-button class="md-icon-button md-raised desktop" v-on:click.native="previousModel">
+        <md-icon>arrow_back</md-icon>
+      </md-button><md-button class="md-icon-button md-raised" v-on:click.native="nextModel">
+        <md-icon>arrow_forward</md-icon>
+      </md-button>
+    </div>
+    <!--
+    <md-menu md-align-trigger md-size="4">
+      <md-button class="md-icon-button md-raised" md-menu-trigger>
+        <md-icon>multiline_chart</md-icon>
+      </md-button>
+      <md-menu-content>
+        <md-menu-item v-on:selected="generateTFJS">
+          <md-icon>insert_chart</md-icon>
+          <span>Histogram</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="generateWebPPL">
+          <md-icon>show_chart</md-icon>
+          <span>Line chart</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="generatePYMC3">
+          <md-icon>bubble_chart</md-icon>
+          <span>Plot</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="generateJSON">
+          <md-icon>pie_chart</md-icon>
+          <span>Pie chart</span>
+        </md-menu-item>
+      </md-menu-content>
+    </md-menu>
+    -->
+    <md-menu md-align-trigger md-size="4" @open="noScroll" @close="scroll">
+      <md-button class="md-icon-button md-raised" md-menu-trigger>
+        <md-icon>code</md-icon>
+      </md-button>
+      <md-menu-content>
+        <md-menu-item v-on:selected="generateTFJS" v-if="models && models.length && models[activeModel].type && (models[activeModel].type === 'tf')">
+          <span>TFJS</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="generateWebPPL">
+          <span>WPPL</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="generatePYMC3">
+          <span>PYMC3</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="generateJSON">
+          <span>JSON</span>
+        </md-menu-item>
+      </md-menu-content>
+    </md-menu>
+    <md-button id="generate-link" class="md-icon-button md-raised" v-on:click.native="openDialog('generate-link-dialog')">
+      <md-icon>link</md-icon>
+      <md-tooltip md-direction="bottom">Generate link</md-tooltip>
+    </md-button>
+    <md-button
+      class="md-icon-button md-raised editor-only"
+      v-if="models.length && !models[activeModel].modelParams.table"
+      @click.native="enableDataTable"
+    >
+      <md-icon>grid_on</md-icon>
+      <md-tooltip md-direction="bottom">Enable table</md-tooltip>
+    </md-button>
+    <md-button
+      class="md-icon-button md-raised editor-only"
+      v-if="models.length && models[activeModel].modelParams.table"
+      @click.native="disableDataTable"
+    >
+      <md-icon>grid_off</md-icon>
+      <md-tooltip md-direction="bottom">Disable table</md-tooltip>
+    </md-button>
+
+    <!-- Preview mode -->
+    <md-button
+      class="md-icon-button md-raised"
+      v-if="!preview"
+      @click.native="previewMode(true)"
+    >
+      <md-icon>visibility</md-icon>
+      <md-tooltip md-direction="bottom">Preview mode</md-tooltip>
+    </md-button>
+
+    <md-button
+      class="md-icon-button md-raised"
+      v-else="preview"
+      @click.native="previewMode(false)"
+    >
+      <md-icon>edit</md-icon>
+      <md-tooltip md-direction="bottom">Edit mode</md-tooltip>
+    </md-button>
+
+    <!-- Model params -->
+    <md-button class="md-icon-button md-raised" @click="toggleRightSidenav">
+      <md-icon>tune</md-icon>
+      <md-tooltip md-direction="bottom">Model parameters</md-tooltip>
+    </md-button>
+
+  </md-toolbar>
 
   <!-- CONTENT -->
   <div class="content">
-    <md-toolbar :class="'message-bar md-dense' + (error.length ? ' md-accent' : ' md-transparent')">
-      <h3 class="message" style="flex: 1">
-        {{ (error.length) ? (error.includes('Error') ? error : 'Error: ' + error) : '' }}
-        {{ (message.length && !error.length) ? message : '' }}
-      </h3>
-      <md-button disabled class="desktop">Generate: </md-button>
-      <md-button class="desktop editor-only" v-on:click.native="generateTFJS" v-if="models && models.length && models[activeModel].type && (models[activeModel].type === 'tf')">
-        TFJS
-      </md-button>
-      <md-button class="desktop editor-only" v-on:click.native="generateWebPPL">
-        WPPL
-      </md-button>
-      <md-button class="desktop editor-only" v-on:click.native="generatePYMC3">
-        PYMC3
-      </md-button>
-      <!--
-      <md-button class="desktop editor-only" v-on:click.native="generateTFP">
-        TFP
-      </md-button>
-      -->
-      <md-button class="desktop editor-only" v-on:click.native="generateJSON">
-        JSON
-      </md-button>
-      <md-button v-on:click.native="generateLink">
-        Link
-      </md-button>
-      <md-button
-        class="md-icon-button md-raised editor-only"
-        v-if="models.length && !models[activeModel].modelParams.table"
-        @click.native="enableDataTable"
-      >
-        <md-icon>grid_on</md-icon>
-      </md-button>
-      <md-button
-        class="md-icon-button md-raised editor-only"
-        v-if="models.length && models[activeModel].modelParams.table"
-        @click.native="disableDataTable"
-      >
-        <md-icon>grid_off</md-icon>
-      </md-button>
-
-      <!-- Model params -->
-      <md-button class="md-icon-button md-raised editor-only" @click="toggleRightSidenav">
-        <md-icon>tune</md-icon>
-      </md-button>
-
-
-      <!-- Preview mode -->
-      <md-button
-        class="md-icon-button md-raised"
-        v-if="!preview"
-        @click.native="previewMode(true)"
-      >
-        <md-icon>visibility</md-icon>
-      </md-button>
-      <md-button
-        class="md-icon-button md-raised"
-        v-else="preview"
-        @click.native="previewMode(false)"
-      >
-        <md-icon>edit</md-icon>
-      </md-button>
-    </md-toolbar>
-
     <!-- Generated links and code -->
     <div class="links wl" v-if="link.length">
       <div class="control-buttons">
         <md-button class="md-dense" @click.native="downloadCode">
-          <md-icon>arrow_downward</md-icon>
-          Download
+          <md-icon>save</md-icon>
+          <span class="desktop">Download</span>
         </md-button>
         <md-button class="md-dense" @click.native="copyCode">
           <md-icon>inbox</md-icon>
-          Copy to clipboard
+          <span class="desktop">Copy to clipboard</span>
         </md-button>
         <md-button class="md-dense" @click.native="link = ''">
           <md-icon>close</md-icon>
-          Close
+          <span class="desktop">Close</span>
         </md-button>
       </div>
       <pre id="link">{{ link }}</pre>
     </div>
 
     <!-- TABLE -->
-    <div class="tables wl" v-if="models.length && models[activeModel].modelParams.table">
+    <div id="table-container" class="tables wl" v-if="models.length && models[activeModel].modelParams.table">
       <!--<div class="control-buttons" v-if="false && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">-->
       <div class="control-buttons" v-if="!preview">
         <md-button class="md-dense" @click.native="renderDataTable">
@@ -1306,7 +1404,10 @@
         </md-button>
       </div>
       <div class="table-wrapper"></div>
-      <div class="table-gradient" v-if="models[activeModel].preview"></div>
+      <div id="table-gradient" class="table-gradient" v-if="models[activeModel].preview">
+        <h4>Preloaded data</h4>
+        <p>Only 50 rows loaded. Click "Load" to read all data from the file</p>
+      </div>
     </div>
 
     <!-- Needed for graph -->

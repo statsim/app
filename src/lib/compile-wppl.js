@@ -22,7 +22,7 @@ function fixBrackets (str) {
 }
 
 module.exports = function (models, activeModel) {
-  console.log(`Mr. Compiler: Oh, models again! Active model is ${activeModel} of ${models.length}`)
+  console.log(`[WebPPL Compiler] Oh, models again! Active model is ${activeModel} of ${models.length}`)
 
   let finalCode = ''
   let modelCodes = []
@@ -90,7 +90,7 @@ module.exports = function (models, activeModel) {
       }
       if (b.typeCode === 2) {
         let dataType = (b.dataType === undefined || b.dataType === '') ? 'auto' : b.dataType
-        if (((dataType === 'auto') && (b.value.indexOf(',') >= 0)) || (dataType === 'array')) {
+        if (((dataType === 'auto') && (b.value.indexOf(',') >= 0)) || (dataType === 'array') || (dataType === 'proxy')) {
           // Data arrays
           dataArrays.push(b.name)
         } else if (dataType === 'vector' || dataType === 'tensor') {
@@ -196,10 +196,10 @@ module.exports = function (models, activeModel) {
 
     // Is it a multistep (multiple iterations) model
     const isMultistepModel = (m.modelParams.steps.length > 0) && (m.modelParams.steps !== '1')
-    console.log(`Mr. Compiler: Model "${m.modelParams.name}" has multiple steps (${isMultistepModel})`)
+    console.log(`[WebPPL Compiler] Model "${m.modelParams.name}" has multiple steps (${isMultistepModel})`)
 
     const blocks = getBlocks(mi)
-    console.log('Blocks:', blocks.map(b => b.name))
+    console.log('[WebPPL Compiler] Blocks:', blocks.map(b => b.name))
 
     /*
       ITERATING OVER ALL BLOCKS OF THE MODEL
@@ -245,7 +245,7 @@ module.exports = function (models, activeModel) {
           ? b.value
           : generateExpression(b.expressionType, b.params)
 
-        console.log('Compiler: Transformed expression value - ', transformedValue)
+        console.log('[WebPPL Compiler] Transformed expression value - ', transformedValue)
         // Check if we are inside the loop
         if (isMultistepModel) {
           // Generate a list of accumulators
@@ -489,7 +489,6 @@ return ${transformedValue}
         // Remove white spaces
         let value = b.value.trim()
 
-        // Check if the value is scalar or vector
         if (b.customLoop && b.loopStart.length && b.loopEnd.length) {
           let params = getParams(b)
           observer += `
@@ -497,6 +496,7 @@ mapN(function (__j) {
   var _j = __j + ${b.loopStart}
   observe(${b.distribution}(${params}), ${b.value})
 }, ${b.loopEnd} - ${b.loopStart})\n`
+        // Check if the value is scalar or vector
         } else if (isNumber(value) || isScalarData(value)) {
           // Scalar
           // Convert observer distribution params to string
@@ -731,11 +731,13 @@ var {${step.list}} = step(${m.modelParams.steps})
   /*
     PREPARE DATAFRAMES
   */
-  console.log(`[WebPPL Compiler] All included: ${[...includedModels]}`)
+  console.log(`[WebPPL Compiler] All included models: ${[...includedModels]}`)
   function isEmptyRow (r) {
     let empty = true
-    r.forEach(c => {
-      if (c !== '') {
+    r.forEach(v => {
+      // (value == null) is eq. to (typeof value === "undefined" || value === null)
+      // https://stackoverflow.com/questions/38648087/checking-for-null-or-undefined
+      if ((v != null) && (v !== '')) {
         empty = false
       }
     })
@@ -743,50 +745,64 @@ var {${step.list}} = step(${m.modelParams.steps})
   }
 
   models.forEach((m, mi) => {
-    // Process only dataframes. Keep 'mi' actual (filtering creates its own indexing)
+    // Process only dataframes.
+    // Keep 'mi' as an actual model index (Array.filter() creates its own indexing)
     if (!(m.modelParams.type && (m.modelParams.type === 'dataframe'))) {
       return
     }
 
-    const isIncluded = includedModels.has(mi)
-    console.log(`[WebPPL Compiler] Check dataframe ${m.modelParams.name}: ${isIncluded}`)
+    const isDataframeIncluded = includedModels.has(mi)
+    console.log(`[WebPPL Compiler] Check dataframe ${m.modelParams.name}. Included: ${isDataframeIncluded}`)
 
+    // Check if dataframe includes data
     if (m.data) {
       let includedColumnsString = ''
 
+      // Iterate over all dataframe columns
       m.data[0].forEach((c, ci) => {
-        const isColumnIncluded = finalCode.includes(m.modelParams.name + '.' + c) || finalCode.includes(m.modelParams.name + "['" + c + "']")
+        if (c && c.length) {
+          const isColumnIncluded = finalCode.includes(m.modelParams.name + '.' + c) || finalCode.includes(m.modelParams.name + "['" + c + "']")
 
-        if (c.length && (isIncluded || isColumnIncluded)) {
-          let values = []
-          if (c && (c !== '')) {
+          if (isDataframeIncluded || isColumnIncluded) {
+            console.log(`[WebPPL Compiler] Column ${c} from ${m.modelParams.name} will be compiled`)
+
+            // Gather all column values in an array
+            let values = []
             m.data.forEach((r, ri) => {
               if ((ri > 0) && !isEmptyRow(r)) {
                 values.push(r[ci])
               }
             })
-          }
-          let valueStr = `[${
-            values
-              .map(v => v.trim())
-              .map(v => !isNaN(v)
-                ? (/* string-number */ v.length ? v : 'undefined')
-                : (/* string-string */ v.includes('"') ? v : `"${v}"`)
-              )
-              .join()
-          }]`
 
-          if (isIncluded) {
-            let v = `var ${c.replace(/\s/g, '_')} = JSON.parse('{"data": ${valueStr}}').data`
-            finalCode = v + '\n' + finalCode
-          }
+            let valueStr = `[${
+              values
+                .map(v => {
+                  if (v == null) {
+                    return 'undefined'
+                  } else {
+                    v = v.trim()
+                    if (!isNaN(v)) {
+                      return v.length ? v : 'undefined'
+                    } else {
+                      return v.includes('"') ? v : `"${v}"`
+                    }
+                  }
+                })
+                .join()
+            }]`
 
-          if (isColumnIncluded) {
-            includedColumnsString += includedColumnsString.length ? ',' : ''
-            includedColumnsString += `"${c}": ${valueStr}`
+            if (isDataframeIncluded) {
+              let v = `var ${c.replace(/\s/g, '_')} = JSON.parse('{"data": ${valueStr}}').data`
+              finalCode = v + '\n' + finalCode
+            }
+
+            if (isColumnIncluded) {
+              includedColumnsString += includedColumnsString.length ? ',' : ''
+              includedColumnsString += `"${c}": ${valueStr}`
+            }
           }
-        }
-      })
+        } // *if c && c.length
+      }) // *iterate over m.data[0] (i.e. column names)
 
       if (includedColumnsString.length) {
         let v = `var ${m.modelParams.name.replace(/\s/g, '_')} = JSON.parse('{${includedColumnsString}}')`
@@ -795,6 +811,6 @@ var {${step.list}} = step(${m.modelParams.steps})
     } // *m.data exist
   })
 
-  console.log(`Mr. Compiler: I've finished. Here's your WebPPL code:%c\n${finalCode}`, `color: #2C893A; font-size:10px;`)
+  console.log(`[WebPPL Compiler] Done. Here's the code:%c\n${finalCode}`, `color: #2C893A; font-size:10px;`)
   return finalCode
 }

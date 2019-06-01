@@ -3,6 +3,18 @@ body {
   height: 100%;
 }
 
+body + .md-backdrop {
+  background: red;
+}
+
+/*
+  Prevents scrolling via overflow
+  The problem is it resizes the page
+*/
+body.no-scroll {
+  overflow: hidden;
+}
+
 hr {
   opacity: 0.3;
 }
@@ -14,11 +26,56 @@ h2 {
 label {
  /* text-transform: capitalize; */
 }
+
 .md-button {
   padding: 0 10px 0 10px;
+  font-weight: 400;
 }
+
+.onboarding-menu {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1}
+  70% { opacity: 0.8 }
+  100% { opacity: 1 }
+}
+
 .md-button.md-raised:not([disabled]) {
   box-shadow: 0 0px 1px rgba(0, 0, 0, 0.35);
+}
+
+/* Make default icons smaller*/
+.md-icon {
+  font-size: 22px;
+}
+
+/* Dialog prompt */
+.md-dialog-container {
+  z-index: 1002;
+}
+.md-dialog {
+  background-color: #161b3f !important;
+  background-image: radial-gradient(#212121 5%, transparent 5%), radial-gradient(#3E4466 5%, transparent 7%);
+  background-position: 0 0, 5px 5px;
+  background-size: 20px 20px;
+  color: rgba(223, 224, 238, 0.87) !important;
+}
+
+.md-dialog .md-dialog-title {
+  margin-bottom: 10px;
+  font-weight: 300;
+  font-size: 24px;
+  color: white;
+}
+
+.md-dialog .md-button {
+  color: #2bb9f7 !important;
+}
+
+.md-dialog .md-dialog-content {
+  padding: 0 24px 18px
 }
 
 .md-menu-content {
@@ -80,7 +137,7 @@ textarea {
   right: 40px;
   bottom: 100px;
   background: white;
-  z-index: 1000;
+  z-index: 1005;
   overflow-y: auto;
   box-shadow: 0 0 30px rgba(0,0,0,.2);
   border-radius: 10px;
@@ -112,6 +169,7 @@ textarea {
 
 .logo {
   font-weight: 500 !important;
+  margin-bottom: 5px !important;
 }
 
 .logo-icon {
@@ -123,7 +181,7 @@ textarea {
 }
 
 .tool-bar {
-  z-index: 1000;
+  z-index: 1001;
   position: fixed;
   top: 0;
   width: 27%;
@@ -179,10 +237,43 @@ textarea {
   overflow: hidden;
 }
 
+.side-bar .model-button-container {
+  display: inline-block;
+}
+
+.side-bar .model-close-button {
+  left: -28px;
+  top: 5px;
+  position: relative;
+  margin-right: -21px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  background: none !important;
+}
+
+
+.side-bar .model-close-button:hover {
+  opacity: .5;
+}
+
+.side-bar .model-close-button .md-ink-ripple {
+  display: none;
+}
+
+.side-bar .model-close-button .md-icon {
+  font-size: 14px;
+}
+
+.side-bar .model-bullet {
+  font-size: 85%;
+  position: relative;
+  bottom: 2px;
+}
+
 .side-bar .model-selector button {
   margin: 17px 2px -1px 0;
   padding-left: 8px;
-  padding-right: 8px;
+  padding-right: 20px;
   background-color: #ccc;
   box-shadow: none !important;
   border-radius: 0px;
@@ -337,6 +428,15 @@ textarea {
   width: 100%;
 }
 
+.model-bar {
+  justify-content: right;
+}
+
+.model-bar .md-button {
+  margin-left: 4px !important;
+  margin-right: 4px !important;
+}
+
 .content {
   padding-left: 27%;
   padding-bottom: 80px;
@@ -398,15 +498,18 @@ textarea {
 }
 
 .content .tables .table-gradient {
-  position: absolute;
-  bottom: 0;
-  height: 300px;
-  background: red;
+  position: fixed;
+  bottom: 55px;
+  left: 0px;
+  right: 0px;
+  height: 350px;
+  padding-top: 200px;
   z-index: 900;
   width: 100%;
-  background: -moz-linear-gradient(top, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 90%);
-  background: -webkit-linear-gradient(top, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%);
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%);
+  background: rgba(0,0,0,0);
+  background: -moz-linear-gradient(top, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 50%);
+  background: -webkit-linear-gradient(top, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 50%);
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 50%);
   display:flex;
   flex-direction: column;
   flex-wrap: wrap;
@@ -415,6 +518,11 @@ textarea {
   align-items: center;
 }
 
+.content .tables .table-gradient h4 {
+  font-size: 22px;
+  font-weight: 100;
+  margin: 0;
+}
 .content .control-buttons {
   text-align: right;
 }
@@ -684,6 +792,7 @@ textarea {
 .md-snackbar {
   margin-bottom: 55px !important;
   opacity: .9;
+  z-index: 999;
 }
 
 .model-summary {
@@ -743,6 +852,9 @@ tile {
   background: #201e29;
   color: white;
 }
+.dark .side-bar .model-selector button {
+  background: #1a1821;
+}
 .dark .side-bar .model-selector button.md-raised {
   background: #3B3847 !important;
   color: white !important;
@@ -758,7 +870,7 @@ tile {
   color: #f2f2f2;
 }
 .dark .md-input-container label {
-  color: rgba(166, 176, 209, 0.51)
+  color: rgba(196, 199, 207, 0.51)
 }
 .dark .md-input-container::after {
   background: rgba(255, 255, 255, 0.1);
@@ -771,6 +883,22 @@ tile {
 }
 .dark .side-bar .block .md-theme-default.md-tabs.md-transparent > .md-tabs-navigation .md-tab-header {
   color: rgb(98, 102, 124)
+}
+.dark .side-bar .data-tools label {
+  color: rgba(196, 199, 207, 0.51);
+}
+.dark .side-bar .data-tools .md-list {
+  padding-top: 0;
+  padding-bottom: 0;
+  background: #1e1c27;
+}
+.dark .side-bar .data-tools .md-list-item-container {
+  background-color: #13111a !important;
+  color: white;
+  border-top: 2px solid #475cd2;
+}
+.dark .side-bar .data-tools .md-icon {
+  color: rgb(70, 70, 70);
 }
 .dark .md-button {
   color: rgba(166, 176, 209, 0.51)
@@ -908,6 +1036,9 @@ tile {
   stroke: rgb(126, 126, 126);
   opacity: 0.5;
 }
+.dark .model-summary {
+  color: #fff;
+}
 /* Preview mode */
 .preview .editor-only {
   display: none;
@@ -964,6 +1095,14 @@ tile {
 }
 
 @media only screen and (max-width: 860px) {
+  /*
+  .table-wrapper {
+   pointer-events: none;
+  }
+  .ht_clone_bottom, .ht_clone_left, .ht_clone_top, .ht_clone_top_left_corner {
+    display: none;
+  }
+  */
   .md-snackbar-container {
     width: 100%;
     max-width: 100%;
@@ -983,11 +1122,21 @@ tile {
   .side-bar {
     position: relative;
     width: 100%;
-    top: 55px;
+    /*
+      55px is needed shift because of fixed tool-bar on top of sidebar
+      Use margin-top, not top, because of relative positioning. It will cover overlay next elements if use top
+    */
+    margin-top: 55px;
+    top: initial;
+    left: initial;
+    bottom: initial;
   }
   .content {
     padding-left: 0;
-    padding-top: 55px;
+  }
+  .content .tables {
+    margin: 20px 0;
+    padding: 0 !important;
   }
   .content .chart {
     width: 98%;
@@ -999,12 +1148,24 @@ tile {
     flex: 1;
     padding-left: 10px;
   }
-  /* Preview mode on mobile */
+
+  /*
+    Preview mode on mobile
+  */
   .preview .content {
     padding-top: 0;
   }
   .preview .tool-bar {
-    position: absolute;
+    /* In preview mode on mobile make the toolbar square smaller */
+    width: 50px;
+    height: 50px;
+    min-height: 50px;
+    min-width: 50px;
+  }
+  .preview .model-bar {
+    /* Make smaller in preview mode */
+    height: 50px;
+    min-height: 50px;
   }
 }
 

@@ -5,10 +5,10 @@ const J2SParser = require('json2csv').Parser // Convert array of objects to CSV
 const X2JParser = new (require('xml2js')).Builder({'pretty': false, 'indent': '', 'newline': ''})
 const flat = require('flat')
 
-const BlockClasses = require('./blockClasses')
 const createStream = require('./createStream')
 const parseStream = require('./parseStream')
 const splitStream = require('./splitStream')
+const flatObjectStream = require('./flatObjectStream')
 const isExactlyNaN = require('./isExactlyNaN')
 
 const encoder = new window['TextEncoder']()
@@ -30,15 +30,6 @@ function filterTextStream (searchArr, fileType, casesensitive) {
       i += 1
     }
     return found
-  })
-}
-
-// --> Transform -->
-// Filter object stream (range)
-function flatObjectStream () {
-  return through2.obj(function (obj, enc, callback) {
-    this.push(flat(obj))
-    callback()
   })
 }
 
@@ -96,10 +87,6 @@ module.exports = async function processDataframe (modelId) {
 
   console.log('[Process] Processing dataframe: ', model.modelParams.name)
 
-  // Reset dataframe blocks
-  // model.blocks = []
-  app.set(model, 'blocks', [])
-  // model.data = []
   app.set(model, 'data', [])
   model.loading = true
   model.pipeline.progress = 0
@@ -295,6 +282,7 @@ module.exports = async function processDataframe (modelId) {
     // Check if we need to store results
     // if (true || source.pipeline.charts.length || source.pipeline.output.toTable || source.pipeline.output.toMemory) {
     // {
+    if (model.pipeline.output.toMemory) {
       const flatObj = flat(obj)
       let line = []
       for (let prop in flatObj) {
@@ -304,7 +292,8 @@ module.exports = async function processDataframe (modelId) {
         line[columns.indexOf(prop)] = value
       }
       model.data.push(line)
-      // model.length += 1
+    }
+    // model.length += 1
     // }
     // }
     // N += 1
@@ -313,7 +302,11 @@ module.exports = async function processDataframe (modelId) {
   stream.on('end', () => {
     // Finalize collection
     app.link = ''
+
     if (model.pipeline.output.toMemory) {
+      // Disable preview mode (basically remove gradient over the table)
+      model.preview = false
+
       console.log('[Process] Finished, length: ', model.data.length)
       console.log('[Process] First 3 rows: ', [model.data[0], model.data[1], model.data[2]])
       if (model.modelParams.table) {

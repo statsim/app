@@ -1,5 +1,6 @@
 module.exports = {
   b: 'burn',
+  cc: 'customCode',
   e: 'description',
   d: 'distribution',
   dt: 'dataType',
@@ -17,6 +18,8 @@ module.exports = {
   sm: 'samples',
   p: 'params',
   t: 'typeCode',
+  ta: 'table',
+  ty: 'type',
   u: 'useAsParameter',
   v: 'value',
   z: 'units'

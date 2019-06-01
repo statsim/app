@@ -11,7 +11,6 @@ module.exports = function (name, type) {
         table: true,
         type
       },
-      blocks: [],
       data: [],
       loading: false,
       preview: false,

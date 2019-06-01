@@ -1,7 +1,9 @@
 const Querify = require('./querify')
 const abbr = require('./abbr')
 const getJSON = require('./getJSON')
-const query = new Querify(['a', 'm', 'preview'])
+const createBaseModel = require('./createBaseModel')
+
+const query = new Querify(['a', 'm', 'preview', 'url'])
 
 const blockTypes = [
   'Random Variable',
@@ -19,9 +21,11 @@ function getFullKey (key) {
 
 module.exports = function (link, cb, err) {
   const q = query.getQueryObject(link) // parsed query object
-  console.log(`Parser Ivanovich: Ho-ho! Something interesting here.. `, q)
+  console.log('[Link parser] Something interesting here:', q)
+
   const activeModel = parseInt(q.preview) - 1 || 0
-  console.log(`Parser Ivanovich: Preview value is `, activeModel)
+  console.log('[Link parser] Preview value is ', activeModel)
+
   // Models inside the link
   if (q.a && (typeof q.a === 'object')) { // array is also 'object'
     let models = []
@@ -65,13 +69,23 @@ module.exports = function (link, cb, err) {
           if (([0, 1, 2, 3].indexOf(block.typeCode) >= 0) && (!block.units)) {
             block.units = ''
           }
+          // Add ID to each block for better list rendering
+          block.id = 'b' + Math.round(Math.random() * 100000000)
           bm.blocks.push(block)
         })
       }
 
-      if (m.data) {
-        bm.data = m.data
+      if (m.pipeline) {
+        bm.data = m.data ? m.data : [[null]]
         bm.pipeline = m.pipeline
+        bm.pipeline.processed = 0
+        bm.pipeline.progress = 0
+      }
+
+      // Includes
+      // Add include field to each model
+      if (typeof bm.modelParams.include === 'undefined') {
+        bm.modelParams.include = []
       }
 
       models.push(bm)
@@ -97,5 +111,10 @@ module.exports = function (link, cb, err) {
         err(`Loading model error: ${e}`)
       }
     ) // *getJSON
+  } else if (q.url && q.url.length) {
+    let model = createBaseModel('Data', 'dataframe')
+    model.pipeline.source.type = 'url'
+    model.pipeline.source.url = q.url
+    cb({ models: [model], activeModel: 0})
   }
 }

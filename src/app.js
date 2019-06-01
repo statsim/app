@@ -203,7 +203,10 @@ function notify (message, type) {
 // Future HotTable object
 // Need it here to easily call from any app method
 let table
-let tableTempHeader // for sorting
+
+// Temorary store model ID here before calling confirmation prompt
+// After confirmation, it will be used to delete the model
+let modelToRemove
 
 const regCSV = RegExp('\\.csv', 'i')
 const regTSV = RegExp('\\.tsv', 'i')
@@ -259,6 +262,12 @@ const params = {
     icons, // List of icons with codes
     expressions, // List of expression types with parameters
     link: '', // Generated URL
+    linkParams: {
+      preview: true,
+      includeDataframes: true,
+      sourcesOnly: true,
+      dataUrl: false
+    },
     loading: false, // Show loading indicator?
     message: '', // Any message in top bar
     models: [], // Array of project models
@@ -482,6 +491,7 @@ const params = {
   },
   mounted () {
     // After mounting
+    // Check if we have a query
     if (window.location.search) {
       let query = window.location.search
       if (query.indexOf('preview') > 0) {
@@ -490,33 +500,56 @@ const params = {
       parseLink(
         query,
         ({ models, activeModel }) => {
+          console.log('[Vue] Got models from queries:', models, activeModel)
           models.forEach(m => {
-            // Add include field to each model
-            if (typeof m.modelParams.include === 'undefined') {
-              m.modelParams.include = []
-            }
-            // Add ID to each block for better list rendering
-            m.blocks.forEach(b => {
-              b.id = 'b' + Math.round(Math.random() * 100000000)
-            })
-            this.models = models
-            this.switchModel(0 || activeModel)
+            this.models.push(Object.assign({}, m))
           })
+          this.switchModel(0 || activeModel)
+          if (query.indexOf('url=') > 0) {
+            console.log('[Vue] Initializing stream for data url')
+            // Adding delay here because somewhere else table redraw is initialized
+            delay.call(this, 1000, () => {
+              this.init(models[0].pipeline.source.url, 0) // We have only one model
+            })
+          }
         },
         (err) => {
           this.notify(err, 'error')
         }
       )
     } else { // *if window.location.search is not empty
+      // Clean start
       this.models = [createBaseModel('Main')]
       this.switchModel(0)
+      delay.call(this, 500, () => {
+        this.openDialog('onboarding')
+      })
     }
   },
   methods: {
+    // Switch to next model
+    scroll () {
+      // I temporary disable this hack because of small resize glitch when scrollbar disappears
+      // document.body.className = 'md-theme-default'
+    },
+    noScroll () {
+      // document.body.className = 'md-theme-default no-scroll'
+    },
+    nextModel () {
+      this.switchModel((this.activeModel < this.models.length - 1) ? this.activeModel + 1 : 0)
+    },
+    // Switch to previous model
+    previousModel () {
+      this.switchModel((this.activeModel > 0) ? this.activeModel - 1 : this.models.length - 1)
+    },
+    // Switch preview mode according to boolean parameter "b"
     previewMode (b) {
       const app = this
+      console.log('[Vue] Switch to preview mode:', b)
       app.preview = b
-      if (table) {
+      // Redraw table if needed
+      if (table && !table.isDestroyed && app.models[app.activeModel].modelParams.table) {
+        console.log('[Vue] Redrawing table after switching modes')
         delay.call(app, 300, () => {
           table.render()
         })
@@ -648,14 +681,16 @@ const params = {
       this.$set(this.models[this.activeModel].blocks[this.chooseIconForBlock], 'size', 40)
       this.chooseIconForBlock = -1
     },
-    // Update data blocks from table inner data
     guessUnits (str, i) {
       this.models[this.activeModel].blocks[i].units = guessUnits(str, this.models[this.activeModel].blocks)
     },
+    // Only when using with a regular model, not DF:
+    // Update data blocks from a table inner data object
+    // Called from renderTable() event function upd() that checks model types
     updateData () {
       // Convert array to a comma-separated string
       function toStringList (arr) {
-        // Find lat non empty value
+        // Find last non empty value
         let lastIndexNonEmpty = arr.length - 1
         for (let i = lastIndexNonEmpty; i > 0; i--) {
           if (!arr[i] || arr[i].trim() === '') lastIndexNonEmpty--
@@ -670,7 +705,6 @@ const params = {
         // Check if table exist
         if (table) {
           let data = table.getData()
-          console.log('[Table] Data:', data)
           // Get headers stored in the first line
           let headers = data.shift(1)
           // Remove blocks not present in the table
@@ -684,7 +718,7 @@ const params = {
           // Update data-blocks values
           headers.forEach((h, hi) => {
             // Check if header cell is not empty
-            if (h.length) {
+            if (h && h.length) {
               // Find index of that header in the blocks array
               const headerInBlocks = this.models[this.activeModel].blocks.map(b => b.name).indexOf(h)
               if (headerInBlocks < 0) {
@@ -714,9 +748,6 @@ const params = {
     },
     removeDataTable () {
       console.log('[Vue] Destroying table')
-      // const app = this
-      // const model = app.models[app.activeModel]
-      console.log(table)
       if (table && !table.isDestroyed) {
         table.destroy()
       }
@@ -728,31 +759,32 @@ const params = {
       model.modelParams.table = true
       app.renderDataTable()
     },
+    // Reloads data from DataFrame, re-renders the table
     updateDataTable () {
       const app = this
       const model = app.models[app.activeModel]
-
       table.loadData(model.data)
       table.render()
     },
     renderDataTable () {
-      console.log('[Vue] Render table')
+      console.log(`[Render data table] Let's start!`)
       const app = this
       const model = app.models[app.activeModel]
 
-      // Draw table only if the corresponding flag is set
       delay.call(this, 300, () => {
         // Function called on each table update
         function upd () {
+          console.log('[Table] Detected changes..')
           if (!(model.modelParams.type && (model.modelParams.type === 'dataframe'))) {
-            console.log('[Table] Detected changes. Update model data')
+            console.log('[Table] Need manually update model data blocks')
             app.updateData()
           }
         }
 
-        let data
+        let data = [[null]]
 
-        if (model.modelParams.type && model.modelParams.type === 'dataframe') {
+        console.log(`[Render data table] After some delay..`)
+        if (model.modelParams.type && model.modelParams.type === 'dataframe' && model.data) {
           // Dataframe
           console.log('[Table] Getting data directly from dataframe')
           data = model.data
@@ -964,23 +996,26 @@ const params = {
       this.theme = theme
       document.cookie = 'theme=' + theme
     },
-    newProject () {
-      delay.call(this, 500, () => {
-        // Switch to edit mode
-        this.preview = false
-        // Update history
-        window.history.replaceState({}, 'New project', '.')
-        // Switch to firstModel model
-        this.switchModel(0)
-        // Clean models
-        this.models = [createBaseModel('Main')]
-        this.notify('New project created')
-      })
+    newProject (confirm) {
+      if (confirm === 'ok') {
+        delay.call(this, 300, () => {
+          // Switch to edit mode
+          this.preview = false
+          // Update history
+          window.history.replaceState({}, 'New project', '.')
+          // Switch to firstModel model
+          this.switchModel(0)
+          // Clean models
+          this.models = [createBaseModel('Main')]
+          this.notify('New project created')
+        })
+      }
     },
     openFile (fileType) {
       document.getElementById(`open${fileType}File`).click()
     },
     openDataFile (e) {
+      this.closeDialog('onboarding')
       const reader = new FileReader()
       const file = e.target.files[0]
       const filename = file.name.split('.')[0]
@@ -1033,6 +1068,7 @@ const params = {
       }
     },
     openProjectFile (e) {
+      this.closeDialog('onboarding')
       const reader = new FileReader()
       const file = e.target.files[0]
       reader.readAsText(file)
@@ -1070,6 +1106,9 @@ const params = {
     // Open remove model dialog
     openDialog (ref) {
       this.$refs[ref].open()
+    },
+    closeDialog(ref) {
+      this.$refs[ref].close()
     },
     createModel () {
       const index = 1 + this.models.filter(m => !(m.modelParams.type && (m.modelParams.type === 'dataframe'))).length
@@ -1151,12 +1190,22 @@ const params = {
       this.models.push(newModel)
       this.notify('New model created (duplicate)')
     },
-    removeModel (confirm) {
+    removeModelConfirmed (confirm) {
       if (confirm === 'ok') {
-        let i = this.activeModel
-        this.switchModel((i > 0) ? i - 1 : 0)
+        console.log('[Vue] Confirmed to remove model: ', modelToRemove)
+        let i = modelToRemove
+        // Check if we are removing active model
+        if (i === this.activeModel) this.switchModel((i > 0) ? i - 1 : 0)
+        // Check if it's a model before active
+        if (i < this.activeModel) this.switchModel(this.activeModel - 1)
+        // Remove model
         this.models.splice(i, 1)
       }
+    },
+    // That's just a wrapper for dialog and removeModelConfirmed()
+    removeModel (modelId) {
+      modelToRemove = modelId
+      this.openDialog('remove-dialog')
     },
     // Callback for autocomplete element
     // Filter the blocks list to match query string (using a block's name)
@@ -1220,7 +1269,7 @@ const params = {
     },
     generateLink () {
       delay.call(this, 400, () => {
-        this.link = createLink(cleanModels(this.models), this.preview, this.activeModel)
+        this.link = createLink(cleanModels(this.models), this.activeModel, this.linkParams)
         this.notify('Link generated')
       })
     },

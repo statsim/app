@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1" />
     <meta name="theme-color" content="#161325">
     <title>StatSim | Statistical Simulation and Inference</title>
     <!--
@@ -34,6 +34,44 @@
         });
       } else {
         console.log('Index: service worker is not supported')
+      }
+
+      /*
+        When the HandsonTable consists of multiple columns the page shows horizontal scrollbar
+        When scrolling right, side-bar and model-bar become invisible
+        We can't make side-bar fixed because everything is stacked and it has fluid height
+        Until a better solution we just shift the relative positioned side-bar with javascript
+      */
+      var oldLeft = 0
+      var oldTop = 0
+
+      // document.querySelectorAll('.md-menu ').forEach(s => console.log(s))
+      /*
+      document.onclick = function() {
+        if ((document.getElementsByClassName('md-backdrop').length > 1) && (document.body.className === 'md-theme-default')) {
+          document.body.className = 'md-theme-default no-scroll'
+        } else {
+          document.body.className = 'md-theme-default'
+        }
+      }
+      */
+      window.onscroll = function() {
+        // event.preventDefault()
+        if (document.getElementsByClassName('md-backdrop').length > 1) {
+          // Manually prevent the page from scrolling when backdrop exists
+          document.documentElement.scrollTo(oldLeft, oldTop)
+        } else {
+          var left = document.documentElement.scrollLeft
+          if (left !== oldLeft) {
+            var x = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth
+            if (x < 860) { document.getElementById('side-bar').style.left = left + 'px' }
+            document.getElementById('model-bar').style.left = left + 'px'
+            var grad = document.getElementById('table-gradient')
+            // if (grad) { grad.style.left = left + 'px' }
+            oldLeft = left
+          }
+          oldTop = document.documentElement.scrollTop
+        }
       }
     </script>
   </body>
