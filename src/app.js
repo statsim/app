@@ -502,6 +502,16 @@ const params = {
         ({ models, activeModel }) => {
           console.log('[Vue] Got models from queries:', models, activeModel)
           models.forEach(m => {
+            if (typeof m.modelParams.include === 'undefined') {
+              m.modelParams.include = []
+            }
+
+            // Add ID to each block for better list rendering
+            // Keep it here because parseLink generates a model in multiple places
+            m.blocks.forEach(b => {
+              b.id = 'b' + Math.round(Math.random() * 100000000)
+            })
+
             this.models.push(Object.assign({}, m))
           })
           this.switchModel(0 || activeModel)

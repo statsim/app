@@ -70,7 +70,7 @@ module.exports = function (link, cb, err) {
             block.units = ''
           }
           // Add ID to each block for better list rendering
-          block.id = 'b' + Math.round(Math.random() * 100000000)
+          // block.id = 'b' + Math.round(Math.random() * 100000000)
           bm.blocks.push(block)
         })
       }
@@ -84,9 +84,9 @@ module.exports = function (link, cb, err) {
 
       // Includes
       // Add include field to each model
-      if (typeof bm.modelParams.include === 'undefined') {
-        bm.modelParams.include = []
-      }
+      // if (typeof bm.modelParams.include === 'undefined') {
+      //  bm.modelParams.include = []
+      // }
 
       models.push(bm)
     })
