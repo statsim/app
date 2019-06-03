@@ -110,7 +110,7 @@
       </md-menu-content>
     </md-menu>
     <!-- <p class="logo-icon">{{ icon }}</p> -->
-    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.11.0b</sup></h2>
+    <h2 class="md-title logo editor-only" style="flex: 1"> StatSim <sup class="version">0.11.0c</sup></h2>
     <md-menu
       md-align-trigger
       md-size="4"
@@ -452,17 +452,6 @@
                   </div>
                 </md-card-content>
               </md-card>
-            </md-list-expand>
-          </md-list-item>
-          <md-list-item>
-            <md-icon>videogame_asset</md-icon>
-            <span>Statistics</span>
-            <md-list-expand>
-            <md-list>
-              <md-list-item class="md-inset">Console</md-list-item>
-              <md-list-item class="md-inset">PC</md-list-item>
-              <md-list-item class="md-inset">Phone</md-list-item>
-            </md-list>
             </md-list-expand>
           </md-list-item>
           <md-list-item>
@@ -1302,7 +1291,7 @@
       </md-menu-content>
     </md-menu>
     -->
-    <md-menu md-align-trigger md-size="4" @open="noScroll" @close="scroll">
+    <md-menu md-align-trigger md-size="4" @open="noScroll" @close="scroll" v-if="!(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
       <md-button class="md-icon-button md-raised" md-menu-trigger>
         <md-icon>code</md-icon>
       </md-button>
