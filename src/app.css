@@ -350,43 +350,43 @@ textarea {
 }
 /* Random variable */
 .side-bar .block-0 {
-  border-top: 4px solid #fab85a;
+  border-top: 2px solid #fab85a;
 }
 
 /* Expression */
 .side-bar .block-1 {
-  border-top: 4px solid #0097cc;
+  border-top: 2px solid #0097cc;
 }
 
 /* Data */
 .side-bar .block-2 {
-  border-top: 4px solid #84c161;
+  border-top: 2px solid #84c161;
 }
 
 /* Accumulator */
 .side-bar .block-3 {
-  border-top: 4px solid #c44a78;
+  border-top: 2px solid #c44a78;
 }
 
 /* Observer */
 .side-bar .block-4 {
-  border-top: 4px solid #ababab;
+  border-top: 2px solid #ababab;
 }
 
 /* Condition */
 .side-bar .block-5 {
-  border-top: 4px solid #ababab;
+  border-top: 2px solid #ababab;
 }
 
 /* Neural net */
 .side-bar .block-6 {
-  border-top: 4px solid #530ea3;
+  border-top: 2px solid #530ea3;
   overflow: hidden;
 }
 
 /* Function */
 .side-bar .block-7 {
-  border-top: 4px solid #1e33cc;
+  border-top: 2px solid #1e33cc;
 }
 
 .side-bar .block-name {

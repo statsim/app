@@ -116,7 +116,7 @@
       md-size="4"
       md-direction="bottom left"
       v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))"
-      :class="'editor-only ' + (models[activeModel].blocks.length ? '' : 'onboarding-menu')"
+      :class="'editor-only ' + ((models[activeModel].blocks.length || (models.length > 1)) ? '' : 'onboarding-menu')"
       @open="noScroll" @close="scroll"
     >
       <md-button class="md-raised md-primary add-block-button" md-menu-trigger>
@@ -1109,7 +1109,7 @@
       <!-- ** Observer ** -->
       <md-card-content v-if="(block.typeCode === 4) && !block.minimized">
         <md-input-container>
-          <label>Observed data (scalar, vector or tensor)</label>
+          <label>Observed data</label>
           <md-autocomplete
             v-model="block.value"
             :list="models[activeModel].blocks"
