@@ -57,20 +57,21 @@
       */
       window.onscroll = function() {
         // event.preventDefault()
-        if (document.getElementsByClassName('md-backdrop').length > 1) {
-          // Manually prevent the page from scrolling when backdrop exists
-          document.documentElement.scrollTo(oldLeft, oldTop)
-        } else {
-          var left = document.documentElement.scrollLeft
-          if (left !== oldLeft) {
-            var x = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth
-            if (x < 860) { document.getElementById('side-bar').style.left = left + 'px' }
-            document.getElementById('model-bar').style.left = left + 'px'
-            var grad = document.getElementById('table-gradient')
-            // if (grad) { grad.style.left = left + 'px' }
-            oldLeft = left
-          }
-          oldTop = document.documentElement.scrollTop
+        // if (document.getElementsByClassName('md-backdrop').length > 1) {
+        // Manually prevent the page from scrolling when backdrop exists
+        // Bad, bad idea!
+        // document.documentElement.scrollTo(oldLeft, oldTop)
+        // } else {
+        //  oldTop = document.documentElement.scrollTop
+        // }
+        var left = document.documentElement.scrollLeft
+        if (left !== oldLeft) {
+          var x = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth
+          if (x < 860) { document.getElementById('side-bar').style.left = left + 'px' }
+          document.getElementById('model-bar').style.left = left + 'px'
+          var grad = document.getElementById('table-gradient')
+          // if (grad) { grad.style.left = left + 'px' }
+          oldLeft = left
         }
       }
     </script>
