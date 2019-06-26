@@ -38,7 +38,7 @@ label {
 
 @keyframes pulse {
   0% { opacity: 1}
-  70% { opacity: 0.8 }
+  70% { opacity: 0.9 }
   100% { opacity: 1 }
 }
 
@@ -301,8 +301,24 @@ textarea {
   width: 30px;
 }
 
-.side-bar .block-header {
+.side-bar .drag-handle {
   cursor: move;
+  width: 25px;
+  height: 40px;
+  text-align: center;
+  padding: 5px 3px;
+}
+
+.side-bar .drag-handle-icon {
+  width: 5px;
+  height: 35px;
+  border-left: 2px solid rgb(170, 170, 170);
+  border-right: 2px solid rgb(170, 170, 170);
+  opacity: .25;
+}
+
+.side-bar .drag-handle:hover .drag-handle-icon {
+  opacity: .5;
 }
 
 .side-bar .block-minimized {
@@ -391,7 +407,7 @@ textarea {
 
 .side-bar .block-name {
   width: 100%;
-  padding-left: 10px;
+  padding-left: 2px;
   padding-top: 7px;
   font-size: 18px;
   overflow: hidden;

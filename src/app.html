@@ -517,7 +517,7 @@
       :style="'display:' + ((modelIndex === activeModel) ? 'block' : 'none')"
     >
     <draggable
-      v-model="model.blocks" :options="{handle: '.block-header'}"
+      v-model="model.blocks" :options="{handle: '.drag-handle'}"
     >
     <transition-group name="block-list">
     <!-- BLOCKS -->
@@ -530,6 +530,9 @@
     >
    <!-- Block actions bar-->
       <md-card-actions :class="'block-header block-header-' + block.typeCode">
+        <div class="drag-handle">
+          <div class="drag-handle-icon"></div>
+        </div>
         <div class="block-name">
           <strong>{{ block.name }}</strong>
           <p class="block-type">{{ block.type }}</p>
@@ -1212,7 +1215,7 @@
 
     <div style="padding: 10px;" v-if="!(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
       <!-- Custom code block-->
-      <textarea v-model="models[activeModel].modelParams.customCode" placeholder="Code..." rows="5"></textarea>
+      <textarea v-model="models[activeModel].modelParams.customCode" placeholder="Custom code..." rows="5"></textarea>
 
       <!-- Time steps-->
       <md-input-container class="simulation-param desktop">
