@@ -294,6 +294,11 @@ textarea {
   transition: all 0.5s;
 }
 
+.side-bar .block .block-header {
+  box-shadow: 0 0 40px rgba(0,0,0,.12);
+  padding-left: 0;
+}
+
 .side-bar .block .block-header .md-button {
   margin: 0;
   padding: 0;
@@ -310,9 +315,8 @@ textarea {
 }
 
 .side-bar .drag-handle-icon {
-  width: 5px;
+  width: 7px;
   height: 35px;
-  border-left: 2px solid rgb(170, 170, 170);
   border-right: 2px solid rgb(170, 170, 170);
   opacity: .25;
 }
