@@ -1210,9 +1210,31 @@
     </draggable>
     </div>
 
-    <!-- Custom code block-->
     <div style="padding: 10px;" v-if="!(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
-      <textarea v-model="models[activeModel].modelParams.customCode" placeholder="Custom code..." rows="5"></textarea>
+      <!-- Custom code block-->
+      <textarea v-model="models[activeModel].modelParams.customCode" placeholder="Code..." rows="5"></textarea>
+
+      <!-- Time steps-->
+      <md-input-container class="simulation-param desktop">
+        <label for="time-steps">Time steps (iterations)</label>
+        <md-input
+          name="time-steps"
+          v-model="models[activeModel].modelParams.steps"
+        >
+        </md-input>
+      </md-input-container>
+
+      <!-- Time start-->
+      <md-input-container class="simulation-param" v-if="models[activeModel].modelParams.steps.length && (models[activeModel].modelParams.steps !== '1')">
+        <label for="time-steps">Time start</label>
+        <md-input
+          name="time-start"
+          v-model="models[activeModel].modelParams.start"
+        >
+        </md-input>
+      </md-input-container>
+
+
     </div>
 
     <!-- Model output -->
@@ -1508,29 +1530,6 @@
         ** - available in PyMC3 only (server-side)
       </small>
 
-      <!-- Time start-->
-      <md-input-container class="simulation-param">
-        <label for="time-steps">Time start:</label>
-        <md-input
-          name="time-start"
-          type="number"
-          min="0"
-          step="1"
-          v-model.number="models[activeModel].modelParams.start"
-        >
-        </md-input>
-      </md-input-container>
-
-      <!-- Time steps-->
-      <md-input-container class="simulation-param">
-        <label for="time-steps">Iterations:</label>
-        <md-input
-          name="time-steps"
-          v-model.number="models[activeModel].modelParams.steps"
-        >
-        </md-input>
-      </md-input-container>
-
       <!-- Number of chains -->
       <md-input-container
         v-if="(models[activeModel].modelParams.method !== 'deterministic')"
@@ -1637,16 +1636,6 @@
   </md-bottom-bar>
     <!-- MODEL CONTROLS-->
   <md-bottom-bar v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" class="bottom-bar">
-    <!-- Time steps-->
-    <md-input-container class="simulation-param desktop">
-      <label for="time-steps">Iterations</label>
-      <md-input
-        name="time-steps"
-        v-model="models[activeModel].modelParams.steps"
-      >
-      </md-input>
-    </md-input-container>
-
     <!-- Simulation method -->
     <md-input-container class="simulation-method-container simulation-param desktop editor-only">
       <label for="simulation-method">Simulation method</label>
