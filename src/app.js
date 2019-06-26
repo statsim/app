@@ -491,6 +491,8 @@ const params = {
   },
   mounted () {
     // After mounting
+    document.getElementById('app-loader').style.display = 'none'
+
     // Check if we have a query
     if (window.location.search) {
       let query = window.location.search
