@@ -276,7 +276,7 @@ module.exports = function processResults (chains, blocks, modelParams) {
         drawVector(
           samples[k][0][0], // values
           k, // name
-          ((k.indexOf('_hist') >= 0) && (modelParams.start !== undefined)) ? modelParams.start : 1
+          ((k.indexOf('_hist') >= 0) && (modelParams.start !== undefined)) ? +modelParams.start : 1
         )
         const stats = Stats.Series([
           { stat: Stats.Mean(), name: 'Average' },
@@ -295,7 +295,7 @@ module.exports = function processResults (chains, blocks, modelParams) {
         allSamples[k].forEach((s, si) => {
           labels.push(k + ` (s. ${si})`)
           s.forEach((sv, i) => {
-            if (!data[i]) data[i] = [i + (((k.indexOf('_hist') >= 0) && (modelParams.start !== undefined)) ? modelParams.start : 1)]
+            if (!data[i]) data[i] = [i + (((k.indexOf('_hist') >= 0) && (modelParams.start !== undefined)) ? +modelParams.start : 1)]
             data[i].push(sv)
           })
         })
