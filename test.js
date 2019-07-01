@@ -21,7 +21,6 @@ const server = 'http://localhost:8080/'
     const page = await browser.newPage()
     await page.goto(server + config)
     await page.waitForSelector('.parameters') // Wait for blocks to load
-    console.log('Run')
     await page.click('.run-button')
     await page.waitForSelector('.result-value') // Wait for resulting charts to load
     const value = await page.$eval('.result-value', node => node.innerText)
@@ -29,6 +28,20 @@ const server = 'http://localhost:8080/'
     _.true(value - Math.PI < 0.1)
     _.end()
   })
+
+  test('Data numeral + data array + expression', async (_) => {
+    const config = `?a=%5B%7B%22mod%22%3A%7B%22n%22%3A%22Main%22%2C%22e%22%3A%22%22%2C%22s%22%3A1%2C%22m%22%3A%22deterministic%22%2C%22ta%22%3Afalse%2C%22cc%22%3A%22%22%7D%2C%22met%22%3A%7B%22chains%22%3A1%2C%22sm%22%3A1000%7D%2C%22b%22%3A%5B%7B%22n%22%3A%22D0%22%2C%22sh%22%3Afalse%2C%22t%22%3A2%2C%22u%22%3Afalse%2C%22dims%22%3A%22%22%2C%22v%22%3A%225%22%7D%2C%7B%22n%22%3A%22D1%22%2C%22sh%22%3Afalse%2C%22t%22%3A2%2C%22u%22%3Afalse%2C%22dims%22%3A%22%22%2C%22v%22%3A%221%2C2%2C3%2C4%22%7D%2C%7B%22n%22%3A%22E2%22%2C%22h%22%3Afalse%2C%22sh%22%3Afalse%2C%22t%22%3A1%2C%22expressionType%22%3A%22Sum%22%2C%22p%22%3A%7B%22array%22%3A%22D1%22%7D%2C%22v%22%3A%22%22%7D%2C%7B%22n%22%3A%22E3%22%2C%22h%22%3Afalse%2C%22sh%22%3Atrue%2C%22t%22%3A1%2C%22expressionType%22%3A%22Custom%22%2C%22p%22%3A%7B%7D%2C%22v%22%3A%22E2%20%2B%20D0%22%7D%5D%7D%5D`
+    const page = await browser.newPage()
+    await page.goto(server + config)
+    await page.waitForSelector('.parameters') // Wait for blocks to load
+    await page.click('.run-button')
+    await page.waitForSelector('.result-value') // Wait for resulting charts to load
+    const value = await page.$eval('.result-value', node => node.innerText)
+    console.log(value)
+    _.true(value === '15')
+    _.end()
+  })
+
   test.onFinish(async (_) => {
     await browser.close()
   })
