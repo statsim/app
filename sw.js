@@ -1,4 +1,4 @@
-const version = 'v0.11.0c'
+const version = 'v0.11.0d'
 const assets = [
   '/app/',
   '/app/dist/density-plot.js',
