@@ -1249,7 +1249,7 @@
     </div>
 
     <!-- Empty model button -->
-    <md-boards v-if="models[activeModel].blocks && !models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" :md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
+    <md-boards v-if="models[activeModel].blocks && !(models[activeModel].modelParams.customCode && models[activeModel].modelParams.customCode.length) && !models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" :md-controls="true" :md-infinite="true" :md-swipeable="true" style="height: auto !important; margin-bottom: 10px;">
       <md-board id="slide1">
         <p><b><span style="border: 1px solid #5db53b; background-color: #5db53b; color: white; padding: 3px 4px;">&nbsp;Add blocks&nbsp;</span> to your model.</b> After you open StatSim or create a new model, add some elements (blocks) to it. There are multiple types of blocks. Data blocks can be constants or input parameters, expressions set relationships between elements, random variables describe stochastic values.</p>
       </md-board>
@@ -1265,7 +1265,7 @@
     </md-boards>
 
     <!-- Totem -->
-    <div v-if="models[activeModel].blocks && !models[activeModel].blocks.reduce((a, b) => b.show || a, false) && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" class="stat-seal" style="text-align: center;">
+    <div class="stat-seal" style="text-align: center;">
       <img src="images/s.png" style="width: 110px; height: auto; opacity: 0.3; margin: 15px 0px 20px 0"></img>
     </div>
 
