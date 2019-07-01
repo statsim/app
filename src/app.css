@@ -57,9 +57,11 @@ label {
 }
 .md-dialog {
   background-color: #161b3f !important;
+  /*
   background-image: radial-gradient(#212121 5%, transparent 5%), radial-gradient(#3E4466 5%, transparent 7%);
   background-position: 0 0, 5px 5px;
   background-size: 20px 20px;
+  */
   color: rgba(223, 224, 238, 0.87) !important;
 }
 
