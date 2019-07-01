@@ -30,6 +30,7 @@ label {
 .md-button {
   padding: 0 10px 0 10px;
   font-weight: 400;
+  text-transform: initial;
 }
 
 .onboarding-menu {
@@ -172,6 +173,7 @@ textarea {
 .logo {
   font-weight: 500 !important;
   margin-bottom: 5px !important;
+  letter-spacing: -0.4px;
 }
 
 .logo-icon {
