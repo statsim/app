@@ -81,7 +81,13 @@ function drawScalar (scalar, name) {
 }
 */
 
-function drawObject (obj, name, units) {
+// function drawObject (obj, name, units) {
+function drawObject (obj, params) {
+  let name = params.name
+  let units = params.units
+  let toSort = params.toSort
+  let toVis = params.toVis
+
   let chartContainer = document.createElement('div')
   chartContainer.className = 'chart'
 
@@ -94,8 +100,13 @@ function drawObject (obj, name, units) {
   summaryDiv.appendChild(h3)
 
   let table = document.createElement('table')
+  let keys = Object.keys(obj)
 
-  Object.keys(obj).forEach(key => {
+  if (toSort) {
+    keys = keys.sort((a, b) => obj[b] - obj[a])
+  }
+
+  keys.forEach(key => {
     const val = obj[key]
     let b = document.createElement('b')
     b.innerText = key
@@ -111,6 +122,11 @@ function drawObject (obj, name, units) {
     }
     if (units && units.length) {
       td2.innerText += ' ' + units
+    }
+    if (toVis) {
+      td2.style.backgroundSize = parseInt(val) + '% 100%'
+      td2.style.backgroundImage = 'linear-gradient(to right, rgba(97, 145, 236, 0.39) 0%, rgba(158, 178, 255, 0.34) 100%)'
+      td2.style.backgroundRepeat = 'no-repeat'
     }
     tr.appendChild(td2)
     table.appendChild(tr)
@@ -256,7 +272,9 @@ module.exports = function processResults (chains, blocks, modelParams) {
     if ((typeof samples[k][0][0] === 'boolean') || (typeof samples[k][0][0] === 'string')) {
       // --> Boolean and String samples (count samples)
       drawHeader(k)
+      // Iterate over all chains for k variable
       samples[k].forEach((samplesArr, ci) => {
+        // Iterate over all samples of this chain anc count values
         let count = {}
         samplesArr.forEach(v => {
           if (!count.hasOwnProperty(v)) {
@@ -264,7 +282,23 @@ module.exports = function processResults (chains, blocks, modelParams) {
           }
           count[v] += 1
         })
-        drawObject(count, k + ' count' + ((chains.length > 1) ? ` (ch. ${ci})` : ''))
+        // Calculate frequencies
+        let freq = {}
+        Object.keys(count).forEach(ck => {
+          freq[ck] = (samplesArr.length) ? +((count[ck] * 100 / samplesArr.length).toFixed(2)) + '' : 0
+        })
+        console.log(freq)
+        // Draw tables
+        drawObject(count, {
+          name: k + ' count' + ((chains.length > 1) ? ` (ch. ${ci})` : ''),
+          toSort: true
+        })
+        drawObject(freq, {
+          name: k + ' frequency' + ((chains.length > 1) ? ` (ch. ${ci})` : ''),
+          units: '%',
+          toSort: true,
+          toVis: true
+        })
       })
       // TODO: Draw pie chart?
     } else if (Array.isArray(samples[k][0][0])) {
@@ -287,7 +321,9 @@ module.exports = function processResults (chains, blocks, modelParams) {
           { stat: Stats.Max(), name: 'Max' }
         ])
         samples[k][0][0].forEach(s => stats(s))
-        drawObject(stats.values, k + ' summary')
+        drawObject(stats.values, {
+          name: k + ' summary'
+        })
       } else {
         // * Random arrays samples
         const data = []
@@ -471,7 +507,10 @@ module.exports = function processResults (chains, blocks, modelParams) {
         // Remove number of observations
         delete summary.n
         // Draw summary block
-        drawObject(summary, `${k} summary`, units[k])
+        drawObject(summary, {
+          name: `${k} summary`,
+          units: units[k]
+        })
 
         // ---- Top 5 values
         const counter = Stats.Count({countArrays: true})
@@ -484,7 +523,9 @@ module.exports = function processResults (chains, blocks, modelParams) {
           }
         }
         if (showTop) {
-          drawObject(topN(5, top), `Top ${Object.keys(top).length <= 5 ? Object.keys(top).length : 5} ${k} values`)
+          drawObject(topN(5, top), {
+            name: `Top ${Object.keys(top).length <= 5 ? Object.keys(top).length : 5} ${k} values`
+          })
         }
       } // -- *draw random variable
     } // *scalars samples
