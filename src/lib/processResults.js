@@ -9,13 +9,52 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
   const chartContainer = document.createElement('div')
   chartContainer.className = 'chart' + ((chartLabels.length > 5) ? ' chart-heavy' : '')
   document.querySelector('.charts').appendChild(chartContainer)
+
   let options = {
-    title: chartTitle,
-    labels: chartLabels,
+    animatedZooms: true,
     colors: ['#3f51b5', '#ce3657', '#7CCD40', '#F3C50F'],
+    labels: chartLabels,
     strokeWidth: 1,
-    strokeBorderWidth: 0
+    strokeBorderWidth: 0,
+    title: chartTitle
   }
+
+  // Draw stats
+  if (chartOptions && chartOptions.stats) {
+    console.log('Drawing chart with extra stats: ', chartOptions.stats)
+    options.underlayCallback = (canvas, area, g) => {
+      const bottomLeft = g.toDomCoords(chartOptions.stats.l, -20)
+      const topRight = g.toDomCoords(chartOptions.stats.r, +20)
+      const m = g.toDomCoords(chartOptions.stats.mean, 0)
+
+      const left = bottomLeft[0]
+      const right = topRight[0]
+      const mean = m[0]
+      const bottom = area.h + area.y
+      // const bottom = m[1] - 2
+
+      // Draw interval
+      canvas.fillStyle = 'rgba(0, 0, 0, 1)'
+      canvas.fillRect(left, bottom - 3, right - left, 3)
+
+      // Draw interval values
+      if (right - left > 70) {
+        canvas.font = '9px sans-serif'
+        canvas.textAlign = 'left'
+        canvas.fillText('[ ' + chartOptions.stats.l.toFixed(2), left, bottom - 10)
+        canvas.textAlign = 'right'
+        canvas.fillText(chartOptions.stats.r.toFixed(2) + ' ]', right, bottom - 10)
+      }
+
+      // Draw mean
+      canvas.fillStyle = 'rgba(254, 31, 79, 0.95)'
+      canvas.fillRect(mean - 2, bottom - 10, 4, 4)
+      canvas.font = 'bold 10px sans-serif'
+      canvas.textAlign = 'center'
+      canvas.fillText(chartOptions.stats.mean.toFixed(2), mean, bottom - 17)
+    }
+  }
+
   if (chartLabels.length <= 1100) {
     options.highlightCircleSize = 2
     options.highlightSeriesOpts = {
@@ -26,13 +65,17 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
     options.highlightCircleSize = 0
     options.showLabelsOnHighlight = false
   }
-  Object.assign(options, chartOptions)
+
+  if (chartOptions && chartOptions.dygraphOptions) {
+    Object.assign(options, chartOptions.dygraphOptions)
+  }
+
   const d = new Dygraphs(
     chartContainer,
     chartData,
     options
   )
-  console.log(`Dygraph: I'm here`, d)
+  console.log(`Dygraph: New chart created: `, d)
 }
 
 function drawHeader (name, value, description, units) {
@@ -288,11 +331,12 @@ module.exports = function processResults (chains, blocks, modelParams) {
           freq[ck] = (samplesArr.length) ? +((count[ck] * 100 / samplesArr.length).toFixed(2)) + '' : 0
         })
         console.log(freq)
-        // Draw tables
+        // Draw count table
         drawObject(count, {
           name: k + ' count' + ((chains.length > 1) ? ` (ch. ${ci})` : ''),
           toSort: true
         })
+        // Draw frequency table
         drawObject(freq, {
           name: k + ' frequency' + ((chains.length > 1) ? ` (ch. ${ci})` : ''),
           units: '%',
@@ -300,7 +344,6 @@ module.exports = function processResults (chains, blocks, modelParams) {
           toVis: true
         })
       })
-      // TODO: Draw pie chart?
     } else if (Array.isArray(samples[k][0][0])) {
       // --> Array samples
       drawHeader(k)
@@ -343,7 +386,9 @@ module.exports = function processResults (chains, blocks, modelParams) {
           ),
           ['Step', k],
           {
-            customBars: true
+            dygraphOptions: {
+              customBars: true
+            }
           }
         )
       } // <-- Array samples
@@ -454,27 +499,6 @@ module.exports = function processResults (chains, blocks, modelParams) {
           }
         })
 
-        // Draw trace
-        createChart(k + ' trace', trace, traceLabels)
-
-        // Draw auto-covariogram
-        createChart(k + ' autocovariogram', cov, covLabels)
-
-        // Draw histogram
-        createChart(k + ' histogram', hist, histLabels, {
-          stepPlot: true,
-          fillGraph: true
-        })
-
-        // Draw PDF (KDE smoothing)
-        createChart(k + ' PDF (smooth)', pdf, pdfLabels, {
-          rollPeriod: 2,
-          fillGraph: true
-        })
-
-        // Draw CDF (updated)
-        createChart(k + ' CDF', cdf, cdfLabels)
-
         // ---- Quantiles
         const allSorted = allSamples[k].slice().sort((a, b) => a - b)
         const quantile = (arr, p) => {
@@ -501,6 +525,43 @@ module.exports = function processResults (chains, blocks, modelParams) {
           { stat: Stats.Max(), name: 'Max' }
         ])
         allSamples[k].forEach(s => stats(s))
+
+        // Draw trace
+        createChart(k + ' trace', trace, traceLabels)
+
+        // Draw auto-covariogram
+        createChart(k + ' autocovariogram', cov, covLabels)
+
+        // Draw histogram
+        createChart(k + ' histogram', hist, histLabels, {
+          dygraphOptions: {
+            fillGraph: true,
+            stepPlot: true,
+            valueRange: [0, null]
+          },
+          stats: {
+            l: quantiles['2.5%'],
+            r: quantiles['97.5%'],
+            mean: stats.values.Mean
+          }
+        })
+
+        // Draw PDF (KDE smoothing)
+        createChart(k + ' PDF (smooth)', pdf, pdfLabels, {
+          dygraphOptions: {
+            fillGraph: true,
+            rollPeriod: 2,
+            valueRange: [0, null]
+          },
+          stats: {
+            l: quantiles['2.5%'],
+            r: quantiles['97.5%'],
+            mean: stats.values.Mean
+          }
+        })
+
+        // Draw CDF (updated)
+        createChart(k + ' CDF', cdf, cdfLabels)
 
         // Prepare summary
         const summary = Object.assign({}, quantiles, stats.values)
