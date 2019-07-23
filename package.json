@@ -17,6 +17,7 @@
   "author": "Anton Zemlyansky",
   "license": "ISC",
   "dependencies": {
+    "chaikin-smooth": "^1.0.4",
     "cookie": "^0.3.1",
     "csv-parse": "^3.2.0",
     "csv-parser": "^1.12.1",
@@ -36,7 +37,6 @@
     "js-quantities": "^1.7.2",
     "json2csv": "^4.5.1",
     "online-stats": "^1.3.0",
-    "pdfast": "^0.2.0",
     "query-string": "^6.2.0",
     "split": "^1.0.1",
     "stream": "0.0.2",

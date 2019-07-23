@@ -2,10 +2,156 @@ const Stats = require('online-stats')
 const Dygraphs = require('dygraphs')
 const d3 = require('d3-array')
 const hist2d = require('d3-hist2d').hist2d
-const pdfast = require('pdfast')
 const plot2d = window['densityPlot'] // ESM WTF!!!
+const smooth = require('chaikin-smooth')
+
+function histogram (samples, params) {
+  const t = params.t
+  const unique = params.unique
+  const max = params.max
+  const min = params.min
+
+  let hist = []
+  // Prepare histogram
+  if (unique.length <= t) {
+    // Number of unique values is too small, don't need bins, count unique values
+    // Initialize counter with 0s
+    // Use global unique array to have a consistent number of values across all chains
+    let counter = {}
+    unique.forEach(u => {
+      counter[u] = 0
+    })
+    // Count element in current chain
+    samples.forEach(x => {
+      counter[x] += 1
+    })
+    // Push counter values to the hist object
+    unique.forEach(u => {
+      hist.push([u, counter[u] / samples.length])
+    })
+  } else {
+    // We are probably dealing with continuous variable, use bins
+    // Use d3.histogram
+    const histogram = d3.histogram().domain([min, max]).thresholds(t)
+    const h = histogram(samples)
+    h.forEach(hv => {
+      hist.push([hv.x0, hv.length / samples.length])
+    })
+  }
+
+  return hist
+}
+
+/* Smoothing */
+/*
+function getControlPoints(p0, p1, p2, opt_alpha, opt_allowFalseExtrema) {
+    var alpha = (opt_alpha !== undefined) ? opt_alpha : 1/3;  // 0=no smoothing, 1=crazy smoothing
+    var allowFalseExtrema = opt_allowFalseExtrema || false;
+
+    if (!p2) {
+          return [p1.x, p1.y, null, null];
+        }
+
+    // Step 1: Position the control points along each line segment.
+    var l1x = (1 - alpha) * p1.x + alpha * p0.x,
+          l1y = (1 - alpha) * p1.y + alpha * p0.y,
+          r1x = (1 - alpha) * p1.x + alpha * p2.x,
+          r1y = (1 - alpha) * p1.y + alpha * p2.y;
+
+    // Step 2: shift the points up so that p1 is on the l1â€“r1 line.
+    if (l1x != r1x) {
+          // This can be derived w/ some basic algebra.
+          var deltaY = p1.y - r1y - (p1.x - r1x) * (l1y - r1y) / (l1x - r1x);
+          l1y += deltaY;
+          r1y += deltaY;
+        }
+
+    // Step 3: correct to avoid false extrema.
+    if (!allowFalseExtrema) {
+          if (l1y > p0.y && l1y > p1.y) {
+                  l1y = Math.max(p0.y, p1.y);
+                  r1y = 2 * p1.y - l1y;
+                } else if (l1y < p0.y && l1y < p1.y) {
+                        l1y = Math.min(p0.y, p1.y);
+                        r1y = 2 * p1.y - l1y;
+                      }
+
+          if (r1y > p1.y && r1y > p2.y) {
+                  r1y = Math.max(p1.y, p2.y);
+                  l1y = 2 * p1.y - r1y;
+                } else if (r1y < p1.y && r1y < p2.y) {
+                        r1y = Math.min(p1.y, p2.y);
+                        l1y = 2 * p1.y - r1y;
+                      }
+        }
+
+    return [l1x, l1y, r1x, r1y];
+}
+
+// i.e. is none of (null, undefined, NaN)
+function isOK(x) {
+    return !!x && !isNaN(x);
+};
+
+// A plotter which uses splines to create a smooth curve.
+// See tests/plotters.html for a demo.
+// Can be controlled via smoothPlotter.smoothing
+function smoothPlotter(e) {
+    var ctx = e.drawingContext,
+          points = e.points;
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].canvasx, points[0].canvasy);
+
+    // right control point for previous point
+    var lastRightX = points[0].canvasx, lastRightY = points[0].canvasy;
+
+    for (var i = 1; i < points.length; i++) {
+          var p0 = points[i - 1],
+                p1 = points[i],
+                p2 = points[i + 1];
+          p0 = p0 && isOK(p0.canvasy) ? p0 : null;
+          p1 = p1 && isOK(p1.canvasy) ? p1 : null;
+          p2 = p2 && isOK(p2.canvasy) ? p2 : null;
+          if (p0 && p1) {
+                  var controls = getControlPoints({x: p0.canvasx, y: p0.canvasy},
+                                                          {x: p1.canvasx, y: p1.canvasy},
+                                                          p2 && {x: p2.canvasx, y: p2.canvasy},
+                                                          smoothPlotter.smoothing);
+                  // Uncomment to show the control points:
+                  // ctx.lineTo(lastRightX, lastRightY);
+                  // ctx.lineTo(controls[0], controls[1]);
+                  // ctx.lineTo(p1.canvasx, p1.canvasy);
+                  lastRightX = (lastRightX !== null) ? lastRightX : p0.canvasx;
+                  lastRightY = (lastRightY !== null) ? lastRightY : p0.canvasy;
+                  ctx.bezierCurveTo(lastRightX, lastRightY,
+                                            controls[0], controls[1],
+                                            p1.canvasx, p1.canvasy);
+                  lastRightX = controls[2];
+                  lastRightY = controls[3];
+                } else if (p1) {
+                        // We're starting again after a missing point.
+                        ctx.moveTo(p1.canvasx, p1.canvasy);
+                        lastRightX = p1.canvasx;
+                        lastRightY = p1.canvasy;
+                      } else {
+                              lastRightX = lastRightY = null;
+                            }
+        }
+
+  ctx.lineWidth = 2;
+    ctx.stroke()
+}
+
+smoothPlotter.smoothing = 0.8
+smoothPlotter._getControlPoints = getControlPoints  // for testing
+// older versions exported a global.
+Dygraphs.smoothPlotter = smoothPlotter
+*/
 
 function createChart (chartTitle, chartData, chartLabels, chartOptions) {
+  console.log('[Create chart] Data: ', chartTitle, chartData, chartLabels)
+
   const chartContainer = document.createElement('div')
   chartContainer.className = 'chart' + ((chartLabels.length > 5) ? ' chart-heavy' : '')
   document.querySelector('.charts').appendChild(chartContainer)
@@ -21,7 +167,7 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
 
   // Draw stats
   if (chartOptions && chartOptions.stats) {
-    console.log('Drawing chart with extra stats: ', chartOptions.stats)
+    console.log('[Create chart] Got extra parameters: ', chartOptions.stats)
     options.underlayCallback = (canvas, area, g) => {
       const bottomLeft = g.toDomCoords(chartOptions.stats.l, -20)
       const topRight = g.toDomCoords(chartOptions.stats.r, +20)
@@ -75,7 +221,8 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
     chartData,
     options
   )
-  console.log(`Dygraph: New chart created: `, d)
+
+  console.log(`[Create chart] New dygraph chart created: `, d)
 }
 
 function drawHeader (name, value, description, units) {
@@ -226,18 +373,16 @@ function topN (n, countObj) {
 
 module.exports = function processResults (chains, blocks, modelParams) {
   // Now v is an array of results from one or multiple workers
-  console.log('Processor, PhD: Z-z-z..')
-  console.log('Processor, PhD: Uh?')
-  console.log('Processor, PhD: Why you send me this?', chains)
+  console.log('[Process results] Uh?')
+  console.log('[Process results] Got new chains: ', chains)
 
   // Deterministic simulation
   if ((chains.length === 1) && !chains[0].hasOwnProperty('samples')) {
-    console.log(`Processor, PhD: That's a determistic BS, converting it to pseudo-random result!`)
+    console.log(`[Process results] That's a determistic result, make it look like random output`)
     chains[0] = {samples: [{score: 0, value: chains[0]}]}
-    console.log(`Processor, PhD: Looks like a random output now!`)
   }
 
-  console.log('Processor, PhD: Busy now!')
+  console.log('[Process results] Busy now!')
 
   // Collect samples in a useful object:
   // { variable_name: [[1,2,...], [2,1,3...]]} - multiple chains case
@@ -293,9 +438,8 @@ module.exports = function processResults (chains, blocks, modelParams) {
     }) // *samples
   }) // *chains
 
-  console.log('Processor, PhD: Updated samples and MAP are ready')
-  console.log('Samples: ', samples)
-  console.log('MAP: ', map)
+  console.log('[Process results] Samples: ', samples)
+  console.log('[Process results] MAP: ', map)
 
   let allSamples = {}
   // Iterate over rearranged samples
@@ -306,11 +450,13 @@ module.exports = function processResults (chains, blocks, modelParams) {
     samples[k].forEach(samplesArr => {
       allSamples[k] = allSamples[k].concat(samplesArr)
     })
-    console.log('All samples:', allSamples)
+    console.log('[Process results] All samples:', allSamples)
 
     // Total min and max
     const min = d3.min(allSamples[k])
     const max = d3.max(allSamples[k])
+    const unique = Array.from(new Set(allSamples[k])).sort((a, b) => a - b)
+    console.log('[Process results] Unique elements: ', unique)
 
     if ((typeof samples[k][0][0] === 'boolean') || (typeof samples[k][0][0] === 'string')) {
       // --> Boolean and String samples (count samples)
@@ -330,7 +476,7 @@ module.exports = function processResults (chains, blocks, modelParams) {
         Object.keys(count).forEach(ck => {
           freq[ck] = (samplesArr.length) ? +((count[ck] * 100 / samplesArr.length).toFixed(2)) + '' : 0
         })
-        console.log(freq)
+        console.log('[Process results] Frequencies: ', freq)
         // Draw count table
         drawObject(count, {
           name: k + ' count' + ((chains.length > 1) ? ` (ch. ${ci})` : ''),
@@ -396,7 +542,7 @@ module.exports = function processResults (chains, blocks, modelParams) {
       // --> Scalar samples
       if (repeatingSamples[k]) {
         // * Repeating scalar samples (not random)
-        console.log('Repeating scalar: ', samples[k][0][0])
+        console.log('[Process results] Repeating scalar: ', samples[k][0][0])
         drawHeader(
           k,
           samples[k][0][0],
@@ -462,42 +608,116 @@ module.exports = function processResults (chains, blocks, modelParams) {
           })
           covLabels.push(`Autocov (ch. ${ci})`)
 
+          /*
+          // Histogram threshold
+          let t = 40
           // Prepare histogram
-          const unique = Array.from(new Set(samplesArr)).length
-          const t = (unique <= 40) ? unique : 40
-          const histogram = d3.histogram().domain([min, max]).thresholds(t)
-          const h = histogram(samplesArr)
-          h.forEach((hv, hvi) => {
-            if (!hist[hvi]) hist[hvi] = [hv.x0]
-            hist[hvi].push(hv.length / samplesArr.length)
-          })
-          histLabels.push(`p (ch. ${ci})`)
+          if (unique.length <= t) {
+            // Number of unique values is too small, don't need bins, count unique values
+            // Initialize counter with 0s
+            // Use global unique array to have a consistent number of values across all chains
+            let counter = {}
+            unique.forEach(u => {
+              counter[u] = 0
+            })
+            // Count element in current chain
+            samplesArr.forEach(x => {
+              counter[x] += 1
+            })
+            // Push counter values to the hist object
+            unique.forEach((u, ui) => {
+              if (!hist[ui]) hist[ui] = [u]
+              hist[ui].push(counter[u] / samplesArr.length)
+            })
+          } else {
+            // We are probably dealing with continuous variable, use bins
+            // Use d3.histogram
+            // TODO: d3.bins?
+            const histogram = d3.histogram().domain([min, max]).thresholds(t)
+            const h = histogram(samplesArr)
+            h.forEach((hv, hvi) => {
+              if (!hist[hvi]) hist[hvi] = [hv.x0]
+              hist[hvi].push(hv.length / samplesArr.length)
+            })
+          }
+          */
 
-          // PDF
-          const p = pdfast.create(samplesArr, {size: 30, min: min, max: max})
-          p.forEach((pv, pvi) => {
-            if (!pdf[pvi]) pdf[pvi] = [pv.x]
-            pdf[pvi].push(pv.y)
+          // Generate histogram with threshold = 40
+          const h40 = histogram(samplesArr, {t: 40, unique, min, max})
+
+          // Fill hist array with all chains histograms
+          h40.forEach((hv, hvi) => {
+            if (!hist[hvi]) hist[hvi] = [hv[0]]
+            hist[hvi].push(hv[1])
           })
-          pdfLabels.push(`f (ch. ${ci})`)
+
+          histLabels.push(`p (ch. ${ci})`)
 
           // CDF
           if (step > 0) {
-            let nextPoint = min + step
-            let cdfBin = 0
-            for (let i = 0; i < sorted[ci].length; i++) {
-              if (sorted[ci][i] >= nextPoint) {
-                while (nextPoint < sorted[ci][i]) {
-                  if (!cdf[cdfBin]) cdf[cdfBin] = [nextPoint]
-                  cdf[cdfBin].push(i / sorted[ci].length)
-                  cdfBin += 1
-                  nextPoint += step
-                }
+            // The problem with the old code was that it missed some samples from the right part of CDF
+            // And it was also not so clear as the updated one
+            // Here we iterate over bins
+            // After jumping to the next bin, we start moving sorted array pointer to the right until it finds the new bin
+            // Then save frequency generated as i / sorted[ci].length
+            let i = 0
+            let nextPoint = min
+            for (let bin = 0; bin <= 200; bin++) {
+              while ((sorted[ci][i] <= nextPoint) && (i < sorted[ci].length)) {
+                i += 1
               }
+              if (!cdf[bin]) cdf[bin] = [nextPoint]
+              cdf[bin].push(i / sorted[ci].length)
+              nextPoint += step
             }
             cdfLabels.push(`F (ch. ${ci})`)
           }
-        })
+
+          // PDF
+          let sp
+
+          if (unique.length <= 200) {
+            // If number of unique items is small, just smooth the histogram
+            console.log('[Process results] Calculate PDF with histogram')
+            const h20 = histogram(samplesArr, {t: 20, unique, min, max})
+            sp = smooth(smooth(h20))
+          } else {
+            // Use CDF's rate of change to get approximate PDF
+            console.log('[Process results] Calculate PDF with CDF')
+            let pdfn = []
+
+            // Set step size for pdf calculation
+            let pdfs
+
+            if (samplesArr.length > 20000) {
+              pdfs = 2
+            } else if (samplesArr.length > 5000) {
+              pdfs = 3
+            } else {
+              pdfs = 4
+            }
+
+            cdf.forEach((cdfv, i) => {
+              if (i === 0 || (i === cdf.length - 1) || !(i % (pdfs * 2))) {
+                const l = i - pdfs
+                const left = (l >= 0) ? l : 0
+                const r = i + pdfs
+                const right = (r < cdf.length) ? r : cdf.length - 1
+                pdfn.push([cdf[i][0], (cdf[right][ci + 1] - cdf[left][ci + 1]) / (cdf[right][0] - cdf[left][0])])
+              }
+            })
+
+            // sp = smooth(smooth(pdfn.filter((x, i) => !(i % pdfpass) || (i === pdfn.length - 1))))
+            sp = smooth(smooth(pdfn))
+          }
+
+          sp.forEach((pv, pvi) => {
+            if (!pdf[pvi]) pdf[pvi] = [pv[0]]
+            pdf[pvi].push(pv[1])
+          })
+
+          pdfLabels.push(`f (ch. ${ci})`)
+        }) // *finish working with individual chains
 
         // ---- Quantiles
         const allSorted = allSamples[k].slice().sort((a, b) => a - b)
@@ -533,12 +753,37 @@ module.exports = function processResults (chains, blocks, modelParams) {
         createChart(k + ' autocovariogram', cov, covLabels)
 
         // Draw histogram
+        // Prepare options for dygraph
+        let histDygraphOptions = {
+          fillGraph: true,
+          valueRange: [0, null]
+        }
+
+        if (unique.length < 40) {
+          histDygraphOptions.xRangePad = 30
+          histDygraphOptions.plotter = (e) => {
+            const ctx = e.drawingContext
+            const points = e.points
+            const yBottom = e.dygraph.toDomYCoord(0) // http://dygraphs.com/jsdoc/symbols/Dygraph.html#toDomYCoord
+            const barWidth = (points[1].canvasx - points[0].canvasx)
+            // const n = points.length
+            // var bar_width = points[n - 1].canvasx / n
+            ctx.fillStyle = e.color
+            ctx.globalAlpha = 0.2
+            for (var i = 0; i < points.length; i++) {
+              const p = points[i]
+              const centerX = p.canvasx // center of the bar
+              ctx.fillRect(centerX - barWidth / 2, p.canvasy, barWidth, yBottom - p.canvasy)
+              ctx.strokeRect(centerX - barWidth / 2, p.canvasy, barWidth, yBottom - p.canvasy)
+            }
+            ctx.globalAlpha = 1
+          }
+        } else {
+          histDygraphOptions.stepPlot = true
+        }
+
         createChart(k + ' histogram', hist, histLabels, {
-          dygraphOptions: {
-            fillGraph: true,
-            stepPlot: true,
-            valueRange: [0, null]
-          },
+          dygraphOptions: histDygraphOptions,
           stats: {
             l: quantiles['2.5%'],
             r: quantiles['97.5%'],
@@ -550,8 +795,9 @@ module.exports = function processResults (chains, blocks, modelParams) {
         createChart(k + ' PDF (smooth)', pdf, pdfLabels, {
           dygraphOptions: {
             fillGraph: true,
-            rollPeriod: 2,
+            rollPeriod: 1,
             valueRange: [0, null]
+            // ,plotter: smoothPlotter
           },
           stats: {
             l: quantiles['2.5%'],
@@ -646,7 +892,7 @@ module.exports = function processResults (chains, blocks, modelParams) {
       }// *for
     }// *for
   }
-  console.log('Processor, PhD: Finished! Returning all samples object')
+  console.log('[Process results] Finished! Returning all samples object')
 
   return allSamples
 } // *processResults
