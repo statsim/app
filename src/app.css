@@ -649,7 +649,7 @@ textarea {
   position: absolute;
   margin: 0 !important;
   background: rgba(255,255,255,.9);
-  padding: 5px 10px;
+  padding: 4px 10px;
   z-index: 100;
 }
 
@@ -657,8 +657,10 @@ textarea {
   /*
   font-weight: bold !important;
   */
-  font-size: 16px !important;
-  margin: 3px 10px !important;
+  font-size: 12px !important;
+  margin: 4px 55px !important;
+  color: #808086;
+  opacity: .8;
 }
 
 .content .chart-heavy .dygraph-legend > span {
