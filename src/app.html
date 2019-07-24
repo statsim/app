@@ -50,9 +50,18 @@
       Just close this message to start experimenting...
     </md-dialog-content>
     <md-dialog-actions>
-      <md-button class="md-primary" @click="closeDialog('onboarding')">Close</md-button>
-      <md-button class="md-primary" @click="openFile('Data')">Load data</md-button>
-      <md-button class="md-primary" @click="openFile('Project')">Open project</md-button>
+      <md-button class="md-primary" @click="closeDialog('onboarding')">
+        <md-icon style="opacity: 0.3">insert_drive_file</md-icon>
+        New
+      </md-button>
+      <md-button class="md-primary" @click="openFile('Project')">
+        <md-icon style="opacity: 0.3">unarchive</md-icon>
+        Open
+      </md-button>
+      <md-button class="md-primary" @click="openFile('Data')">
+        <md-icon style="opacity: 0.3">storage</md-icon>
+        Load dataset
+      </md-button>
     </md-dialog-actions>
   </md-dialog>
 
