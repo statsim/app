@@ -52,7 +52,11 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
   let options = {
     animatedZooms: true,
     colors: ['#3f51b5', '#ce3657', '#7CCD40', '#F3C50F'],
+    digitsAfterDecimal: 2,
+    highlightSeriesBackgroundAlpha: 0.85,
+    highlightSeriesBackgroundColor: 'rgb(115, 110, 125)',
     labels: chartLabels,
+    panEdgeFraction: 0.05,
     strokeWidth: 1,
     strokeBorderWidth: 0,
     title: chartTitle
