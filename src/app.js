@@ -839,7 +839,8 @@ const params = {
         // Create a new table
         table = new Table(container, {
           data,
-          // contextMenu: true,
+          contextMenu: true,
+          /*
           contextMenu: {
             items: {
                     "colors": { // Own custom option
@@ -865,7 +866,6 @@ const params = {
               'export': {
                 name: 'Export to CSV',
                 callback: function (key, options) {
-                  /*
                   let start = options[0].start
                   let end = options[0].end
                   for (let ri = start.row; ri <= end.row; ri++) {
@@ -875,7 +875,6 @@ const params = {
                   }
                   table.render()
                   console.log(key, options)
-                  */
                   this.getPlugin('exportFile').downloadFile('csv', {
                     filename: 'MyFile'
                   })
@@ -896,6 +895,7 @@ const params = {
               'redo': true
             }
           },
+          */
           observeChanges: false,
           afterChange: upd,
           afterColumnMove: upd,
@@ -1119,7 +1119,7 @@ const params = {
     openDialog (ref) {
       this.$refs[ref].open()
     },
-    closeDialog(ref) {
+    closeDialog (ref) {
       this.$refs[ref].close()
     },
     createModel () {
