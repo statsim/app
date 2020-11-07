@@ -1,4 +1,4 @@
-const version = '0.11.0d'
+const version = '0.11.1'
 
 // NPM deps
 const parseCSV = require('csv-parse')
