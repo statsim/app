@@ -46,11 +46,11 @@ module.exports = {
     params: {}
   },
   'deterministic': {
-    name: 'Deterministic *',
+    name: 'Run Once',
     params: {}
   },
   'enumerate': {
-    name: 'Enumeration *',
+    name: 'Enumeration',
     params: {
       maxExecutions: {
         type: 'int',
@@ -68,7 +68,7 @@ module.exports = {
     }
   },
   'rejection': {
-    name: 'Rejection Sampling *',
+    name: 'Rejection Sampling',
     params: {
       samples,
       maxScore: {
