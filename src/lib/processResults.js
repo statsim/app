@@ -482,6 +482,9 @@ module.exports = function processResults (chains, blocks, modelParams) {
         // CDF
         let cdf = []
         let cdfLabels = [k]
+        // Effective sample size
+        // let ness = 0
+
         const step = (max - min) / 200 // CDF step
 
         // Iterate over all chain samples
@@ -504,6 +507,14 @@ module.exports = function processResults (chains, blocks, modelParams) {
             cov[covi].push(c)
           })
           covLabels.push(`Autocov (ch. ${ci})`)
+
+          // Effective sample size
+          // const autocovFull = Stats.AutoCov(samplesArr.length)
+          // autocovFull(samplesArr)
+          // const acsum = Math.abs(autocovFull().slice(1).reduce((a, v) => a + v, 0))
+          // const nessi = samplesArr.length / (1 + 2 * acsum)
+          // console.log('ESS', acsum, nessi)
+          // ness += nessi
 
           /*
           // Histogram threshold
@@ -706,8 +717,17 @@ module.exports = function processResults (chains, blocks, modelParams) {
         // Draw CDF (updated)
         createChart(k + ' CDF', cdf, cdfLabels)
 
+        // Get probability of variable being more than 0
+        const ppos = 100 * allSamples[k].filter(v => v > 0).length / allSamples[k].length
+
         // Prepare summary
-        const summary = Object.assign({}, quantiles, stats.values)
+        const summary = Object.assign(
+          {},
+          quantiles,
+          stats.values,
+          { 'P+': ppos + '%' }
+          // ,{ 'ESS': ness }
+        )
         // Remove number of observations
         delete summary.n
         // Draw summary block
