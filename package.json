@@ -18,7 +18,7 @@
   "dependencies": {
     "chaikin-smooth": "^1.0.4",
     "cookie": "^0.3.1",
-    "csv-parse": "^3.2.0",
+    "csv-parse": "^4.4.6",
     "csv-parser": "^1.12.1",
     "d3-array": "^1.2.4",
     "d3-hist2d": "^1.0.7",
