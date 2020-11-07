@@ -1,5 +1,5 @@
 *.swp
-models
+examples
 node_modules
 bin
 npm-debug.log
