@@ -97,7 +97,7 @@ module.exports = function (link, cb, err) {
   // Models in the external json file (short)
   } else if (q.m && (typeof q.m === 'string')) {
     getJSON(
-      `/models/${q.m}.json`,
+      `/examples/${q.m}.json`,
       (models) => {
         if (Array.isArray(models)) {
           cb({ models, activeModel })
