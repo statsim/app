@@ -1,3 +1,5 @@
+const version = '0.11.0d'
+
 // NPM deps
 const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
@@ -282,7 +284,8 @@ const params = {
     // showDataTable: false, // Show or not data table?
     simulationMethods, // Array of simulation methods
     theme: 'light', // Current theme
-    units: Qty.getUnits().map(u => ({ name: u })) // All units
+    units: Qty.getUnits().map(u => ({ name: u })), // All units
+    version
   }),
 
   /*
@@ -533,9 +536,9 @@ const params = {
       // Clean start
       this.models = [createBaseModel('Main')]
       this.switchModel(0)
-      delay.call(this, 500, () => {
-        this.openDialog('onboarding')
-      })
+      // delay.call(this, 500, () => {
+      //   this.openDialog('onboarding')
+      // })
     }
   },
   methods: {
