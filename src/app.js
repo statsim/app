@@ -1,4 +1,4 @@
-const version = '0.11.1'
+const version = '0.12.0'
 
 // NPM deps
 const parseCSV = require('csv-parse')
@@ -18,6 +18,7 @@ const compileModels = require('./lib/compile-wppl')
 const compilePYMC3 = require('./lib/compile-pymc3')
 const compileTFP = require('./lib/compile-tfp')
 const compileTFJS = require('./lib/compile-tfjs')
+const compileZ3 = require('./lib/compile-z3')
 const copyText = require('./lib/copy')
 const createBaseModel = require('./lib/createBaseModel')
 const createLink = require('./lib/createLink')
@@ -1282,6 +1283,12 @@ const params = {
         this.link = this.code
       })
     },
+    generateZ3 () {
+      delay.call(this, 1000, () => {
+        this.compile('z3')
+        this.link = this.code
+      })
+    },
     generateLink () {
       delay.call(this, 400, () => {
         this.link = createLink(cleanModels(this.models), this.activeModel, this.linkParams)
@@ -1355,12 +1362,15 @@ const params = {
         this.code = compileTFP(this.models, this.activeModel)
       } else if (target === 'tfjs') {
         this.code = compileTFJS(this.models, this.activeModel)
+      } else {
+        this.code = compileZ3(this.models, this.activeModel)
       }
       console.log('Vue: F* yeah! Got compiled code!')
     },
     process (data) {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
+      console.log('[Vue] Process results:', data)
       this.samples = processResults(data, this.models[this.activeModel].blocks, this.models[this.activeModel].modelParams)
       this.notify('Done!')
     },
@@ -1392,6 +1402,9 @@ const params = {
 
       if (model.modelParams.type === 'tf') {
         app.compile('tfjs')
+      } else if (model.modelParams.method === 'smt') {
+        app.compile('z3')
+        console.log('[Vue] Compiled to SMT:', app.code)
       } else {
         app.compile()
       }
@@ -1408,6 +1421,7 @@ const params = {
           }
           if (!(
             this.models[this.activeModel].blocks.reduce((acc, b) => acc || b.show, false) ||
+            (this.models[this.activeModel].modelParams.method === 'smt') ||
             (this.models[this.activeModel].modelParams.customCode && this.models[this.activeModel].modelParams.customCode.includes('return'))
           )) {
             throw new Error('No output! Choose blocks to show in results')
@@ -1478,12 +1492,12 @@ const params = {
               workers.push(
                 new Promise((resolve, reject) => {
                   let w
-                  if (this.models[this.activeModel].modelParams.type && (this.models[this.activeModel].modelParams.type === 'tf')) {
-                    // Tensorflow worker
-                    w = new Worker('dist/worker-tf.js')
+                  if (model.modelParams.method === 'smt') {
+                    // Z3 worker
+                    w = new Worker('worker-z3.js')
                   } else {
                     // WebPPL worker
-                    w = new Worker('dist/worker.js')
+                    w = new Worker('worker-wppl.js')
                   }
                   w.postMessage(this.code)
                   w.onmessage = (msg) => {

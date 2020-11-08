@@ -156,6 +156,12 @@ function drawHeader (name, value, description, units) {
   document.querySelector('.charts').appendChild(headerContainer)
 }
 
+function drawCode (code) {
+  const pre = document.createElement('pre')
+  pre.innerText = code
+  document.querySelector('.charts').appendChild(pre)
+}
+
 /*
 function drawScalar (scalar, name) {
   const chartContainer = document.createElement('div')
@@ -272,6 +278,24 @@ module.exports = function processResults (chains, blocks, modelParams) {
   // Now v is an array of results from one or multiple workers
   console.log('[Process results] Uh?')
   console.log('[Process results] Got new chains: ', chains)
+
+  if (modelParams.method === 'smt') {
+    console.log('[Process results] Got string...')
+    chains.forEach(chain => {
+      const splitted = chain.data.split('\n')
+      drawHeader(
+        splitted[0],
+        undefined,
+        splitted[0].includes('unsat') 
+          ? 'The formulas are not satisfiable'
+          : splitted[0].includes('sat')
+            ? 'The formulas are satisfiable'
+            : 'Something went wrong...'
+      )
+      drawCode(splitted.slice(1).join('\n'))
+    })
+    return []
+  }
 
   // Deterministic simulation
   if ((chains.length === 1) && !chains[0].hasOwnProperty('samples')) {

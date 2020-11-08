@@ -49,22 +49,11 @@ module.exports = {
     name: 'Run Once',
     params: {}
   },
-  'enumerate': {
-    name: 'Enumeration',
+  'forward': {
+    name: 'Forward Sampling',
     params: {
-      maxExecutions: {
-        type: 'int',
-        min: 0,
-        max: Infinity,
-        default: Infinity,
-        description: 'Max number of executions'
-      },
-      strategy: {
-        type: 'select',
-        values: ['likelyFirst', 'depthFirst', 'breadthFirst'],
-        default: 'depthFirst',
-        description: 'The traversal strategy'
-      }
+      samples,
+      onlyMAP
     }
   },
   'rejection': {
@@ -114,7 +103,6 @@ module.exports = {
       onlyMAP
     }
   },
-
   'incrementalMH': {
     name: 'Incremental MH *',
     params: {
@@ -169,11 +157,26 @@ module.exports = {
       onlyMAP
     }
   },
-  'forward': {
-    name: 'Forward Sampling',
+  'enumerate': {
+    name: 'Enumeration',
     params: {
-      samples,
-      onlyMAP
+      maxExecutions: {
+        type: 'int',
+        min: 0,
+        max: Infinity,
+        default: Infinity,
+        description: 'Max number of executions'
+      },
+      strategy: {
+        type: 'select',
+        values: ['likelyFirst', 'depthFirst', 'breadthFirst'],
+        default: 'depthFirst',
+        description: 'The traversal strategy'
+      }
     }
+  },
+  'smt': {
+    name: 'SMT',
+    params: {}
   }
 }

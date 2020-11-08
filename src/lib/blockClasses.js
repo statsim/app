@@ -31,6 +31,7 @@ module.exports = [
       this.params = {}
       this.value = ''
       this.units = ''
+      this.dataType = ''
     }
   },
   class Data extends Block {
@@ -113,6 +114,8 @@ module.exports = [
       this.min = ''
       this.max = ''
       this.tableFunction = false
+      this.units = ''
+      this.dataType = ''
     }
   }
 ]

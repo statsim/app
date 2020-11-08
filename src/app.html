@@ -682,7 +682,7 @@
           style="padding: 15px; margin: 5px 0 15px"
         >
           <md-input-container>
-            <label for="expressionType">Expression type:</label>
+            <label for="expressionType">Expression template:</label>
             <!-- @change: reset distribution paramaters when distribution changed -->
             <md-select
               name="expressionType"
@@ -725,10 +725,10 @@
           </md-input-container>
         </md-whiteframe>
 
-        <!-- Units -->
-        <div class="data-input">
-          <md-input-container>
-           <label>Units</label>
+        <div class="data-input" style="display: flex">
+          <!-- Units -->
+          <md-input-container style="width: 95%; margin-right: 5%;">
+            <label>Units</label>
             <md-autocomplete
               v-model="block.units"
               :list="units"
@@ -744,6 +744,24 @@
               <md-icon>loop</md-icon>
               <md-tooltip md-direction="bottom">Guess units</md-tooltip>
             </md-button>
+          </md-input-container>
+          <!-- Data type -->
+          <md-input-container>
+            <label for="dataType">Return type</label>
+            <md-select
+              name="dataType"
+              id="dataType"
+              v-model="block.dataType"
+            >
+              <md-option value="auto">Auto (default)</md-option>
+              <md-option value="boolean">Boolean</md-option>
+              <md-option value="integer">Integer</md-option>
+              <md-option value="float">Float</md-option>
+              <md-option value="string">String</md-option>
+              <md-option value="array">Array</md-option>
+              <md-option value="vector">Vector</md-option>
+              <md-option value="tensor">Tensor</md-option>
+            </md-select>
           </md-input-container>
         </div>
 
@@ -892,7 +910,7 @@
           style="padding: 15px; margin: 5px 0 15px"
         >
           <md-input-container>
-            <label for="expressionType">Return type:</label>
+            <label for="expressionType">Function template:</label>
             <!-- @change: reset distribution paramaters when distribution changed -->
             <md-select
               name="expressionType"
@@ -954,6 +972,45 @@
               :value="block.max"
               @blur="set(block, 'max', $event)"
             ></md-input>
+          </md-input-container>
+        </div>
+        <div class="data-input" style="display: flex">
+          <!-- Units -->
+          <md-input-container style="width: 95%; margin-right: 5%;">
+            <label>Units</label>
+            <md-autocomplete
+              v-model="block.units"
+              :list="units"
+              :filter-list="unitsFilter"
+              :min-chars="0"
+              print-attribute="name"
+            ></md-autocomplete>
+            <md-button
+              v-if="!block.expressionType || (block.expressionType === 'Custom')"
+              class="md-icon-button md-dense"
+              @click.native="guessUnits(block.value, blockIndex)"
+            >
+              <md-icon>loop</md-icon>
+              <md-tooltip md-direction="bottom">Guess units</md-tooltip>
+            </md-button>
+          </md-input-container>
+          <!-- Data type -->
+          <md-input-container>
+            <label for="dataType">Return type</label>
+            <md-select
+              name="dataType"
+              id="dataType"
+              v-model="block.dataType"
+            >
+              <md-option value="auto">Auto (default)</md-option>
+              <md-option value="boolean">Boolean</md-option>
+              <md-option value="integer">Integer</md-option>
+              <md-option value="float">Float</md-option>
+              <md-option value="string">String</md-option>
+              <md-option value="array">Array</md-option>
+              <md-option value="vector">Vector</md-option>
+              <md-option value="tensor">Tensor</md-option>
+            </md-select>
           </md-input-container>
         </div>
         <md-checkbox v-model="block.tableFunction" class="md-primary">
@@ -1335,6 +1392,9 @@
         </md-menu-item>
         <md-menu-item v-on:selected="generateWebPPL">
           <span>WPPL</span>
+        </md-menu-item>
+        <md-menu-item v-on:selected="generateZ3">
+          <span>Z3</span>
         </md-menu-item>
         <md-menu-item v-on:selected="generatePYMC3">
           <span>PYMC3</span>
