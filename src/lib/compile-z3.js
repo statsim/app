@@ -63,6 +63,8 @@ function toSMT (js) {
         } else {
           return '(' + operatorToSMT(exp.operator) + ' ' + proc(exp.left) + ' ' + proc(exp.right) + ')'
         }
+      case 'ConditionalExpression':
+        return '(ite ' + proc(exp.test) + ' ' + proc(exp.consequent) + ' ' + proc(exp.alternate) + ')'
       case 'Identifier':
         return exp.name
       case 'Literal':
