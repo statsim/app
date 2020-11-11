@@ -617,13 +617,15 @@ const params = {
       const block = this.models[this.activeModel].blocks[blockIndex]
       const newBlock = JSON.parse(JSON.stringify(block))
       newBlock.id = 'b' + Math.round(Math.random() * 100000000)
-      let nameArr = newBlock.name.split('')
-      if (nameArr.length && !isNaN(nameArr[nameArr.length - 1])) {
-        nameArr[nameArr.length - 1] = 1 + parseInt(nameArr[nameArr.length - 1])
-      } else {
-        nameArr.push(2)
+      if ('name' in newBlock) {
+        const nameArr = newBlock.name.split('')
+        if (nameArr.length && !isNaN(nameArr[nameArr.length - 1])) {
+          nameArr[nameArr.length - 1] = 1 + parseInt(nameArr[nameArr.length - 1])
+        } else {
+          nameArr.push(2)
+        }
+        newBlock.name = nameArr.join('')
       }
-      newBlock.name = nameArr.join('')
       this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, newBlock)
     },
     notify,
