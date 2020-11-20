@@ -414,6 +414,12 @@ textarea {
   border-top: 2px solid #1e33cc;
 }
 
+/* Optimize */
+.side-bar .block-8 {
+  border-top: 2px solid #ababab;
+  overflow: hidden;
+}
+
 .side-bar .block-name {
   width: 100%;
   padding-left: 2px;

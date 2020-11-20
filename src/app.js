@@ -32,6 +32,7 @@ const previewDataframe = require('./lib/previewDataframe')
 const processDataframe = require('./lib/processDataframe')
 const processResults = require('./lib/processResults')
 const simulationMethods = require('./lib/methods')
+const samplesToCSV = require('./lib/samplesToCSV')
 // const getXmlStreamStructure = require('./lib/get-xml-stream-structure.js') // Get XML nodes and repeated node
 
 // Access global objects
@@ -49,7 +50,8 @@ const colors = [
   '#ababab',
   '#ababab',
   '#530ea3',
-  '#1e33cc'
+  '#1e33cc',
+  '#ababab',
 ]
 
 // Network options object
@@ -160,8 +162,13 @@ const networkOptions = {
       size: 15
     },
     7: {
-      shape: 'triangle',
+      shape: 'dot',
       color: colors[7], // function
+      size: 10
+    },
+    8: {
+      shape: 'triangle',
+      color: colors[4], // optimize
       size: 10
     },
     'shadow': {
@@ -277,7 +284,7 @@ const params = {
     networkOptions, // Graph opts
     notifyMessage: '',
     preview: false, // Preview mode?
-    samples: {}, // Simulation results
+    samples: {}, // Simulation results (returned by process())
     reactiveDataTable: false, // Update data from table reactively?
     server: false, // Server-side processing
     serverAPI: '',
@@ -475,7 +482,10 @@ const params = {
                 .concat(check(b.loopEnd, i))
             }
             break
-          case 5:
+          case 5: // Condition
+            links = links.concat(check(b.value, i))
+            break
+          case 8: // Optimize
             links = links.concat(check(b.value, i))
             break
         }
@@ -652,22 +662,8 @@ const params = {
     download () {
       // Download samples
       console.log('Vue: Downloading samples')
-      let keys = Object.keys(this.samples)
-      let csv = keys.join() + '\n'
-      this.samples[keys[0]].forEach((s, i) => {
-        csv += keys
-          .map((key) => {
-            const sample = this.samples[key][i]
-            if ((typeof sample === 'object') || (typeof sample === 'string')) {
-              return '"' + sample + '"'
-            } else {
-              return sample
-            }
-          })
-          .join() + '\n'
-      })
-      // const blob = new Blob([JSON.stringify(this.samples, null, 2)], {type: 'text/plain;charset=utf-8'})
-      const blob = new Blob([csv], {type: 'text/plain;charset=utf-8'})
+      const csv = samplesToCSV(this.samples)
+      const blob = new Blob([csv], { type: 'text/plain;charset=utf-8' })
       fileSaver.saveAs(blob, this.models[0].modelParams.name + '-results.csv')
     },
     set (obj, param, value) {

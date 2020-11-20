@@ -20,13 +20,14 @@ const solver = Z3({
   print: function (message) {
     console.log('[Z3 worker] Print:', message)
     message = message.replace(STUB_MSG, '')
-    res += message + '\n'
-    if ((message.trim() === ')') || (message.includes('error'))) {
+    if (message.trim() === '---') { // || (message.includes('error'))) {
       console.log('[Z3 worker] Result:', res)
       postMessage({
         'data': res
       })
       res = ''
+    } else {
+      res += message + '\n'
     }
   },
   printErr: function (message) {

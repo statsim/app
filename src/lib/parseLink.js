@@ -12,7 +12,9 @@ const blockTypes = [
   'Accumulator',
   'Observer',
   'Condition',
-  'Neural Net'
+  'Neural Net',
+  'Function',
+  'Optimize'
 ]
 
 function getFullKey (key) {

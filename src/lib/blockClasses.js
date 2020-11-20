@@ -117,5 +117,14 @@ module.exports = [
       this.units = ''
       this.dataType = ''
     }
+  },
+  class Optimize extends Block {
+    constructor (counter) {
+      super()
+      this.type = 'Optimize'
+      this.typeCode = 8
+      this.value = ''
+      this.optimizationType = 'minimize'
+    }
   }
 ]

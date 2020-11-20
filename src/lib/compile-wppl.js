@@ -240,7 +240,6 @@ module.exports = function (models, activeModel) {
         }
       } else if ((b.typeCode === 1) && b.name.length) {
         // --> EXPRESSION
-
         const transformedValue = (!b.expressionType || (b.expressionType === 'Custom'))
           ? b.value
           : generateExpression(b.expressionType, b.params)
@@ -341,6 +340,9 @@ module.exports = function (models, activeModel) {
           // model = `var ${b.name} = ${valueStr}\n` + model
           data += `var ${b.name} = ${valueStr}\n`
         }
+      } else if ((b.typeCode === 2) && !b.value.length & b.name.length) {
+        // Parameter
+          model += `var ${b.name} = param({name: '${b.name}'})\n`
       } else if ((b.typeCode === 3) && b.value.length) {
         // --> ACCUMULATOR
 
@@ -564,12 +566,19 @@ if (typeof (${value}) === 'number') {
         }
       } else if ((b.typeCode === 5) && (b.value) && (b.value.length)) {
         // --> CONDITION BLOCK
-
         const cond = `condition(${b.value})\n`
         if (isMultistepModel) {
           observers += cond
         } else {
           model += cond
+        }
+      } else if ((b.typeCode === 8) && (b.value) && (b.value.length)) {
+        // --> OPTIMIZATION/FACTOR BLOCK
+        const factor = `factor(${(b.optimizationType === 'minimize' ? '-' : '')}(${b.value}))\n`
+        if (isMultistepModel) {
+          observers += factor
+        } else {
+          model += factor
         }
       }
 

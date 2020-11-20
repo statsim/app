@@ -168,12 +168,10 @@
           <md-icon :style="'color: ' + colors[5]">done_all</md-icon>
           <span>Condition</span>
         </md-menu-item>
-        <!--
-        <md-menu-item v-on:click.native="addBlock(6)">
-          <md-icon :style="'color: ' + colors[5]">offline_bolt</md-icon>
-          <span>Factor</span>
+        <md-menu-item v-on:click.native="addBlock(8)">
+          <md-icon :style="'color: ' + colors[5]">import_export</md-icon>
+          <span>Optimize</span>
         </md-menu-item>
-        -->
       </md-menu-content>
     </md-menu>
 
@@ -1247,6 +1245,28 @@
             :value="block.value"
             @blur="set(block, 'value', $event)"
           ></md-input>
+        </md-input-container>
+      </md-card-content>
+
+      <!-- Optimize -->
+      <md-card-content v-if="(block.typeCode === 8) && !block.minimized">
+        <md-input-container>
+          <label>Optimization target</label>
+          <md-input
+            :value="block.value"
+            @blur="set(block, 'value', $event)"
+          ></md-input>
+        </md-input-container>
+        <md-input-container>
+          <label for="optimizationType">Type:</label>
+          <md-select
+            name="optimizationType"
+            id="optimizationType"
+            v-model="block.optimizationType"
+          >
+            <md-option value="minimize">Minimize</md-option>
+            <md-option value="maximize">Maximize</md-option>
+          </md-select>
         </md-input-container>
       </md-card-content>
 

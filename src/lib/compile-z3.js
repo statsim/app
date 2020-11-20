@@ -63,6 +63,8 @@ function toSMT (js) {
         } else {
           return '(' + operatorToSMT(exp.operator) + ' ' + proc(exp.left) + ' ' + proc(exp.right) + ')'
         }
+      case 'MemberExpression':
+        return '(select ' + proc(exp.object) + ' ' + proc(exp.property) + ')'
       case 'ConditionalExpression':
         return '(ite ' + proc(exp.test) + ' ' + proc(exp.consequent) + ' ' + proc(exp.alternate) + ')'
       case 'Identifier':
@@ -91,7 +93,10 @@ module.exports = function (models, activeModel) {
   // Iterate over all blocks of the model
   model.blocks.forEach(block => {
     const dataType = Object.keys(dataTypes).includes(block.dataType) ? dataTypes[block.dataType] : 'Int'
-    if ((block.typeCode === 2) && block.name.length) {
+    if ((block.typeCode === 1) && block.name.length && block.value.length) {
+      // Expression
+      code += `(define-fun ${block.name} () ${dataType} ${toSMT(block.value)})\n`
+    } else if ((block.typeCode === 2) && block.name.length) {
       // Data block
       if (block.value.length) {
         const value = (dataType === 'Real') && !block.value.includes('.') ? block.value + '.0' : block.value
@@ -110,10 +115,13 @@ module.exports = function (models, activeModel) {
       } else {
         code += `(declare-fun ${block.name} (${fargs}) ${dataType})\n`
       }
+    } else if ((block.typeCode === 8) && (block.value) && (block.value.length)) {
+      // Optimization block
+      code += `(${block.optimizationType} ${toSMT(block.value)})\n`
     }
   })
 
-  code += '(check-sat)\n(get-model)\n(exit)'
+  code += '(check-sat)\n(get-model)\n(get-objectives)\n(echo "---")\n(exit)'
 
   return code
 }
