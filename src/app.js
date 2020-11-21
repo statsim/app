@@ -451,6 +451,8 @@ const params = {
                 // Add result to links array
                 links = links.concat(check(b.params[k], i))
               })
+              // Check dimensions too
+              links = links.concat(check(b.dims, i))
             }
             break
           case 1: // Expression
