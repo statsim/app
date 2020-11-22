@@ -5,6 +5,8 @@ const hist2d = require('d3-hist2d').hist2d
 const plot2d = window['densityPlot'] // ESM WTF!!!
 const smooth = require('chaikin-smooth')
 
+const parseZ3 = require('./parseZ3')
+
 function histogram (samples, params) {
   const t = params.t
   const unique = params.unique
@@ -122,6 +124,14 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
   console.log(`[Create chart] New dygraph chart created: `, d)
 }
 
+function drawSummary (samples) {
+  const summaryContainer = document.createElement('div')
+  const keys = Object.keys(samples)
+  summaryContainer.className = 'result-summary'
+  summaryContainer.innerHTML = `Number of elements: <strong>${keys.length}</strong> (${keys.join(', ')})<br>`
+  document.querySelector('.charts').appendChild(summaryContainer)
+}
+
 function drawHeader (name, value, description, units) {
   const headerContainer = document.createElement('div')
   const newName = name.replace(/__/g, ' ')
@@ -157,9 +167,12 @@ function drawHeader (name, value, description, units) {
 }
 
 function drawCode (code) {
+  const headerContainer = document.createElement('div')
+  headerContainer.className = 'result-header'
   const pre = document.createElement('pre')
   pre.innerText = code
-  document.querySelector('.charts').appendChild(pre)
+  headerContainer.appendChild(pre)
+  document.querySelector('.charts').appendChild(headerContainer)
 }
 
 /*
@@ -283,6 +296,7 @@ module.exports = function processResults (chains, blocks, modelParams) {
     console.log('[Process results] Got string...')
     chains.forEach(chain => {
       const splitted = chain.data.split('\n')
+      const output = splitted.slice(1).join('\n')
       drawHeader(
         splitted[0],
         undefined,
@@ -292,7 +306,12 @@ module.exports = function processResults (chains, blocks, modelParams) {
             ? 'The formulas are satisfiable'
             : 'Something went wrong...'
       )
-      drawCode(splitted.slice(1).join('\n'))
+      parseZ3(output).forEach(v => {
+        if ((v[0] === 'define-fun') && !isNaN(v[4])) {
+          drawHeader(v[1], v[4], v[3])
+        }
+      })
+      drawCode(output)
     })
     return []
   }
@@ -361,6 +380,9 @@ module.exports = function processResults (chains, blocks, modelParams) {
 
   console.log('[Process results] Samples: ', samples)
   console.log('[Process results] MAP: ', map)
+
+  // Output samples summary
+  drawSummary(samples)
 
   let allSamples = {}
   // Iterate over rearranged samples

@@ -585,6 +585,11 @@ textarea {
   align-items: flex-start;
 }
 
+.content .result-summary {
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
 .content .result-header {
   width: 100%;
   border-top: 1px solid rgba(150,150,150,.4);
