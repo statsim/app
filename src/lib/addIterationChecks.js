@@ -7,7 +7,12 @@ const spacesToUnderscores = require('./spacesToUnderscores')
  * @param {string[]} names - block names
  */
 function addIterationChecks (string, blocks) {
-  let newString = spacesToUnderscores(string, blocks.map(block => block.name))
+  let newString = spacesToUnderscores(
+    string,
+    blocks
+      .filter(block => block.name && block.name.length)
+      .map(block => block.name)
+  )
   blocks
     .filter(block => [1, 3].includes(block.typeCode))
     .map(block => block.name)
