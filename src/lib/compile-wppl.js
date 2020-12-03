@@ -199,7 +199,7 @@ module.exports = function (models, activeModel) {
     console.log(`[WebPPL Compiler] Model "${m.modelParams.name}" has multiple steps (${isMultistepModel})`)
 
     const blocks = getBlocks(mi)
-    console.log('[WebPPL Compiler] Blocks:', blocks.map(b => b.name))
+    console.log('[WebPPL Compiler] Blocks:', blocks.map(b => b.id))
 
     /*
       ITERATING OVER ALL BLOCKS OF THE MODEL
