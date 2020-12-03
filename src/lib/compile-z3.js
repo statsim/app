@@ -104,6 +104,25 @@ module.exports = function (models, activeModel) {
       } else {
         code += `(declare-const ${block.name} ${dataType})\n`
       }
+    } else if ((block.typeCode === 3) && (block.value) && (block.value.length)) {
+      // Accumulator
+      code += `(define-fun ${block.name}__0 () ${dataType} ${toSMT(block.initialValue + '')})\n`
+      const s = model.modelParams.steps
+      // Add loop
+      for (let i = 0; i < s; i++) {
+        const value = block.name + '__' + i + ' + ' + block.value
+        // code += `(define-fun ${block.name + ((i < (s - 1)) ? '__' + (i + 1) + '' : '')} () ${dataType} ${toSMT(value)})\n`
+        code += `(define-fun ${block.name}__${i + 1} () ${dataType} ${toSMT(value)})\n`
+      }
+      code += `(declare-const ${block.name} ${dataType})\n`
+      code += `(assert ${toSMT(block.name + ' == ' + block.name + '__' + s)})\n`
+      // Add min/max conditions
+      if (block.min && block.min.length) {
+        code += `(assert ${toSMT(block.name + ' >= ' + block.min)})\n`
+      }
+      if (block.max && block.max.length) {
+        code += `(assert ${toSMT(block.name + ' <= ' + block.max)})\n`
+      }
     } else if ((block.typeCode === 5) && (block.value) && (block.value.length)) {
       // Condition block
       code += `(assert ${toSMT(block.value)})\n`
