@@ -50,8 +50,11 @@ module.exports = [
       } else {
         this.value = ''
       }
+      this.min = ''
+      this.max = ''
       this.units = ''
       this.dataType = ''
+      this.elType = ''
       this.dataCategories = ''
     }
   },

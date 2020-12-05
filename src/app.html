@@ -596,12 +596,7 @@
             @blur="set(block, 'name', $event)"
           ></md-input>
         </md-input-container>
-        <md-input-container md-clearable>
-          <label>Size / Dimensions</label>
-          <md-input
-            v-model="block.dims"
-          ></md-input>
-        </md-input-container>
+
         <md-whiteframe
           md-elevation="11"
           style="padding: 15px; margin: 5px 0 15px"
@@ -634,17 +629,27 @@
           </md-input-container>
         </md-whiteframe>
 
-        <!-- Units -->
-        <md-input-container>
-         <label>Units</label>
-          <md-autocomplete
-            v-model="block.units"
-            :list="units"
-            :filter-list="unitsFilter"
-            :min-chars="0"
-            print-attribute="name"
-          ></md-autocomplete>
-        </md-input-container>
+        <div style="display: flex">
+          <!-- Units -->
+          <md-input-container style="width: 95%; margin-right: 5%;">
+           <label>Units</label>
+            <md-autocomplete
+              v-model="block.units"
+              :list="units"
+              :filter-list="unitsFilter"
+              :min-chars="0"
+              print-attribute="name"
+            ></md-autocomplete>
+          </md-input-container>
+
+          <!-- Shape -->
+          <md-input-container>
+            <label>Shape</label>
+            <md-input
+              v-model="block.dims"
+            ></md-input>
+          </md-input-container>
+        </div>
 
         <!-- Sample once per cycle-->
         <md-checkbox
@@ -864,6 +869,47 @@
           ></md-input>
         </md-input-container>
 
+        <!-- Dimensions and cell type-->
+        <div style="display: flex" v-if="['array', 'vector', 'tensor'].includes(block.dataType)">
+          <md-input-container style="width: 95%; margin-right: 5%;">
+            <label>Shape</label>
+            <md-input
+              v-model="block.dims"
+            ></md-input>
+          </md-input-container>
+          <md-input-container>
+            <label for="elType">Element type</label>
+            <md-select
+              name="elType"
+              id="elType"
+              v-model="block.elType"
+            >
+              <md-option value="auto">Auto (default)</md-option>
+              <md-option value="boolean">Boolean</md-option>
+              <md-option value="integer">Integer</md-option>
+              <md-option value="float">Float</md-option>
+              <md-option value="string">String</md-option>
+            </md-select>
+          </md-input-container>
+        </div>
+
+        <!-- Data Min/Max -->
+        <div style="display: flex" v-if="['auto', 'integer', 'float'].includes(block.dataType) || ['auto', 'integer', 'float'].includes(block.elType)">
+          <md-input-container style="width: 95%; margin-right: 5%;">
+            <label>Min</label>
+            <md-input
+              :value="block.min"
+              @blur="set(block, 'min', $event)"
+            ></md-input>
+          </md-input-container>
+          <md-input-container>
+            <label>Max</label>
+            <md-input
+              :value="block.max"
+              @blur="set(block, 'max', $event)"
+            ></md-input>
+          </md-input-container>
+        </div>
 
         <!-- Input? -->
         <md-checkbox
@@ -1576,6 +1622,8 @@
               v-else
               :type="(b.dataType === 'float' || b.dataType === 'integer') ? 'number' : ''"
               :step="(b.dataType === 'integer') ? 1 : 0.1"
+              :min="b.min"
+              :max="b.max"
             ></md-input>
           </md-input-container>
         </div>

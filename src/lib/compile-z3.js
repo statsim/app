@@ -39,8 +39,6 @@ function toSMT_old (js) {
 
 function toSMT (js) {
   const p = esprima.parseScript(js).body[0]
-  const keys = ['argument', 'left', 'right']
-
   function proc (exp) {
     console.log('toSMT:', exp)
     // Convert a != b to !(a == b)
@@ -53,7 +51,7 @@ function toSMT (js) {
         return '(' + operatorToSMT(exp.operator) + ' ' + proc(exp.argument) + ')'
       case 'BinaryExpression':
         if ((exp.operator === '!=') || (exp.operator === '!==')) {
-          exp['operator'] = '=='
+          exp.operator = '=='
           exp = {
             'type': 'UnaryExpression',
             'operator': '!',
@@ -64,7 +62,8 @@ function toSMT (js) {
           return '(' + operatorToSMT(exp.operator) + ' ' + proc(exp.left) + ' ' + proc(exp.right) + ')'
         }
       case 'MemberExpression':
-        return '(select ' + proc(exp.object) + ' ' + proc(exp.property) + ')'
+        return proc(exp.object) + '_' + proc(exp.property)
+        // return '(select ' + proc(exp.object) + ' ' + proc(exp.property) + ')'
       case 'ConditionalExpression':
         return '(ite ' + proc(exp.test) + ' ' + proc(exp.consequent) + ' ' + proc(exp.alternate) + ')'
       case 'Identifier':
@@ -75,6 +74,30 @@ function toSMT (js) {
   }
 
   return proc(p.expression)
+}
+
+// Generate SMT code for the data block
+function dataCode (name, value, type, min, max) {
+  let c = ''
+  if (value.length) {
+    const val = (type === 'Real') && !value.includes('.') ? value + '.0' : value
+    c += `(define-fun ${name} () ${type} ${val})\n`
+  } else {
+    c += `(declare-const ${name} ${type})\n`
+    if (min.trim() !== '') c += `(assert ${toSMT(name + ' >= ' + min)})\n`
+    if (max.trim() !== '') c += `(assert ${toSMT(name + ' <= ' + max)})\n`
+  }
+  return c
+}
+
+// Generate flat naming for high-dimensional arrays
+function genArrayNames (name, dims) {
+  const shape = dims.split(',').map(v => parseInt(v))
+  let res = [name]
+  shape.forEach(dim => {
+    res = res.map(v => Array(dim).fill(0).map((_, i) => v + '_' + i)).flat()
+  })
+  return res
 }
 
 module.exports = function (models, activeModel) {
@@ -98,11 +121,19 @@ module.exports = function (models, activeModel) {
       code += `(define-fun ${block.name} () ${dataType} ${toSMT(block.value)})\n`
     } else if ((block.typeCode === 2) && block.name.length) {
       // Data block
-      if (block.value.length) {
-        const value = (dataType === 'Real') && !block.value.includes('.') ? block.value + '.0' : block.value
-        code += `(define-fun ${block.name} () ${dataType} ${value})\n`
+      if (['array', 'vector', 'tensor'].includes(block.dataType) && block.dims) {
+        // Array or vector
+        const cellType = Object.keys(dataTypes).includes(block.cellType) ? dataTypes[block.cellType] : 'Int'
+        const names = genArrayNames(block.name, block.dims)
+        const values = block.value.includes(',')
+          ? block.value.replace(/\[|\]|\s/g, '').split(',')
+          : names.map(_ => block.value) // Repeat block value
+        names.forEach((name, ni) => {
+          code += dataCode(name, values[ni], cellType, block.min, block.max)
+        })
       } else {
-        code += `(declare-const ${block.name} ${dataType})\n`
+        // Scalar
+        code += dataCode(block.name, block.value, dataType, block.min, block.max)
       }
     } else if ((block.typeCode === 3) && (block.value) && (block.value.length)) {
       // Accumulator
