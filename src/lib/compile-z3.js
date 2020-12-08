@@ -84,8 +84,12 @@ function dataCode (name, value, type, min, max) {
     c += `(define-fun ${name} () ${type} ${val})\n`
   } else {
     c += `(declare-const ${name} ${type})\n`
-    if (min.trim() !== '') c += `(assert ${toSMT(name + ' >= ' + min)})\n`
-    if (max.trim() !== '') c += `(assert ${toSMT(name + ' <= ' + max)})\n`
+    if ((typeof min !== 'undefined') && ((min + '').trim() !== '')) {
+      c += `(assert ${toSMT(name + ' >= ' + min)})\n`
+    }
+    if ((typeof max !== 'undefined') && ((max + '').trim() !== '')) {
+      c += `(assert ${toSMT(name + ' <= ' + max)})\n`
+    }
   }
   return c
 }
