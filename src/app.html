@@ -174,9 +174,8 @@
         </md-menu-item>
       </md-menu-content>
     </md-menu>
-
-
   </md-toolbar>
+
   <div id="side-bar" v-if="models && models.length" class="side-bar editor-only">
     <!-- MODELS -->
     <div class="model-selector">
@@ -1448,7 +1447,7 @@
       </md-menu-content>
     </md-menu>
     -->
-    <md-menu md-align-trigger md-size="4" @open="noScroll" @close="scroll" v-if="!(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
+    <md-menu md-align-trigger md-size="4" @open="noScroll" @close="scroll" v-if="models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">
       <md-button class="md-icon-button md-raised" md-menu-trigger>
         <md-icon>code</md-icon>
       </md-button>
@@ -1762,6 +1761,7 @@
 
   <!-- BOTTOM BAR-->
   <md-progress class="progress" v-if="loading" md-indeterminate></md-progress>
+  
   <!-- DATAFRAME CONTROLS-->
   <md-bottom-bar v-if="models && models.length && models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe')" class="bottom-bar">
     <div class="model-summary">
@@ -1774,7 +1774,8 @@
     </md-button>
     <md-button v-if="models[activeModel].loading" v-on:click.native="stopStream(activeModel)" class="md-raised md-accent control-button"><md-icon>stop</md-icon> Stop</md-button>
   </md-bottom-bar>
-    <!-- MODEL CONTROLS-->
+
+  <!-- MODEL CONTROLS-->
   <md-bottom-bar v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" class="bottom-bar">
     <!-- Simulation method -->
     <md-input-container class="simulation-method-container simulation-param desktop editor-only">
