@@ -1,4 +1,4 @@
-const lineParser = require('csv-parse/lib/sync')
+const { parse } = require('csv-parse/sync')
 
 function count (substr, str) {
   return (str.match(new RegExp(substr, 'g')) || []).length
@@ -32,7 +32,7 @@ function getCsvStreamStructure (rs, extra, cb) {
       }
       rs.unshift(head) // throw back the readed chunk to the buffer.
       var delimiter = (extra && extra.length) ? extra : findDelimiter(delimiters, head)
-      cb(lineParser(head.slice(0, -1), {delimiter: delimiter})[0], delimiter)
+      cb(parse(head.slice(0, -1), {delimiter: delimiter})[0], delimiter)
     }
   })
 }
