@@ -28,7 +28,7 @@
     "esprima": "^4.0.1",
     "file-saver": "^2.0.0",
     "filestream": "^4.1.3",
-    "flat": "^4.1.0",
+    "flat": "^5.0.1",
     "handsontable": "^6.2.0",
     "html-escape": "^2.0.0",
     "is": "^3.2.1",
