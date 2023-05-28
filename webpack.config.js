@@ -4,6 +4,16 @@ const TerserPlugin = require('terser-webpack-plugin') // Minimize code
 const webpack = require('webpack')
 const package = require('./package.json')
 
+/*
+// Throws: Module Error (from ./node_modules/vue-loader/dist/index.js):
+// vue-loader was used without the corresponding plugin. Make sure
+// to include VueLoaderPlugin in your webpack config.
+// https://github.com/stephencookdev/speed-measure-webpack-plugin/issues/184
+
+const SpeedMeasurePlugin = require('speed-measure-webpack-plugin')
+const smp = new SpeedMeasurePlugin()
+*/
+
 module.exports = (env) => {
   const config = {
     entry: './src/main.js',
@@ -17,12 +27,14 @@ module.exports = (env) => {
           test: /\.vue$/,
           loader: 'vue-loader'
         },
+        // {
+        //   test: /\.js$/,
+        //   loader: 'babel-loader'
+        // },
+        // If broad, webpack will throw an error:
+        // Can't import the named export 'render' (imported as 'render') from default-exporting module (only default export is available)
         {
-          test: /\.js$/,
-          loader: 'babel-loader'
-        },
-        {
-          test: /\.html/,
+          test: /(index|404)\.html/,
           type: 'asset/source'
         },
         {
@@ -54,19 +66,26 @@ module.exports = (env) => {
       // Replace those values in the code
       new webpack.DefinePlugin({
         'VERSION': JSON.stringify(package.version),
-      })
+      }),
+      new webpack.ProvidePlugin({
+        Buffer: ['buffer', 'Buffer'],
+      }),
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
     ],
     // Load different versions of vue based on RUNTIME value
     resolve: {
       fallback: {
         'buffer': require.resolve('buffer'),
-        'crypto': require.resolve('crypto-browserify'),
+        // 'crypto': require.resolve('crypto-browserify'),
+        'http': require.resolve('stream-http'),
         'https': require.resolve('https-browserify'),
         'path': require.resolve('path-browserify'),
-        'http': require.resolve('stream-http'),
+        'stream': require.resolve('stream-browserify'), // Needed for csv-parse
         'timers': require.resolve('timers-browserify'),
+        'url': require.resolve('url'),
         'util': require.resolve('util'),
-        'url': require.resolve('url')
       },
       alias: {
         vue$: 'vue/dist/vue.runtime.esm-bundler.js'
@@ -80,7 +99,7 @@ module.exports = (env) => {
     },
     // Remove comments
     optimization: {
-      minimize: true,
+      minimize: false,
       minimizer: [new TerserPlugin({
         extractComments: false,
         terserOptions: {

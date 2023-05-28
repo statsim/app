@@ -1,8 +1,8 @@
 const Stats = require('online-stats')
-const Dygraphs = require('dygraphs')
+const Dygraph = require('dygraphs').default // https://gist.github.com/mingderwang/da6421c5b4614ff6c469264de9d391cc
 const d3 = require('d3-array')
 const hist2d = require('d3-hist2d').hist2d
-const plot2d = window['densityPlot'] // ESM WTF!!!
+const plot2d = window['densityPlot']
 const smooth = require('chaikin-smooth')
 
 const parseZ3 = require('./parseZ3')
@@ -115,7 +115,7 @@ function createChart (chartTitle, chartData, chartLabels, chartOptions) {
     Object.assign(options, chartOptions.dygraphOptions)
   }
 
-  const d = new Dygraphs(
+  const d = new Dygraph(
     chartContainer,
     chartData,
     options

@@ -1,12 +1,11 @@
 const version = '0.12.1'
 
 // NPM deps
-const parseCSV = require('csv-parse')
+// const parseCSV = require('csv-parse')
 const fileSaver = require('file-saver')
 const cookie = require('cookie')
-const VueVis = require('vue2vis')
 const draggable = require('vuedraggable')
-const Table = require('handsontable')
+// const Table = require('handsontable')
 const Qty = require('js-quantities')
 const VueColor = require('vue-color')
 const beautify = require('js-beautify').js
@@ -34,6 +33,7 @@ const processResults = require('./lib/processResults')
 const simulationMethods = require('./lib/methods')
 const samplesToCSV = require('./lib/samplesToCSV')
 // const getXmlStreamStructure = require('./lib/get-xml-stream-structure.js') // Get XML nodes and repeated node
+import colors from './lib/blockColors'
 
 // Access global objects
 const Blob = window['Blob']
@@ -41,153 +41,36 @@ const fetch = window['fetch']
 const FileReader = window['FileReader']
 const Worker = window['Worker']
 
-// Block colors
-const colors = [
-  '#eaac0c',
-  '#0097cc',
-  '#61c900',
-  '#d51558',
-  '#ababab',
-  '#ababab',
-  '#530ea3',
-  '#1e33cc',
-  '#ababab',
-]
+// For theme switch
+import { useTheme } from 'vuetify'
 
-// Network options object
-const networkOptions = {
-  autoResize: true,
-  height: '100%',
-  width: '100%',
-  locale: 'en',
-  nodes: {
-    shape: 'circle',
-    font: {
-      size: 18,
-      color: '#888888'
+// Vue components
+import SidebarComponent from './components/Sidebar.vue'
+import FlowComponent from './components/Flow.vue'
+import NetworkComponent from './components/Network.vue'
+import InputsComponent from './components/Inputs.vue'
+
+// Vis
+// import { Network } from "@vue2vis/network"
+// import "vis-network/styles/vis-network.css"
+
+import { defineNode, NodeInterface, NumberInterface, SelectInterface } from "baklavajs";
+import { EditorComponent, useBaklava } from "@baklavajs/renderer-vue";
+import "@baklavajs/themes/dist/syrup-dark.css";
+import { onMounted } from 'vue'
+  
+// Define a custom node
+const Node = defineNode({
+    type: "MyNode",
+    inputs: {
+        number1: () => new NumberInterface("Number", 1),
+        number2: () => new NumberInterface("Number", 10),
+        operation: () => new SelectInterface("Operation", "Add", ["Add", "Subtract"]).setPort(false),
     },
-    scaling: {
-      label: {
-        min: 8,
-        max: 50
-      }
+    outputs: {
+        output: () => new NodeInterface("Output", 0),
     },
-    borderWidth: 0,
-    shadow: false,
-    margin: {
-      top: 10,
-      left: 20,
-      right: 20,
-      bottom: 10
-    },
-    color: {
-      border: '',
-      background: '#b2dfdb',
-      highlight: {
-        border: '#e57373',
-        background: '#ffcdd2'
-      }
-    }
-  },
-  layout: {
-    improvedLayout: true,
-    hierarchical: {
-      enabled: false,
-      direction: 'UD',
-      sortMethod: 'hubsize',
-      parentCentralization: true,
-      blockShifting: true,
-      edgeMinimization: true
-    }
-  },
-  edges: {
-    smooth: true,
-    chosen: true,
-    arrows: {
-      to: {
-        enabled: true,
-        type: 'arrow'
-      }
-    },
-    color: {
-      color: '#888',
-      highlight: '#0042FF',
-      hover: '#999',
-      inherit: 'from',
-      opacity: 0.5
-    }
-  },
-  groups: {
-    0: {
-      shape: 'dot',
-      color: colors[0], // RV
-      size: 10
-    },
-    1: {
-      shape: 'dot',
-      color: colors[1], // Exp
-      size: 10
-    },
-    2: {
-      shape: 'dot',
-      color: colors[2],
-      size: 10 // Data
-    },
-    3: {
-      shape: 'icon',
-      icon: {
-        face: 'Material Icons',
-        code: '\ue146',
-        size: 30,
-        color: colors[3]
-      }
-    },
-    4: {
-      shape: 'diamond',
-      color: colors[4], // observer
-      size: 10
-    },
-    5: {
-      shape: 'icon',
-      icon: {
-        face: 'Material Icons',
-        code: '\ue86c',
-        size: 40,
-        color: colors[5]
-      }
-    },
-    6: {
-      shape: 'square',
-      color: colors[6], // nn
-      size: 15
-    },
-    7: {
-      shape: 'dot',
-      color: colors[7], // function
-      size: 10
-    },
-    8: {
-      shape: 'triangle',
-      color: colors[4], // optimize
-      size: 10
-    },
-    'shadow': {
-      shape: 'dot',
-      color: '#ababab', // shadow
-      size: 10
-    }
-  },
-  physics: {
-    enabled: true,
-    barnesHut: {
-      gravitationalConstant: -2000
-    }
-  },
-  interaction: {
-    zoomView: false,
-    navigationButtons: true
-  }
-}
+})
 
 // Delay showing loading indicator
 function delay (time, cb) {
@@ -201,13 +84,8 @@ function delay (time, cb) {
 // Show bottom notification
 function notify (message, type) {
   const app = this
-  app.notifyMessage = message
-  let color = '#5db53b'
-  if (type === 'error') {
-    color = '#e91e63'
-  }
-  app.$refs.snackbar.$el.firstElementChild.style.backgroundColor = color
-  app.$refs.snackbar.open()
+  app.notificationText = message
+  app.notificationFlag = true
 }
 
 // Future HotTable object
@@ -250,21 +128,29 @@ function init (files, modelId) {
   }
 }
 
+let theme // Theme object
+
 const params = {
   /*
     COMPONENTS
   */
   components: {
+    'baklava-editor': EditorComponent,
     'color-picker': VueColor.Swatches,
     'draggable': draggable,
-    'network': VueVis.Network
+    's-inputs': InputsComponent,
+    's-flow': FlowComponent,
+    's-network': NetworkComponent,
+    's-sidebar': SidebarComponent,
   },
 
   /*
     DATA
   */
   data: () => ({
+    networkEvents: "",
     activeModel: 0, // Selected model
+    baklava: null,
     chooseIconForBlock: -1, // If > 0 icon selector activates
     code: '', // Compiled webppl code
     colors, // Array of block colors
@@ -281,8 +167,8 @@ const params = {
     loading: false, // Show loading indicator?
     message: '', // Any message in top bar
     models: [], // Array of project models
-    networkOptions, // Graph opts
-    notifyMessage: '',
+    notificationFlag: false, // Show notification?
+    notificationText: '',
     preview: false, // Preview mode?
     samples: {}, // Simulation results (returned by process())
     reactiveDataTable: false, // Update data from table reactively?
@@ -292,7 +178,7 @@ const params = {
     // showDataTable: false, // Show or not data table?
     simulationMethods, // Array of simulation methods
     theme: 'light', // Current theme
-    units: Qty.getUnits().map(u => ({ name: u })), // All units
+    // units: Qty.getUnits().map(u => ({ name: u })), // All units -> BlockData.vue
     version
   }),
 
@@ -389,7 +275,7 @@ const params = {
         .map((b, i) => {
           let node = {
             id: i,
-            label: (b.name && b.name.length) ? `${b.name}` : b.type
+            label: (b.name && b.name.length) ? `${b.name}` : b.type,
           }
           if (b.icon && b.icon.length) {
             node.group = 'icon'
@@ -401,7 +287,7 @@ const params = {
               color: (b.color && b.color.length) ? b.color : '#ababab'
             }
           } else {
-            node.group = b.typeCode
+            node.group = b.typeCode + '' // Stopped working with raw numbers
           }
           if (b.pos) {
             node.x = b.pos.x
@@ -508,6 +394,14 @@ const params = {
   mounted () {
     // After mounting
     document.getElementById('app-loader').style.display = 'none'
+
+    // Baklava
+    this.baklava = useBaklava();
+    this.baklava.editor.registerNodeType(Node);
+
+    // Theme
+    theme = useTheme()
+    theme.global.name.value = this.theme
 
     // Check if we have a query
     if (window.location.search) {
@@ -683,12 +577,13 @@ const params = {
       }, 1500)
     },
     selectNode (selection) {
-      console.log('Selected', selection)
       if (!isNaN(parseInt(selection.nodes[0]))) {
+        // Scroll to block
         const block = document.getElementById('block-id-' + this.activeModel + '-' + selection.nodes[0])
         const offset = block.offsetTop
-        document.getElementById('side-bar').scrollTop = offset - 20
-        this.$set(this.models[this.activeModel].blocks[selection.nodes[0]], 'minimized', false)
+        document.getElementById('sidebar').scrollTop = offset - 20
+        // Maximize block
+        this.models[this.activeModel].blocks[selection.nodes[0]].minimized = false
       }
     },
     chooseIcon (icon) {
@@ -1008,9 +903,10 @@ const params = {
         input.setSelectionRange(newPos, newPos)
       }, 100)
     },
-    setTheme (theme) {
-      this.theme = theme
+    setTheme (newTheme) {
+      this.theme = newTheme
       document.cookie = 'theme=' + theme
+      theme.global.name.value = newTheme
     },
     newProject (confirm) {
       if (confirm === 'ok') {
@@ -1186,7 +1082,9 @@ const params = {
       } else {
         // Target: Model
         targetModel.blocks.forEach(b => {
-          this.$set(b, 'minimized', true)
+          // Uncaught TypeError: this.$set is not a function
+          // this.$set(b, 'minimized', true) 
+          b.minimized = true
         })
       }
 
@@ -1301,24 +1199,25 @@ const params = {
         this.notify('JSON generated')
       })
     },
-    toggle (blockIndex) {
-      this.$set(
-        this.models[this.activeModel].blocks[blockIndex],
-        'minimized',
-        !this.models[this.activeModel].blocks[blockIndex].minimized
-      )
+    toggleBlock (blockIndex) {
+      const oldMinimized = this.models[this.activeModel].blocks[blockIndex].minimized
+      this.models[this.activeModel].blocks[blockIndex].minimized = !oldMinimized
     },
     maximizeAllBlocks () {
-      this.models[this.activeModel].blocks.forEach(b => this.$set(b, 'minimized', false))
+      this.models[this.activeModel].blocks.forEach(b => { b.minimized = false })
     },
     minimizeAllBlocks () {
-      this.models[this.activeModel].blocks.forEach(b => this.$set(b, 'minimized', true))
+      this.models[this.activeModel].blocks.forEach(b => { b.minimized = true })
     },
-    addBlock (blockClassNumber) {
+    addBlock (blockClassNumber, blockIndex) {
       let block = new BlockClasses[blockClassNumber](this.models[this.activeModel].blocks.length)
       block.minimized = false
       block.id = 'b' + Math.round(Math.random() * 100000000)
-      this.models[this.activeModel].blocks.push(block)
+      if (blockIndex !== undefined) {
+        this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, block)
+      } else {
+        this.models[this.activeModel].blocks.push(block)
+      }
       // If data added, update table
       if ((blockClassNumber === 2) && this.models[this.activeModel].modelParams.table) {
         this.renderDataTable()
@@ -1526,4 +1425,5 @@ const params = {
   }
 }
 
-module.exports = params
+// module.exports = params
+export default params

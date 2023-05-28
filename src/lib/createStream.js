@@ -2,7 +2,7 @@ const ReadStream = require('filestream').read
 const http = require('stream-http')
 const Readable = require('stream').Readable
 // const Dat = require('dat-js')
-const WebTorrent = require('webtorrent')
+// const WebTorrent = require('webtorrent')
 
 // Creates a stream based on file object or url
 
@@ -18,7 +18,7 @@ function createStream (f) {
       stream = new ReadStream(f, {chunkSize: 102400})
       stream.setEncoding('utf8')
       resolve(stream)
-    /*
+    /* FORGET ABOUT THIS FOR NOW
     } else if (f.length && f.includes('dat:/')) {
       const dat = new Dat({gateway: 'ws://gateway.mauve.moe:3000'})
       console.log(`[Create stream] Dat: ${f}`)
@@ -28,6 +28,7 @@ function createStream (f) {
       })
     }
     */
+    /* FORGET ABOUT THIS FOR NOW
     } else if (f.length && (f.includes('magnet') || !f.includes('.'))) {
       const client = new WebTorrent()
       console.log(`[Create stream] Torrent: ${f}`)
@@ -37,6 +38,7 @@ function createStream (f) {
         stream.setEncoding('utf8')
         resolve(stream)
       })
+    */
     } else if (f.length) {
       // const request =
       // 1st request
