@@ -1,0 +1,52 @@
+[
+  {
+    "modelParams": {
+      "name": "Main",
+      "description": "",
+      "steps": 1,
+      "method": "deterministic",
+      "include": [],
+      "table": false,
+      "customCode": ""
+    },
+    "blocks": [
+      {
+        "id": "b50615356",
+        "name": "x",
+        "show": false,
+        "type": "Data",
+        "typeCode": 2,
+        "useAsParameter": false,
+        "dims": "",
+        "value": "1,2,3,4,5,6",
+        "min": "",
+        "max": "",
+        "units": "",
+        "dataType": "array",
+        "elType": "",
+        "dataCategories": "",
+        "minimized": false
+      },
+      {
+        "id": "b65406521",
+        "name": "mean",
+        "history": false,
+        "show": true,
+        "type": "Expression",
+        "typeCode": 1,
+        "expressionType": "Reduce mean",
+        "params": {
+          "input": "x"
+        },
+        "value": "",
+        "units": "",
+        "dataType": "",
+        "minimized": false
+      }
+    ],
+    "methodParams": {
+      "chains": 1,
+      "samples": 1000
+    }
+  }
+]

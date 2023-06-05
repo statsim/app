@@ -1,48 +1,142 @@
-const test = require('tape')
-const puppeteer = require('puppeteer')
-const underscore = require('./src/lib/spacesToUnderscores')
+require('expect-puppeteer')
 
-const server = 'http://localhost:8080/'
+page.setDefaultTimeout(10000)
 
-;(async () => {
-  const browser = await puppeteer.launch()
+const createLink = require('./src/lib/createLink')
 
-  // Module tests
-  test('Sanitize spaces in block names', (_) => {
-    const s = 'var a = A B C + A B + B / A C * _A C D + _A B'
-    const names = ['B', 'A B', 'A A', 'A C', 'A C D', 'C', 'A B C', 'r a']
-    _.equal(underscore(s, names), 'var a = A__B__C + A__B + B / A__C * _A__C__D + _A__B')
-    _.end()
+const port = 8080
+const urlModel = (name) => `http://localhost:${port}/?m=${name}`
+
+async function waitForText (page, text) {
+  await page.waitForFunction(
+    `document.querySelector("body").innerText.includes("${text}")`,
+    { timeout: 1000}
+  )
+} 
+
+async function waitForNoText (page, text) {
+  await page.waitForFunction(
+    `!document.querySelector("body").innerText.includes("${text}")`,
+    { timeout: 1000}
+  )
+} 
+
+// await new Promise(resolve => setTimeout(resolve, 1000))
+describe('Block examples', () => {
+  const modelName = 'data_input'
+  const model = require(`./test/${modelName}.json`)[0]
+  const expectedValue = parseFloat(model.blocks[0].value)
+
+  test('Load, run, check gaussian', async () => {
+    await page.goto(urlModel('test/' + modelName + '.json'))
+    await page.setViewport({ width: 1920, height: 1080 })
+    await page.waitForSelector('.block')
+    await expect(page).toMatchTextContent('Variable')
+    await expect(page).toClick('#btn-run')
+    await page.waitForSelector('.result-value')
+    const resultValue = await page.$eval('.result-value', el => parseFloat(el.textContent))
+    expect(Math.abs(resultValue - expectedValue) < 5).toBe(true)
   })
 
-  // Head-less tests
-  test('Pi test', async (_) => {
-    const config = `?a=%5B%7B%22b%22%3A%5B%7B%22d%22%3A%22Uniform%22%2C%22n%22%3A%22X%22%2C%22o%22%3Afalse%2C%22p%22%3A%7B%22a%22%3A%22-1%22%2C%22b%22%3A%221%22%7D%2C%22sh%22%3Atrue%2C%22t%22%3A0%7D%2C%7B%22d%22%3A%22Uniform%22%2C%22n%22%3A%22Y%22%2C%22o%22%3Afalse%2C%22p%22%3A%7B%22a%22%3A%22-1%22%2C%22b%22%3A%221%22%7D%2C%22sh%22%3Atrue%2C%22t%22%3A0%7D%2C%7B%22i%22%3A0%2C%22h%22%3Afalse%2C%22n%22%3A%22Sa%22%2C%22sh%22%3Afalse%2C%22t%22%3A3%2C%22v%22%3A%22%28%28X%20%2A%20X%20%2B%20Y%20%2A%20Y%20%3C%201%29%20%3F%201%20%3A%200%29%22%7D%2C%7B%22n%22%3A%22Pi%22%2C%22h%22%3Afalse%2C%22sh%22%3Atrue%2C%22t%22%3A1%2C%22v%22%3A%22Sa%20%2A%204%20%2F%20_i%22%7D%5D%2C%22mod%22%3A%7B%22n%22%3A%22Pi%22%2C%22s%22%3A%22200000%22%2C%22m%22%3A%22deterministic%22%7D%2C%22met%22%3A%7B%22sm%22%3A1000%7D%7D%5D`
-    const page = await browser.newPage()
-    await page.goto(server + config)
-    await page.waitForSelector('.parameters') // Wait for blocks to load
-    await page.click('.run-button')
-    await page.waitForSelector('.result-value') // Wait for resulting charts to load
-    const value = await page.$eval('.result-value', node => node.innerText)
-    console.log(value)
-    _.true(value - Math.PI < 0.1)
-    _.end()
+  test('Add new block (Expression), set value, disable output, run', async () => {
+    await page.goto(urlModel('test/' + modelName + '.json'))
+    await page.setViewport({ width: 1920, height: 1080 })
+    await page.waitForSelector('.block')
+    await expect(page).toClick('#btn-add-block', { text: 'Add block' })
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await expect(page).toClick('.menu-add-block', { text: 'Expression' })
+    await page.waitForSelector('.block-1') // Expression block
+    await expect(page).toMatchTextContent('Expression')
+    await expect(page).toClick('label', { text: 'expression' })
+    await new Promise(resolve => setTimeout(resolve, 100))
+    await page.keyboard.type('R0 + 1000')
+    await expect(page).toClick('button', { text: 'Output' })
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await expect(page).toClick('label', { text: 'R0' })
+    await expect(page).toClick('#btn-run')
+    await page.waitForSelector('.result-value')
+    const resultValue = await page.$eval('.result-value', el => parseFloat(el.textContent))
+    expect(Math.abs(resultValue - (expectedValue + 1000)) < 5).toBe(true)
+    await page.screenshot({ path: `./tmp/screenshot_blocks_${modelName}.png` })
+  })
+})
+
+
+describe('Z3 (SMT)', () => {
+  const modelName = 'bananas'
+  test(modelName, async () => {
+    await page.goto(urlModel(modelName))
+    await page.waitForSelector('.block')
+    await expect(page).toClick('#btn-run')
+    await page.waitForSelector('.result-value')
+    await expect(page).toMatchTextContent('sat')
+    await expect(page).toMatchTextContent('63') // Mangoes
+    await page.screenshot({ path: `./tmp/screenshot_z3_${modelName}.png` })
+  })
+})
+
+describe('Flow', () => {
+  const modelName1 = 'cookies'
+  test(modelName1, async () => {
+    await page.goto(urlModel(modelName1))
+    await page.waitForSelector('.block')
+    await expect(page).toClick('#btn-flow')
+    await page.waitForSelector('.baklava-node')
+    await expect(page).toMatchTextContent('Output')
+    await page.screenshot({ path: `./tmp/screenshot_flow_${modelName1}.png` })
+    await expect(page).toClick('#btn-flow')
+    await page.waitForSelector('.block')
+    await expect(page).toMatchTextContent('Urn1Cookie')
   })
 
-  test('Data numeral + data array + expression', async (_) => {
-    const config = `?a=%5B%7B%22mod%22%3A%7B%22n%22%3A%22Main%22%2C%22e%22%3A%22%22%2C%22s%22%3A1%2C%22m%22%3A%22deterministic%22%2C%22ta%22%3Afalse%2C%22cc%22%3A%22%22%7D%2C%22met%22%3A%7B%22chains%22%3A1%2C%22sm%22%3A1000%7D%2C%22b%22%3A%5B%7B%22n%22%3A%22D0%22%2C%22sh%22%3Afalse%2C%22t%22%3A2%2C%22u%22%3Afalse%2C%22dims%22%3A%22%22%2C%22v%22%3A%225%22%7D%2C%7B%22n%22%3A%22D1%22%2C%22sh%22%3Afalse%2C%22t%22%3A2%2C%22u%22%3Afalse%2C%22dims%22%3A%22%22%2C%22v%22%3A%221%2C2%2C3%2C4%22%7D%2C%7B%22n%22%3A%22E2%22%2C%22h%22%3Afalse%2C%22sh%22%3Afalse%2C%22t%22%3A1%2C%22expressionType%22%3A%22Sum%22%2C%22p%22%3A%7B%22array%22%3A%22D1%22%7D%2C%22v%22%3A%22%22%7D%2C%7B%22n%22%3A%22E3%22%2C%22h%22%3Afalse%2C%22sh%22%3Atrue%2C%22t%22%3A1%2C%22expressionType%22%3A%22Custom%22%2C%22p%22%3A%7B%7D%2C%22v%22%3A%22E2%20%2B%20D0%22%7D%5D%7D%5D`
-    const page = await browser.newPage()
-    await page.goto(server + config)
-    await page.waitForSelector('.parameters') // Wait for blocks to load
-    await page.click('.run-button')
-    await page.waitForSelector('.result-value') // Wait for resulting charts to load
-    const value = await page.$eval('.result-value', node => node.innerText)
-    console.log(value)
-    _.true(value === '15')
-    _.end()
+  const modelName2 = 'test/data_array_mean.json'
+  test(modelName2, async () => {
+    await page.goto(urlModel(modelName2))
+    await page.waitForSelector('.block')
+    await expect(page).toClick('#btn-flow')
+    await page.waitForSelector('.baklava-node')
+    await expect(page).toMatchTextContent('Output')
+    await expect(page).toClick('#btn-flow')
+    await page.waitForSelector('.block')
+    await expect(page).toClick('#btn-run')
+    await page.waitForSelector('.result-value')
+    await expect(page).toMatchTextContent('3.5')
+  })
+})
+
+describe('Multiple models', () => {
+  const modelName = 'multi_model_output'
+  test('Output is preserved when switching', async () => {
+    await page.goto(urlModel(`test/${modelName}.json`))
+    await page.waitForSelector('#block-id-0-0')
+    await expect(page).toClick('#btn-run')
+    await page.waitForSelector('.result-value')
+    await expect(page).toMatchTextContent('22')
+    await expect(page).toClick('button', { text: 'Model2' })
+    await page.waitForSelector('#block-id-1-0')
+    await waitForText(page, 'E2')
+    await waitForNoText(page, '22')
+    await expect(page).toClick('#btn-run')
+    await waitForText(page, '33')
+    await expect(page).toClick('button', { text: 'Model1' })
+    await page.waitForSelector('#block-id-0-0')
+    await waitForText(page, '22')
   })
 
-  test.onFinish(async (_) => {
-    await browser.close()
+  test('Flow is preserved when switching', async () => {
+    await page.goto(urlModel(`test/${modelName}.json`))
+    await page.waitForSelector('#block-id-0-0')
+    await expect(page).toClick('#btn-flow')
+    await page.waitForSelector('.baklava-node')
+    await expect(page).toClick('button', { text: 'Model2' })
+    await waitForText(page, 'E2')
+    await expect(page).toClick('#btn-flow')
+    await page.waitForSelector('.baklava-node')
+    await expect(page).toMatchTextContent('E2')
+    await expect(page).toClick('button', { text: 'Model1' })
+    await waitForText(page, 'E1')
+    await expect(page).toClick('#btn-run')
+    await page.waitForSelector('.result-value')
+    await expect(page).toMatchTextContent('22')
   })
-})()
+})

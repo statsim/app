@@ -1,0 +1,50 @@
+[
+  {
+    "modelParams": {
+      "name": "Main",
+      "description": "",
+      "steps": 1,
+      "method": "MCMC",
+      "table": false,
+      "customCode": "",
+      "include": []
+    },
+    "methodParams": {
+      "chains": 1,
+      "samples": 1000
+    },
+    "blocks": [
+      {
+        "type": "Data",
+        "name": "D1",
+        "show": false,
+        "typeCode": 2,
+        "useAsParameter": false,
+        "dims": "",
+        "value": "-150",
+        "min": "",
+        "max": "",
+        "elType": "",
+        "units": "",
+        "id": "b55808446",
+        "minimized": true
+      },
+      {
+        "type": "Variable",
+        "distribution": "Gaussian",
+        "name": "R0",
+        "once": false,
+        "params": {
+            "mu": "D1",
+            "sigma": 1
+        },
+        "show": true,
+        "typeCode": 0,
+        "dims": "1",
+        "units": "",
+        "id": "b3794282",
+        "minimized": true
+      }
+    ]
+  }
+]
