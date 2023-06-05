@@ -3,13 +3,13 @@
 </style>
 <template>
   <div class="parameters">
-    <v-chip-group>
+    <!-- <v-chip-group>
       <v-chip 
         v-for="b in models[activeModel].blocks" 
         :key="b.name" 
         :style="{background: colors[b.typeCode]}"
       >{{ b.name || b.type }}</v-chip>
-    </v-chip-group>
+    </v-chip-group> -->
     <p style="font-size:11px;">Model:</p>
     <h2>{{ models[activeModel].modelParams.name }}</h2>
     <p class="model-description">{{ models[activeModel].modelParams.description }}</p>

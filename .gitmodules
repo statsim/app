@@ -1,3 +1,6 @@
 [submodule "assets"]
 	path = assets
 	url = https://github.com/statsim/assets.git
+[submodule "examples"]
+	path = examples
+	url = https://github.com/statsim/examples.git

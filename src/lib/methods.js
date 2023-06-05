@@ -34,7 +34,7 @@ const steps = {
 }
 
 const stepSize = {
-  type: 'real',
+  type: 'float',
   min: 0,
   default: 0.1,
   description: 'The size of each step'
@@ -61,7 +61,7 @@ module.exports = {
     params: {
       samples,
       maxScore: {
-        type: 'real',
+        type: 'float',
         default: 0,
         description: 'An upper bound on the total factor score per-execution'
       },

@@ -5,7 +5,7 @@ class Block {
 }
 
 module.exports = [
-  class RandomVariable extends Block {
+  class Variable extends Block {
     constructor (counter) {
       super()
       this.distribution = 'Uniform'
@@ -13,7 +13,7 @@ module.exports = [
       this.once = false
       this.params = {}
       this.show = false
-      this.type = 'Random Variable'
+      this.type = 'Variable'
       this.typeCode = 0
       this.dims = '1'
       this.units = ''

@@ -1,104 +1,99 @@
 <v-app>
-  <v-system-bar>
-    <v-spacer></v-spacer>
-    <v-icon>mdi-square</v-icon>
-    <v-icon>mdi-circle</v-icon>
-    <v-icon>mdi-triangle</v-icon>
-  </v-system-bar>
-  
-  <!-- 
-    Sidebar is used to design models 
-    `v-if` is used to show sidebar only when models are loaded/initiated
-  -->
-  <s-sidebar 
-    :models="models"
-    :active-model="activeModel"
-    @addBlock="addBlock"
-    @toggleBlock="toggleBlock"
-    @moveBlockUp="moveBlockUp"
-    @moveBlockDown="moveBlockDown"
-    @minimizeAllBlocks="minimizeAllBlocks"
-    @maximizeAllBlocks="maximizeAllBlocks"
-    v-if="models && models.length > 0"
-  ></s-sidebar>
+  <s-menu
+    @openDialog="openDialog"
+    @openFile="openFile"
+    :version="version"
+  ></s-menu> 
 
+  <!--  
+    clipped-left
+  -->
   <v-app-bar 
-    color="primary"
+    v-if="models && models.length > 0"
+    color="white"
     location="top"
     app
-    clipped-left
-    dense
-    style="transition: none !important"
+    style="transition: none !important; border:1px solid #DDD;"
+    density="compact"
+    variant="outlined"
+    :elevation="0"
   >
+    <v-btn icon="mdi-menu" class="d-none d-md-flex"
+      @click="preview=!preview"
+      ></v-btn>
+      <!-- v-if="preview" -->
     <v-tabs
-      bg-color="deep-purple-darken-4"
+      v-model="activeModel"
+      bg-color="white"
       center-active
       density="compact"
     >
-      <v-tab>Model</v-tab>
-      <v-tab>Data</v-tab>
+      <v-tab
+        v-for="(model, modelId) in models"
+        :value="modelId"
+      >
+        {{ model.modelParams.name }}
+      </v-tab>
+      <!-- <v-tab>Data</v-tab> -->
     </v-tabs>
+
+    <v-menu>
+      <template v-slot:activator="{ props }">
+        <v-btn 
+          v-bind="props" 
+          icon="mdi-plus"
+        ></v-btn>
+      </template>
+      <v-list>
+        <v-list-item 
+          @click="createModel" 
+          key="0"
+        >
+          <v-list-item-title>
+            <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> Model
+          </v-list-item-title>
+        </v-list-item>
+        <v-list-item 
+          @click="createDataframe" 
+          key="1" 
+        >
+          <v-list-item-title>
+            <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> Data
+          </v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+
+    <!-- <v-btn 
+      @click="createModel"
+      icon="mdi-plus"
+    ></v-btn> -->
+
     <v-spacer></v-spacer>
 
-    <v-btn
-      v-bind="props"
-      icon
-    >
-      <v-icon>mdi-plus</v-icon>
-    </v-btn>
+    <v-btn 
+      id="btn-flow"
+      :icon="models[activeModel].modelParams.type === 'flow' ? 'mdi-view-column-outline' : 'mdi-source-fork'"
+      @click="toggleFlow(models[activeModel])"
+      style="transform: rotate(90deg);"
+    ></v-btn>
+    <v-btn icon="mdi-account"></v-btn>
+    <v-btn icon="mdi-eye"></v-btn>
+    <v-btn icon="mdi-cog"></v-btn>
 
   </v-app-bar>
-
-  <v-main class="content" style="transition: none !important">
-    <div v-if="models && models.length && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))" style="position: relative" class="graph-container">
-      <div class="wl">
-        <s-network
-          class="net"
-          ref="network"
-          :nodes="graphNodes"
-          :edges="graphLinks"
-          @selectNode="selectNode"
-        ></s-network>
-        <s-inputs
-          :blocks="models[activeModel].blocks"
-          :models="models"
-          :active-model="activeModel"
-        ></s-inputs>
-      </div>
-    </div>
-
-    <pre style="font-size: 9px; line-height: 9px;">{{ JSON.stringify(models, null, 2) }}</pre>
-        <v-btn
-          @click="console.log(baklava.editor.save())"
-        >
-          Save
-        </v-btn>
-        <!--
-    <div class="flow" style="width: 100%; height: 800px">
-        <s-flow></s-flow>
-        <baklava-editor 
-        v-if="baklava"
-        :view-model="baklava" 
-        ></baklava-editor>
-        
-      </div>
-    -->
-    
-    <div id="loader"></div>
-    <div class="charts wl"></div>
-    <div class="charts-2d wl"></div>
-    <div class="charts-extra wl"></div>
-    <div class="archives wl"></div>
-  </v-main>
+  
 
   <v-app-bar
-    color="primary"
-    location="bottom"
     v-if="models && models.length > 0"
+    color="white"
+    location="bottom"
     fixed
-    style="transition: none !important"
+    style="transition: none !important; border:1px solid #DDD;"
+    density="compact"
+    :elevation="0"
   >
-    <v-app-bar-title>Photos</v-app-bar-title>
+    <v-app-bar-title>Engine</v-app-bar-title>
 
     <v-select
       v-model="models[activeModel].modelParams.method"
@@ -119,6 +114,7 @@
           Settings
         </v-btn>
         <v-btn
+          id="btn-run"
           prepend-icon="mdi-play"
           variant="outlined"
           @click="run"
@@ -128,17 +124,123 @@
     </template>
   </v-app-bar>
 
-<v-snackbar v-model="notificationFlag">
-  {{ notificationText }}
-  <template v-slot:actions>
-    <v-btn
-      color="pink"
-      variant="text"
-      @click="notificationFlag = false"
+
+  <!-- 
+    Sidebar is used to design models 
+    `v-if` is used to show sidebar only when models are loaded/initiated
+  -->
+  <!-- 
+    @addBlock="addBlock"
+    @toggleBlock="toggleBlock"
+    @moveBlockUp="moveBlockUp"
+    @moveBlockDown="moveBlockDown"
+   -->
+  <s-sidebar 
+    :models="models"
+    :active-model="activeModel"
+    @toggleSidebar="preview=!preview"
+    @minimizeAllBlocks="minimizeAllBlocks"
+    @maximizeAllBlocks="maximizeAllBlocks"
+    v-if="models && models.length > 0 && !preview"
+  ></s-sidebar>
+
+  <v-main class="content" style="transition: none !important" v-if="models && models.length">
+    <div v-if="!(models[activeModel].modelParams.type && (['dataframe', 'flow'].includes(models[activeModel].modelParams.type)))" style="position: relative" class="graph-container">
+      <div class="wl">
+        <s-network
+          class="net"
+          ref="network"
+          :models="models"
+          :active-model="activeModel"
+          @selectNode="selectNode"
+        ></s-network>
+        <s-inputs
+          :blocks="models[activeModel].blocks"
+          :models="models"
+          :active-model="activeModel"
+        ></s-inputs>
+        <v-btn
+          @click="getPositions(true)"
+        >
+          Positions
+        </v-btn>
+      </div>
+    </div>
+
+
+    <!-- Flow -->
+    <!-- <v-btn
+      @click="console.log(baklava.editor.save())"
     >
-      Close
-    </v-btn>
-  </template>
-</v-snackbar>
+      Save
+    </v-btn> -->
+    <!-- <s-flow></s-flow> -->
+    <div class="flow" style="width: 100%; height: 800px">
+      <baklava-editor 
+      v-if="baklava && models[activeModel].modelParams.type === 'flow'"
+      :view-model="baklava" 
+      ></baklava-editor>
+    </div>
+        
+    <pre style="font-size: 9px; line-height: 9px;">{{ JSON.stringify(models, null, 2) }}</pre>
+    
+    <!-- Computation running indicator -->
+    <div id="loader"></div>
+
+    <!-- Active model has all output blocks with the expected classNames -->
+    <!-- Now we can switch .output.active with visible: visi -->
+    <div 
+      v-for="(model, modelIndex) in models"
+      :key="modelIndex"
+    >
+      <div
+        :class="{ output: true, hidden: activeModel != modelIndex }"
+      >
+        <div :class="{ wl: true, 'charts': activeModel === modelIndex }"></div>
+        <div :class="{ wl: true, 'charts-2d': activeModel === modelIndex }"></div>
+        <div :class="{ wl: true, 'charts-extra': activeModel === modelIndex }"></div>
+        <div :class="{ wl: true, 'archives': activeModel === modelIndex }"></div>
+      </div>
+    </div>
+    
+<!--  
+        <div class="charts wl"></div>
+        <div class="charts-2d wl"></div>
+        <div class="charts-extra wl"></div>
+        <div class="archives wl"></div>
+
+-->
+  </v-main>
+
+  <!-- Notifications -->
+  <v-snackbar v-model="notificationFlag">
+    {{ notificationText }}
+    <template v-slot:actions>
+      <v-btn
+        color="pink"
+        variant="text"
+        @click="notificationFlag = false"
+      >
+        Close
+      </v-btn>
+    </template>
+  </v-snackbar>
+
+  <!-- Fake file inputs-->
+  <input 
+    type="file" 
+    accept=".csv, .tsv, .txt" 
+    id="openDataFile" 
+    v-on:change="openDataFile" 
+    style="display: none;" 
+  />
+  <input 
+    type="file" 
+    accept=".json, .ssp" 
+    id="openProjectFile" 
+    v-on:change="openProjectFile" 
+    style="display: none;" 
+  />
+
 
 </v-app>

@@ -3,7 +3,7 @@ export default [
   '#a9e7ff',
   '#ffcdd5',
   '#c7efa7',
-  '#d51558',
+  '#ffdd8c',
   '#ababab',
   '#ababab',
   '#530ea3',

@@ -1,7 +1,7 @@
 console.log('Worker: Hi!')
 console.log('Worker: Inviting WebPPL to the chat..')
 
-importScripts('/assets/webppl.min.js')
+importScripts('assets/webppl.min.js')
 
 if (webppl) {
   console.log(`WebPPL: Hello everyone! I'm ready to work!`)

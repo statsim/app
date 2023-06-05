@@ -1,4 +1,4 @@
-<style>
+<style scoped>
 .handle {
   cursor: move;
   position: absolute;
@@ -47,7 +47,7 @@
         class="handle mdi mdi-drag-vertical"
       ></span>
       <v-toolbar-title class="text-h6">
-        {{ block.name }}
+        {{ block.name ? block.name : block.type }}
       </v-toolbar-title>
       <div class="v-toolbar-subtitle">
         {{ block.type }}
@@ -63,27 +63,62 @@
             <v-btn icon="mdi-dots-vertical" v-bind="props"></v-btn>
           </template>
           <v-list>
+            <!-- ^ -->
             <v-list-item
-              v-for="(item, i) in ['Minimize', 'Delete']"
-              :key="i"
+              key="0"
+              @click="$emit('moveBlockToTop', blockIndex)"
             >
-              <v-list-item-title
-                @click="$emit('blockAction', item.toLowerCase())"
-              >{{ item }}</v-list-item-title>
+              <v-list-item-title> 
+                <v-icon size="x-small" color="#DDD">mdi-arrow-up</v-icon> 
+                Move to top
+              </v-list-item-title>
+            </v-list-item>
+            <!-- [] -->
+            <v-list-item
+              key="1"
+              @click="$emit('cloneBlock', blockIndex)"
+            >
+              <v-list-item-title> 
+                <v-icon size="x-small" color="#DDD">mdi-content-copy</v-icon> 
+                Clone block
+              </v-list-item-title>
+            </v-list-item>
+            <!-- X -->
+            <v-list-item
+              key="2"
+              @click="$emit('removeBlock', blockIndex)"
+            >
+              <v-list-item-title> 
+                <v-icon size="x-small" color="#DDD">mdi-delete</v-icon> 
+                Delete
+              </v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>
       </template>
     </v-toolbar>
 
-    <s-block-variable :block="block" v-if="block.typeCode === 0 && !block.minimized"></s-block-variable>
-    <s-block-data :block="block" v-if="block.typeCode === 2 && !block.minimized"></s-block-data>
+    <template 
+      v-if="!block.minimized"
+      >
+      <s-block-variable :block="block" v-if="block.typeCode === 0"></s-block-variable>
+      <s-block-expression :block="block" v-if="block.typeCode === 1"></s-block-expression>
+      <s-block-data :block="block" v-if="block.typeCode === 2"></s-block-data>
+      <s-block-accumulator :block="block" v-if="block.typeCode === 3"></s-block-accumulator>
+      <s-block-condition :block="block" v-if="block.typeCode === 5"></s-block-condition>
+      <s-block-optimize :block="block" v-if="block.typeCode === 8"></s-block-optimize>
+    </template>
   </v-card>
 </template>
 
 <script>
 import BlockData from './BlockData.vue'
 import BlockVariable from './BlockVariable.vue'
+import BlockExpression from './BlockExpression.vue'
+import BlockAccumulator from './BlockAccumulator.vue'
+import BlockOptimize from './BlockOptimize.vue'
+import BlockCondition from './BlockCondition.vue'
+
 import colors from '../lib/blockColors.js'
 
 export default {
@@ -95,6 +130,10 @@ export default {
   components: {
     's-block-variable': BlockVariable,
     's-block-data': BlockData,
+    's-block-expression': BlockExpression,
+    's-block-accumulator': BlockAccumulator,
+    's-block-optimize': BlockOptimize,
+    's-block-condition': BlockCondition,
   },
   props: ['block', 'blockIndex'],
 }

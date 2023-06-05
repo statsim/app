@@ -1,4 +1,4 @@
-const version = '0.12.1'
+const version = require('../package.json').version
 
 // NPM deps
 // const parseCSV = require('csv-parse')
@@ -29,10 +29,12 @@ const parseLink = require('./lib/parseLink')
 const preprocessDataframe = require('./lib/preprocessDataframe')
 const previewDataframe = require('./lib/previewDataframe')
 const processDataframe = require('./lib/processDataframe')
+const processModels = require('./lib/processModels')
 const processResults = require('./lib/processResults')
 const simulationMethods = require('./lib/methods')
 const samplesToCSV = require('./lib/samplesToCSV')
 // const getXmlStreamStructure = require('./lib/get-xml-stream-structure.js') // Get XML nodes and repeated node
+
 import colors from './lib/blockColors'
 
 // Access global objects
@@ -46,31 +48,35 @@ import { useTheme } from 'vuetify'
 
 // Vue components
 import SidebarComponent from './components/Sidebar.vue'
-import FlowComponent from './components/Flow.vue'
 import NetworkComponent from './components/Network.vue'
 import InputsComponent from './components/Inputs.vue'
+import MenuComponent from './components/Menu.vue'
 
-// Vis
-// import { Network } from "@vue2vis/network"
-// import "vis-network/styles/vis-network.css"
+// Use flow here for easier access for now
+// TODO: move to separate file and call with $refs
+// import FlowComponent from './components/Flow.vue'
 
-import { defineNode, NodeInterface, NumberInterface, SelectInterface } from "baklavajs";
+// Flow (Baklava)
 import { EditorComponent, useBaklava } from "@baklavajs/renderer-vue";
 import "@baklavajs/themes/dist/syrup-dark.css";
-import { onMounted } from 'vue'
-  
+
+// Flow helpers (Nodes, Converter)
+import nodes from './lib/flowNodes' 
+import { blocksToFlow, flowToBlocks } from './lib/flowConvert'
+
 // Define a custom node
-const Node = defineNode({
-    type: "MyNode",
-    inputs: {
-        number1: () => new NumberInterface("Number", 1),
-        number2: () => new NumberInterface("Number", 10),
-        operation: () => new SelectInterface("Operation", "Add", ["Add", "Subtract"]).setPort(false),
-    },
-    outputs: {
-        output: () => new NodeInterface("Output", 0),
-    },
-})
+// import { defineNode, NodeInterface, NumberInterface, SelectInterface } from "baklavajs";
+// const Node = defineNode({
+//     type: "MyNode",
+//     inputs: {
+//         number1: () => new NumberInterface("Number", 1),
+//         number2: () => new NumberInterface("Number", 10),
+//         operation: () => new SelectInterface("Operation", "Add", ["Add", "Subtract"]).setPort(false),
+//     },
+//     outputs: {
+//         output: () => new NodeInterface("Output", 0),
+//     },
+// })
 
 // Delay showing loading indicator
 function delay (time, cb) {
@@ -81,12 +87,6 @@ function delay (time, cb) {
   }, time)
 }
 
-// Show bottom notification
-function notify (message, type) {
-  const app = this
-  app.notificationText = message
-  app.notificationFlag = true
-}
 
 // Future HotTable object
 // Need it here to easily call from any app method
@@ -129,6 +129,7 @@ function init (files, modelId) {
 }
 
 let theme // Theme object
+let timeOutAutorun // Timeout for autorun updates
 
 const params = {
   /*
@@ -139,24 +140,25 @@ const params = {
     'color-picker': VueColor.Swatches,
     'draggable': draggable,
     's-inputs': InputsComponent,
-    's-flow': FlowComponent,
+    // 's-flow': FlowComponent,
     's-network': NetworkComponent,
     's-sidebar': SidebarComponent,
+    's-menu': MenuComponent,
   },
 
   /*
     DATA
   */
   data: () => ({
-    networkEvents: "",
     activeModel: 0, // Selected model
+    autorun: false, // TODO: Autorun simulation after each change
     baklava: null,
     chooseIconForBlock: -1, // If > 0 icon selector activates
     code: '', // Compiled webppl code
     colors, // Array of block colors
     error: '', // Error string, activates error bar
-    icons, // List of icons with codes
     expressions, // List of expression types with parameters
+    icons, // List of icons with codes
     link: '', // Generated URL
     linkParams: {
       preview: true,
@@ -167,6 +169,7 @@ const params = {
     loading: false, // Show loading indicator?
     message: '', // Any message in top bar
     models: [], // Array of project models
+    networkEvents: "",
     notificationFlag: false, // Show notification?
     notificationText: '',
     preview: false, // Preview mode?
@@ -212,174 +215,6 @@ const params = {
         })
       // Merge base distributions and generated ones
       return Object.assign({}, newDistributions, distributions)
-    },
-    shadowNodes: function () {
-      // Stringify current blocks to easily search for variable
-      // let blockString = JSON.stringify(this.models[this.activeModel].blocks)
-      let sn = []
-      // Check for shadow nodes only if multiple models
-      if (this.models.length > 1) {
-        console.log('[Shadow nodes] Start searching!')
-        let blockString = JSON.stringify(this.models[this.activeModel].blocks).split(/[^A-Za-z0-9_]/g).filter(el => el.length)
-        // Iterate over all non active models
-        this.models.filter((_, i) => i !== this.activeModel).forEach((m, mi) => {
-          // Check model first (shadow model)
-          if (m.modelParams.name && (blockString.indexOf(m.modelParams.name) >= 0)) {
-            sn.push({
-              id: m.modelParams.name,
-              label: m.modelParams.name,
-              shape: 'icon',
-              group: 'icon',
-              icon: {
-                face: 'Material Icons',
-                code: '\ue886',
-                size: 60,
-                color: '#ababab'
-              }
-            })
-          }
-          // Check included model blocks and columns (shadow blocks)
-          if (this.models[this.activeModel].modelParams.include && this.models[this.activeModel].modelParams.include.length) {
-            let names
-            if (m.modelParams.type && (m.modelParams.type === 'dataframe')) {
-              // Dataframe
-              if (m.data && m.data[0] && m.data[0].length) {
-                names = m.data[0]
-              } else {
-                names = m.pipeline.source.columns
-              }
-            } else {
-              // Regular model
-              names = m.blocks.map(b => b.name)
-            }
-
-            // Iterate over names
-            names.forEach((n, ni) => {
-              if (n && (blockString.indexOf(n) >= 0)) {
-                sn.push({
-                  id: n + ni,
-                  label: n,
-                  group: 'shadow'
-                })
-              }
-            })
-          }
-        }) // *iterate over all other models
-      }
-      // console.log(new Date(), 'Shadow nodes', sn)
-      return sn
-    },
-    graphNodes: function () {
-      // console.log(new Date(), 'Nodes: Starting dynamic update')
-      const nodes = this.models[this.activeModel].blocks
-        .map((b, i) => {
-          let node = {
-            id: i,
-            label: (b.name && b.name.length) ? `${b.name}` : b.type,
-          }
-          if (b.icon && b.icon.length) {
-            node.group = 'icon'
-            node.shape = 'icon'
-            node.icon = {
-              face: 'Material Icons',
-              code: b.icon,
-              size: b.size ? b.size : 40,
-              color: (b.color && b.color.length) ? b.color : '#ababab'
-            }
-          } else {
-            node.group = b.typeCode + '' // Stopped working with raw numbers
-          }
-          if (b.pos) {
-            node.x = b.pos.x
-            node.y = b.pos.y
-            delete b.pos
-          }
-          return node
-        })
-        .concat(this.shadowNodes)
-      // console.log(new Date(), 'Nodes: returning nodes', nodes)
-      return nodes
-    },
-    graphLinks: function () {
-      // console.log(new Date(), 'Links: generating network links')
-      const check = (str, baseBlockIndex) => {
-        const l = []
-        if (typeof str === 'string') {
-          this.models[this.activeModel].blocks.forEach((b, i) => {
-            if (b.name && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(b.name.trim()) >= 0)) {
-              l.push({
-                to: baseBlockIndex,
-                from: i
-              })
-            }
-          })
-          this.shadowNodes.forEach((s, i) => {
-            if (s.label && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(s.label.trim()) >= 0)) {
-              l.push({
-                to: baseBlockIndex,
-                from: s.id
-              })
-            }
-          })
-        }
-        return l
-      }
-      let links = []
-      this.models[this.activeModel].blocks.forEach((b, i) => {
-        switch (b.typeCode) {
-          case 0: // RV
-            // Load selected distribution / model
-            const distr = this.distributions[b.distribution]
-            if (distr) {
-              // Iterate over its keys
-              Object.keys(distr).forEach(k => {
-                // Check params=keys of the block
-                // Add result to links array
-                links = links.concat(check(b.params[k], i))
-              })
-              // Check dimensions too
-              links = links.concat(check(b.dims, i))
-            }
-            break
-          case 1: // Expression
-            if (b.expressionType && b.expressionType !== 'Custom') {
-              // Check custom expression params
-              this.expressions[b.expressionType].forEach(k => {
-                links = links.concat(check(b.params[k], i))
-              })
-            } else {
-              // Check only value field
-              links = links.concat(check(b.value, i))
-            }
-            break
-          case 2: // Data
-            links = links.concat(check(b.value, i))
-            break
-          case 3: // Accum
-            links = links.concat(check(b.value, i))
-            links = links.concat(check(b.initialValue, i))
-            break
-          case 4: // Observer
-            Object.keys(this.distributions[b.distribution]).forEach(k => {
-              links = links.concat(check(b.params[k], i))
-            })
-            links = links.concat(check(b.value, i))
-            if (b.customLoop) {
-              links = links
-                .concat(check(b.loopStart, i))
-                .concat(check(b.loopEnd, i))
-            }
-            break
-          case 5: // Condition
-            links = links.concat(check(b.value, i))
-            break
-          case 8: // Optimize
-            links = links.concat(check(b.value, i))
-            break
-        }
-      })
-      // console.log(new Date(), 'Links: returning links', links.length)
-      return links
     }
   },
   created () {
@@ -397,7 +232,22 @@ const params = {
 
     // Baklava
     this.baklava = useBaklava();
-    this.baklava.editor.registerNodeType(Node);
+    nodes.forEach(node => {
+      this.baklava.editor.registerNodeType(node)
+    })
+    // const token = Symbol()
+    // this.baklava.editor.nodeEvents.update.subscribe(token, (data, node) => {
+    //   // Update outputs
+    //   if (this.autorun) {
+    //     try {
+    //       setTimeout(() => {
+    //         this.run()
+    //       }, 100)
+    //     } catch (e) {
+    //       this.log('[Baklava] Error', e)
+    //     }
+    //   }
+    // })
 
     // Theme
     theme = useTheme()
@@ -412,20 +262,9 @@ const params = {
       parseLink(
         query,
         ({ models, activeModel }) => {
-          console.log('[Vue] Got models from queries:', models, activeModel)
-          models.forEach(m => {
-            if (typeof m.modelParams.include === 'undefined') {
-              m.modelParams.include = []
-            }
-
-            // Add ID to each block for better list rendering
-            // Keep it here because parseLink generates a model in multiple places
-            m.blocks.forEach(b => {
-              b.id = 'b' + Math.round(Math.random() * 100000000)
-            })
-
-            this.models.push(Object.assign({}, m))
-          })
+          this.log('[parseLink] Got models from queries:', models, activeModel)
+          processModels(models)
+          this.models = models
           this.switchModel(0 || activeModel)
           if (query.indexOf('url=') > 0) {
             console.log('[Vue] Initializing stream for data url')
@@ -448,9 +287,36 @@ const params = {
       // })
     }
   },
+  watch: {
+    // whenever model changes, this function will run
+    // https://vuejs.org/guide/essentials/watchers.html#this-watch
+    // TODO: stop watcher when autorun is off
+    /*
+    models: {
+      handler () {
+        if (this.autorun && !this.loading) {
+          if (typeof timeOutAutorun !== 'undefined') {
+            clearTimeout(timeOutAutorun)
+          }
+          timeOutAutorun = setTimeout(() => {
+            this.log('[Watch] Autorun...')
+            this.run()
+          }, 1000)
+        }
+      },
+      deep: true
+    }
+    */
+    /* 
+    activeModel () {
+      this.log('[Watch] Active model changed')
+      this.switchModel(this.activeModel)
+    }
+    */
+  },
   methods: {
     // Switch to next model
-    scroll () {
+   scroll () {
       // I temporary disable this hack because of small resize glitch when scrollbar disappears
       // document.body.className = 'md-theme-default'
     },
@@ -519,22 +385,11 @@ const params = {
         })
       }
     },
-    cloneBlock (blockIndex) {
-      const block = this.models[this.activeModel].blocks[blockIndex]
-      const newBlock = JSON.parse(JSON.stringify(block))
-      newBlock.id = 'b' + Math.round(Math.random() * 100000000)
-      if ('name' in newBlock) {
-        const nameArr = newBlock.name.split('')
-        if (nameArr.length && !isNaN(nameArr[nameArr.length - 1])) {
-          nameArr[nameArr.length - 1] = 1 + parseInt(nameArr[nameArr.length - 1])
-        } else {
-          nameArr.push(2)
-        }
-        newBlock.name = nameArr.join('')
-      }
-      this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, newBlock)
+    notify (message, type) {
+      // Show bottom notification
+      this.notificationText = message
+      this.notificationFlag = !this.autorun
     },
-    notify,
     downloadCode () {
       // Download code
       console.log('Vue: Downloading code')
@@ -980,7 +835,7 @@ const params = {
       }
     },
     openProjectFile (e) {
-      this.closeDialog('onboarding')
+      // this.closeDialog('onboarding')
       const reader = new FileReader()
       const file = e.target.files[0]
       reader.readAsText(file)
@@ -1000,10 +855,11 @@ const params = {
             }
             // Add ID to each block for better list rendering
             m.blocks.forEach(b => {
-              this.$set(b, 'id', ((b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000)))
+              // this.$set(b, 'id', ((b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000)))
+              b.id = ((b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000))
             })
           })
-          this.fitNetwork()
+          // this.fitNetwork()
         })
       }
     },
@@ -1042,7 +898,7 @@ const params = {
       this.notify('New dataframe created')
     },
     switchModel (modelId) {
-      console.log('Vue: switching to model', modelId)
+      this.log('[switchModel] Switching to model', modelId)
       this.samples = {} // Clear old samples
       this.error = ''
       if (modelId < 0 || modelId > this.models.length - 1) {
@@ -1069,12 +925,12 @@ const params = {
         }
 
         // Get current positions of the graph and save them
-        if (this.$refs.network) {
-          currentModel.blocks.forEach((b, bi) => {
-            console.log('Network: get pos')
-            b.pos = this.$refs.network.getPositions([bi])[bi]
-          })
-        }
+        // if (this.$refs.network) {
+        //   currentModel.blocks.forEach((b, bi) => {
+        //     console.log('Network: get pos')
+        //     b.pos = this.$refs.network.getPositions([bi])[bi]
+        //   })
+        // }
       }
 
       if (targetModel.modelParams.type && (targetModel.modelParams.type === 'dataframe')) {
@@ -1209,48 +1065,6 @@ const params = {
     minimizeAllBlocks () {
       this.models[this.activeModel].blocks.forEach(b => { b.minimized = true })
     },
-    addBlock (blockClassNumber, blockIndex) {
-      let block = new BlockClasses[blockClassNumber](this.models[this.activeModel].blocks.length)
-      block.minimized = false
-      block.id = 'b' + Math.round(Math.random() * 100000000)
-      if (blockIndex !== undefined) {
-        this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, block)
-      } else {
-        this.models[this.activeModel].blocks.push(block)
-      }
-      // If data added, update table
-      if ((blockClassNumber === 2) && this.models[this.activeModel].modelParams.table) {
-        this.renderDataTable()
-      } else if ((blockClassNumber === 0) && (this.models[this.activeModel].modelParams.method === 'deterministic') && (this.models[this.activeModel].blocks.filter(b => b.typeCode === 0).length === 1)) {
-        // Random variable added
-        // Should we check the simulation method?
-        // Probably yes!
-        this.models[this.activeModel].modelParams.method = 'rejection'
-      } else if ((blockClassNumber === 4) && (['deterministic', 'rejection', 'forward', 'enumerate'].includes(this.models[this.activeModel].modelParams.method))) {
-        this.models[this.activeModel].modelParams.method = 'MCMC'
-      }
-    },
-    moveBlockToTop (blockIndex) {
-      if (blockIndex > 0) {
-        this.models[this.activeModel].blocks.splice(0, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
-      }
-    },
-    moveBlockUp (blockIndex) {
-      if (blockIndex > 0) {
-        this.models[this.activeModel].blocks.splice(blockIndex - 1, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
-      }
-    },
-    moveBlockDown (blockIndex) {
-      if (blockIndex < this.models[this.activeModel].blocks.length - 1) {
-        this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
-      }
-    },
-    removeBlock (blockIndex) {
-      const typeCode = this.models[this.activeModel].blocks[blockIndex].typeCode
-      this.models[this.activeModel].blocks.splice(blockIndex, 1)
-      // Redraw data table if data removed
-      if ((typeCode === 2) && this.models[this.activeModel].modelParams.table) this.renderDataTable()
-    },
     compile (target) {
       // Convert available models (this.models) to the probabilistic lang
       if (!target || (target === 'wppl')) {
@@ -1266,6 +1080,37 @@ const params = {
       }
       console.log('Vue: F* yeah! Got compiled code!')
     },
+    toggleFlow (model) {
+      if (model.modelParams.type === undefined) {
+        model.modelParams.type = 'blocks'
+      }
+      if (model.modelParams.type === 'flow') {
+        this.log('[toggleFlow] Converting to blocks')
+        const flow = this.baklava.editor.save()
+        console.log('[toggleFlow] Flow:', JSON.stringify(flow, null, 2))
+        const blocks = flowToBlocks(flow, this.log)
+        model.blocks = blocks
+        model.modelParams.type = 'blocks'
+        this.preview = false
+      } else {
+        this.log('[toggleFlow] Converting to flow')
+        const flow = blocksToFlow(
+          this.models[this.activeModel].blocks, 
+          this.getPositions(true),
+          this.log
+        )
+        this.baklava.editor.load(flow)
+        model.modelParams.type = 'flow'
+        this.preview = true
+      }
+    },
+    getPositions (hierarchical=false) {
+      const positions = this.$refs.network.getPositions(hierarchical) // Object
+      return Object.keys(positions).map(k => positions[k])
+    },
+    log() {
+      console.log('[App]', ...arguments)
+    },
     process (data) {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
@@ -1276,6 +1121,15 @@ const params = {
     run () {
       const app = this
       const model = app.models[app.activeModel]
+
+      // Check if current model is flow-based
+      // In such case the blocks are out of sync with the flow
+      // Convert flow to blocks, but do not switch
+      if (model.modelParams.type === 'flow') {
+        this.log('[run] Generating blocks from flow model')
+        const flow = this.baklava.editor.save()
+        model.blocks = flowToBlocks(flow, this.log)
+      }
 
       const errorHandler = (err) => {
         this.loading = false

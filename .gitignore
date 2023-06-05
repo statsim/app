@@ -1,5 +1,4 @@
 *.swp
-examples
 bundle.js.tmp*
 node_modules
 bin

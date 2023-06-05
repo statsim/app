@@ -1,26 +1,26 @@
 module.exports = {
   'Bernoulli': {
     p: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: 1
     }
   },
   'Beta': {
     a: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     },
     b: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
   },
   'Binomial': {
     p: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: 1
     },
@@ -40,17 +40,17 @@ module.exports = {
   },
   'Cauchy': {
     location: {
-      type: 'real'
+      type: 'float'
     },
     scale: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
   },
   'Delta': {
     v: {
-      type: 'real'
+      type: 'float'
     }
   },
   'Dirichlet': {
@@ -65,29 +65,29 @@ module.exports = {
   },
   'Exponential': {
     a: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
   },
   'Gamma': {
     shape: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     },
     scale: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
   },
   'Gaussian': {
     mu: {
-      type: 'real'
+      type: 'float'
     },
     sigma: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
@@ -97,17 +97,17 @@ module.exports = {
       type: 'vector'
     },
     width: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
   },
   'Laplace': {
     location: {
-      type: 'real'
+      type: 'float'
     },
     scale: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
@@ -122,18 +122,18 @@ module.exports = {
   },
   'LogitNormal': {
     mu: {
-      type: 'real'
+      type: 'float'
     },
     sigma: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     },
     a: {
-      type: 'real'
+      type: 'float'
     },
     b: {
-      type: 'real'
+      type: 'float'
     }
   },
   /*
@@ -172,7 +172,7 @@ module.exports = {
   },
   'Poisson': {
     mu: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
@@ -186,25 +186,25 @@ module.exports = {
   },
   'StudentT': {
     df: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     },
     location: {
-      type: 'real'
+      type: 'float'
     },
     scale: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     }
   },
   'TensorGaussian': {
     mu: {
-      type: 'real'
+      type: 'float'
     },
     sigma: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     },
@@ -219,7 +219,7 @@ module.exports = {
       type: 'vector'
     },
     scale: {
-      type: 'real',
+      type: 'float',
       min: 0,
       max: Infinity
     },
@@ -231,10 +231,10 @@ module.exports = {
   },
   'Uniform': {
     a: {
-      type: 'real'
+      type: 'float'
     },
     b: {
-      type: 'real'
+      type: 'float'
     }
   }
 }

@@ -4,14 +4,21 @@ const addIterationChecks = require('./addIterationChecks')
 
 function generateExpression (expressionType, params) {
   switch (expressionType) {
+    case 'Custom':
+      return params.expression
     case 'If..Else':
       return `((${params.condition}) ? ${params.true} : ${params.false})`
     case 'Length':
-      return `${params.array}.length`
+      return `${params.input}.length`
     case 'Sum':
-      return `sum(${params.array})`
+    case 'Reduce sum':
+      return `sum(${params.input})`
     case 'Product':
-      return `product(${params.array})`
+    case 'Reduce product':
+      return `product(${params.input})`
+    case 'Mean':
+    case 'Reduce mean':
+      return `sum(${params.input}) / ${params.input}.length`
   }
 }
 
@@ -90,6 +97,7 @@ module.exports = function (models, activeModel) {
       }
       if (b.typeCode === 2) {
         let dataType = (b.dataType === undefined || b.dataType === '') ? 'auto' : b.dataType
+        b.value += '' // Make sure it's string
         if (((dataType === 'auto') && (b.value.indexOf(',') >= 0)) || (dataType === 'array') || (dataType === 'proxy')) {
           // Data arrays
           dataArrays.push(b.name)
@@ -97,14 +105,17 @@ module.exports = function (models, activeModel) {
           // Data tensors
           dataTensors.push(b.name)
         }
-      } else if ((b.typeCode === 0) && b.dims && (b.dims.trim() !== '1')) {
+      } else if ((b.typeCode === 0) && b.dims) {
+        b.dims += '' // Make sure it's string 
         // Multiple random variables:
-        if ((b.dims.indexOf(',') < 0) && (parseInt(b.dims) > 1)) {
-          // Random array
-          randomArrays.push(b.name)
-        } else {
-          // Random tensor
-          randomTensors.push(b.name)
+        if (b.dims.trim() !== '1') {
+          if (!b.dims.includes(',') && (parseInt(b.dims) > 1)) {
+            // Random array
+            randomArrays.push(b.name)
+          } else {
+            // Random tensor
+            randomTensors.push(b.name)
+          }
         }
       }
     })
@@ -133,10 +144,17 @@ module.exports = function (models, activeModel) {
       if (paramObj) {
         const paramKeys = Object.keys(paramObj).filter(k => (paramObj[k] !== ''))
         paramKeys.forEach((key, i) => {
+          // Convert to string
+          let value = paramObj[key] + ''
+          
           // Detect csv with commas and no brackets: add brackets
-          let value = ((paramObj[key].indexOf(',') >= 0) && (paramObj[key].indexOf('(') < 0) && (paramObj[key].indexOf('[') < 0))
-            ? `[${paramObj[key]}]`
-            : paramObj[key]
+          value = ((value.indexOf(',') >= 0) && (value.indexOf('(') < 0) && (value.indexOf('[') < 0))
+             ? `[${value}]`
+             : value
+
+          // value = ((paramObj[key].indexOf(',') >= 0) && (paramObj[key].indexOf('(') < 0) && (paramObj[key].indexOf('[') < 0))
+          //   ? `[${paramObj[key]}]`
+          //   : paramObj[key]
 
           if (index && index.length) {
             // Add indexes to array names
@@ -240,7 +258,7 @@ module.exports = function (models, activeModel) {
         }
       } else if ((b.typeCode === 1) && b.name.length) {
         // --> EXPRESSION
-        const transformedValue = (!b.expressionType || (b.expressionType === 'Custom'))
+        const transformedValue = (!b.expressionType || (b.expressionType === 'Custom') && b.value && b.value.length)
           ? b.value
           : generateExpression(b.expressionType, b.params)
 

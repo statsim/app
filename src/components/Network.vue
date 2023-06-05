@@ -7,6 +7,9 @@
   import { DataSet, Network } from "vis-network/standalone"
   import { defineComponent } from "vue"
   import colors from '../lib/blockColors'
+
+  const distributions = require('../lib/distributions')
+  const expressions = require('../lib/expressions')
   
   // Defining network here rather than in `data` to prevent proxifying by Vue
   // TypeError: Cannot read private member from an object whose class did not declare it
@@ -51,11 +54,13 @@
       improvedLayout: true,
       hierarchical: {
         enabled: false,
-        direction: 'UD',
-        sortMethod: 'hubsize',
-        parentCentralization: true,
-        blockShifting: true,
-        edgeMinimization: true
+        direction: 'LR',
+        sortMethod: 'directed',
+        shakeTowards: 'roots'
+        // sortMethod: 'hubsize',
+        // parentCentralization: true,
+        // blockShifting: true,
+        // edgeMinimization: true
       }
     },
     edges: {
@@ -149,18 +154,192 @@
 
   export default {
     props: [
-      'nodes',
-      'edges',
+      // 'nodes',
+      // 'edges',
+      'models',
+      'activeModel',
     ],
+    computed: {
+      shadowNodes: function () {
+        // Stringify current blocks to easily search for variable
+        // let blockString = JSON.stringify(this.models[this.activeModel].blocks)
+        let sn = []
+        // Check for shadow nodes only if multiple models
+        if (this.models.length > 1) {
+          console.log('[Shadow nodes] Start searching!')
+          let blockString = JSON.stringify(this.models[this.activeModel].blocks).split(/[^A-Za-z0-9_]/g).filter(el => el.length)
+          // Iterate over all non active models
+          this.models.filter((_, i) => i !== this.activeModel).forEach((m, mi) => {
+            // Check model first (shadow model)
+            if (m.modelParams.name && (blockString.indexOf(m.modelParams.name) >= 0)) {
+              sn.push({
+                id: m.modelParams.name,
+                label: m.modelParams.name,
+                shape: 'icon',
+                group: 'icon',
+                icon: {
+                  face: 'Material Icons',
+                  code: '\ue886',
+                  size: 60,
+                  color: '#ababab'
+                }
+              })
+            }
+            // Check included model blocks and columns (shadow blocks)
+            if (this.models[this.activeModel].modelParams.include && this.models[this.activeModel].modelParams.include.length) {
+              let names
+              if (m.modelParams.type && (m.modelParams.type === 'dataframe')) {
+                // Dataframe
+                if (m.data && m.data[0] && m.data[0].length) {
+                  names = m.data[0]
+                } else {
+                  names = m.pipeline.source.columns
+                }
+              } else {
+                // Regular model
+                names = m.blocks.map(b => b.name)
+              }
+
+              // Iterate over names
+              names.forEach((n, ni) => {
+                if (n && (blockString.indexOf(n) >= 0)) {
+                  sn.push({
+                    id: n + ni,
+                    label: n,
+                    group: 'shadow'
+                  })
+                }
+              })
+            }
+          }) // *iterate over all other models
+        }
+        // console.log(new Date(), 'Shadow nodes', sn)
+        return sn
+      },
+      nodes: function () {
+        // console.log(new Date(), 'Nodes: Starting dynamic update')
+        const nodes = this.models[this.activeModel].blocks
+          .map((b, i) => {
+            let node = {
+              id: i,
+              label: (b.name && b.name.length) ? `${b.name}` : b.type,
+            }
+            if (b.icon && b.icon.length) {
+              node.group = 'icon'
+              node.shape = 'icon'
+              node.icon = {
+                face: 'Material Icons',
+                code: b.icon,
+                size: b.size ? b.size : 40,
+                color: (b.color && b.color.length) ? b.color : '#ababab'
+              }
+            } else {
+              node.group = b.typeCode + '' // Stopped working with raw numbers
+            }
+            if (b.pos) {
+              node.x = b.pos.x
+              node.y = b.pos.y
+              delete b.pos
+            }
+            return node
+          })
+          .concat(this.shadowNodes)
+        // console.log(new Date(), 'Nodes: returning nodes', nodes)
+        return nodes
+      },
+      edges: function () {
+        // console.log(new Date(), 'Links: generating network links')
+        const check = (str, baseBlockIndex) => {
+          const l = []
+          if (typeof str === 'string') {
+            this.models[this.activeModel].blocks.forEach((b, i) => {
+              if (b.name && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(b.name.trim()) >= 0)) {
+                l.push({
+                  to: baseBlockIndex,
+                  from: i
+                })
+              }
+            })
+            this.shadowNodes.forEach((s, i) => {
+              if (s.label && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(s.label.trim()) >= 0)) {
+                l.push({
+                  to: baseBlockIndex,
+                  from: s.id
+                })
+              }
+            })
+          }
+          return l
+        }
+        let links = []
+        this.models[this.activeModel].blocks.forEach((b, i) => {
+          switch (b.typeCode) {
+            case 0: // RV
+              // Load selected distribution / model
+              const distr = distributions[b.distribution]
+              if (distr) {
+                // Iterate over its keys
+                Object.keys(distr).forEach(k => {
+                  // Check params=keys of the block
+                  // Add result to links array
+                  links = links.concat(check(b.params[k], i))
+                })
+                // Check dimensions too
+                links = links.concat(check(b.dims, i))
+              }
+              break
+            case 1: // Expression
+              if (b.expressionType) {
+                // Check custom expression params
+                Object.keys(expressions[b.expressionType]).forEach(k => {
+                  links = links.concat(check(b.params[k], i))
+                })
+              } else {
+                // Check only value field
+                links = links.concat(check(b.value, i))
+              }
+              break
+            case 2: // Data
+              links = links.concat(check(b.value, i))
+              break
+            case 3: // Accum
+              links = links.concat(check(b.value, i))
+              links = links.concat(check(b.initialValue, i))
+              break
+            case 4: // Observer
+              Object.keys(distributions[b.distribution]).forEach(k => {
+                links = links.concat(check(b.params[k], i))
+              })
+              links = links.concat(check(b.value, i))
+              if (b.customLoop) {
+                links = links
+                  .concat(check(b.loopStart, i))
+                  .concat(check(b.loopEnd, i))
+              }
+              break
+            case 5: // Condition
+              links = links.concat(check(b.value, i))
+              break
+            case 8: // Optimize
+              links = links.concat(check(b.value, i))
+              break
+          }
+        })
+        // console.log(new Date(), 'Links: returning links', links.length)
+        return links
+      }
+    },
     mounted() {
       // create a network
       // Relying on `this` so not using arrow
       const container = document.getElementById("mynetwork");
+      console.log('>>', this.models)
       this.data = {
         nodes: this.nodes,
         edges: this.edges
       }
-      network = new Network(container, this.data, networkOptions);
+      network = new Network(container, this.data, networkOptions)
+      
       console.log(network)
       network.on('selectNode', (params) => {
         // Using arrow here to preserve `this` of the Vue component
@@ -169,16 +348,29 @@
       });
     },
     watch: {
-      nodes(newNodes) {
-        this.updateNetworkData(newNodes, this.edges)
+      // models() {
+      //   this.updateNetworkData(this.nodes, this.edges)
+      // },
+      nodes(nodes) {
+        this.updateNetworkData(nodes, this.edges)
       },
-      edges(newEdges) {
-        this.updateNetworkData(this.nodes, newEdges)
-      },
+      edges(edges) {
+        this.updateNetworkData(this.nodes, edges)
+      }
     },
     methods: {
       updateNetworkData(nodes, edges) {
         network.setData({ nodes, edges })
+      },
+      getPositions(hierarchical=false) {
+        let n = network
+        if (hierarchical) {
+          const container = document.createElement('div')
+          networkOptions.layout.hierarchical.enabled = hierarchical
+          n = new Network(container, this.data, networkOptions)
+          n.stabilize()
+        } 
+        return n.getPositions()
       },
     },
   }

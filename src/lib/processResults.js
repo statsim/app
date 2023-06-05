@@ -492,6 +492,12 @@ module.exports = function processResults (chains, blocks, modelParams) {
           (samples[k][0][0].toString().split('.')[1] > 6) ? '*Rounded' : '',
           units[k]
         )
+        // TODO: Update flow nodes
+        // const nodeId = blocks.find(b => b.name === k).id
+        // const nodeEl = document.getElementById(nodeId)
+        // if (nodeEl) {
+        //   nodeEl.querySelector('.__outputs span').innerHTML = `<b>${samples[k][0][0]}</b>`
+        // }
         // drawScalar(samples[k][0], k)
       } else {
         // * Random scalar samples

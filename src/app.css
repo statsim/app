@@ -555,6 +555,19 @@ textarea {
   min-height: 21px;
 }
 
+.content .output {
+  visibility: visible;
+}
+
+.content .output.hidden {
+  visibility: hidden;
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 0px;
+  height: 0px;
+  overflow: hidden;
+}
 
 .content .charts, .content .charts-2d, .content .charts-extra, .content .archives {
   margin: 20px;

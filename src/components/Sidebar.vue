@@ -34,12 +34,50 @@
     color: rgb(114, 114, 114)
   }
 
+  .v-expansion-panel {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .v-expansion-panel-title {
+    padding: 10px 15px !important;
+    min-height: 40px;
+  }
+
+  .v-expansion-panel-text {
+    padding: 15px 0;
+  }
+
+  .v-expansion-panel--active > .v-expansion-panel-title {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    min-height: 40px;
+  }
+
+  .v-expansion-panel--active:not(:first-child), .v-expansion-panel--active + .v-expansion-panel {
+    margin-top: 0;
+  }
+
+  .v-textarea .v-field__input {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  .v-expansion-panel-text__wrapper {
+    padding: 5px 15px 16px;
+  }
+
   @media screen and (max-width: 1264px) {
     .sidebar {
       /* on mobile make it block without absolute position */
       position: relative !important;
       width: 100% !important;
       transform: none !important;
+    }
+    .add-block-here {
+      height: 20px;
+      padding-top: 7px;
+      font-size: 12px;
+      color: #BBB;
     }
   }
 </style>
@@ -51,23 +89,36 @@
     id="sidebar"
     location="left"
   >
+
+    <!-- 
+
     <v-toolbar 
       color="primary"
       location="top"
       dense
       fixed
+      density="compact"
     >
-      <v-toolbar-title>Blocks</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <s-block-menu
-        :items="items"
-        @addBlock="addBlock"
-      ></s-block-menu>
-    </v-toolbar>
+    <v-tabs
+      bg-color="deep-purple-darken-4"
+      center-active
+      density="compact"
+    >
+      <v-tab>Main</v-tab>
+      <v-tab>Data</v-tab>
+      <v-tab>Data</v-tab>
+    </v-tabs>
+    <v-spacer></v-spacer>
+
+  </v-toolbar>
+-->
+
 
 
     
     <!-- Hide / Show all blocks-->
+    <!--
+
     <v-container style="opacity: 0.4" v-if="models[activeModel]?.blocks?.length">
       <v-row justify="center">
         <v-col cols="auto">
@@ -91,6 +142,7 @@
         </v-col>
       </v-row>
     </v-container>
+     -->
 
     <!-- Possibly model selector? -->
     <!-- 
@@ -108,59 +160,159 @@
     </v-container>
     -->
 
-    <v-container>
-      <draggable 
-        v-model="models[activeModel].blocks" 
-        group="blocks" 
-        @start="drag=true" 
-        @end="drag=false" 
-        item-key="id"
-        handle=".handle"
+
+    <v-expansion-panels
+      v-model="panel"
+      multiple
+      density="compact"
+    >
+      <v-expansion-panel>
+        <v-expansion-panel-title>Model details</v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <!-- Name -->
+          <v-text-field 
+            label="Model name"
+            v-model="models[activeModel].modelParams.name" 
+            clearable 
+            density="compact"
+          ></v-text-field>
+          <v-textarea 
+            label="Description"
+            v-model="models[activeModel].modelParams.description"
+            density="compact"
+          ></v-textarea>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+
+      <v-expansion-panel
+        v-if="!(models[activeModel].modelParams.type && models[activeModel].modelParams.type === 'flow')"
       >
-        <template #item="{element, index}">
-          <v-row dense>
-            <v-col 
-              cols="12"
-              style="padding-bottom: 0px !important; padding-top: 0px !important;"
+        <v-expansion-panel-title>
+          Blocks         
+          <v-badge
+            color="#AAA"
+            :content="models[activeModel].blocks.length"
+            inline
+          ></v-badge>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <div>
+            <draggable 
+              v-model="models[activeModel].blocks" 
+              group="blocks" 
+              @start="drag=true" 
+              @end="drag=false" 
+              item-key="id"
+              handle=".handle"
             >
-              <s-block 
-                :id="'block-id-' + activeModel + '-' + index"
-                :block="element"
-                :block-index="index"
-                @toggleBlock="toggleBlock"
-                @moveBlockUp="moveBlockUp"
-                @moveBlockDown="moveBlockDown"
-              ></s-block>
+              <template #item="{element, index}">
+                <v-row dense>
+                  <v-col 
+                    cols="12"
+                    style="padding-bottom: 0px !important; padding-top: 0px !important;"
+                  >
+                    <s-block 
+                      :id="'block-id-' + activeModel + '-' + index"
+                      :block="element"
+                      :block-index="index"
+                      @removeBlock="removeBlock"
+                      @cloneBlock="cloneBlock"
+                      @toggleBlock="toggleBlock"
+                      @moveBlockToTop="moveBlockToTop"
+                      @moveBlockUp="moveBlockUp"
+                      @moveBlockDown="moveBlockDown"
+                    ></s-block>
+                    <v-menu>
+                      <template v-slot:activator="{ props }">
+                        <a 
+                          v-if="index < models[activeModel].blocks.length - 1"
+                          v-bind="props" 
+                          class="add-block-here"
+                        > + </a>
+                      </template>
+                      <v-list>
+                        <v-list-item
+                          v-for="item in items"
+                          :key="item.code"
+                          :value="item.code"
+                          @click="addBlock(item.code, index)"
+                        >
+                          <v-list-item-title>
+                            <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> {{ item.name }}
+                          </v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
+                  </v-col>
+                </v-row>
+               </template>
+            </draggable>
+          </div>
 
-    <v-menu>
-      <template v-slot:activator="{ props }">
-        <a v-bind="props" class="add-block-here"> + </a>
-      </template>
-      <v-list>
-        <v-list-item
-          v-for="item in items"
-          :key="item.code"
-          :value="item.code"
-        >
-          <v-btn @click="addBlock(item.code, index)" block plain> {{ item.name }}</v-btn>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+          <div style="margin-top: 15px; padding-top: 0px;">
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  id="btn-add-block"
+                  v-bind="props" 
+                  size="small" 
+                  variant="outlined"
+                  block 
+                  style="border: 1px dashed #CCC; height: 48px"
+                >
+                  <v-icon>mdi-plus</v-icon>
+                  Add block
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item
+                  class="menu-add-block"
+                  v-for="item in items"
+                  :key="item.code"
+                  :value="item.code"
+                  @click="addBlock(item.code, index)"
+                >
+                  <v-list-item-title>
+                    <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> 
+                    {{ item.name }}
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
 
-    <!-- 
+      <v-expansion-panel
+        v-if="!(models[activeModel].modelParams.type && models[activeModel].modelParams.type === 'flow')"
+      >
+        <v-expansion-panel-title>
+          Output
+          <v-badge
+            color="#AAA"
+            :content="models[activeModel].blocks.filter(block => block.show).length"
+            inline
+          ></v-badge>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <div>
+            <div
+              v-for="block in models[activeModel].blocks" 
+            >
+              <v-checkbox
+                v-if="block.hasOwnProperty('show')" 
+                v-model="block.show"
+                :label="block.name"
+                density="compact"
+              ></v-checkbox>
+            </div>
+          </div>  
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
-              <a 
-                class="add-block-here"
-              >+
-              </a>
 
-     -->
-            </v-col>
 
-          </v-row>
-
-         </template>
-      </draggable>
       <!-- 
     <draggable :list="test" item-key="id" group="blocks">
       <template #item="{element}">
@@ -177,7 +329,6 @@
       </template>
     </draggable>
   -->
-    </v-container>
 
     <!-- 
 
@@ -199,17 +350,21 @@
       class="resize-handle"
       @mousedown.prevent="resizeStart"
     ></div>
+
   </v-navigation-drawer>
 </template>
 
 <script>
+import draggable from 'vuedraggable'
+
 import Block from './Block.vue'
 import BlockMenu from './BlockMenu.vue'
 
-import draggable from 'vuedraggable'
+const BlockClasses = require('../lib/blockClasses')
 
 export default {
   data: () => ({
+    panel: [1],
     drag: false,
     drawerWidth: 300, 
     items: [
@@ -248,17 +403,64 @@ export default {
       document.removeEventListener('mousemove', this.resize);
       document.removeEventListener('mouseup', this.resizeEnd);
     },
-    addBlock: function (typeCode, blockIndex) {
-      this.$emit('addBlock', typeCode, blockIndex)
+    addBlock (blockClassNumber, blockIndex) {
+      let block = new BlockClasses[blockClassNumber](this.models[this.activeModel].blocks.length)
+      block.minimized = false
+      block.id = 'b' + Math.round(Math.random() * 100000000)
+      if (blockIndex !== undefined) {
+        this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, block)
+      } else {
+        this.models[this.activeModel].blocks.push(block)
+      }
+      // If data added, update table
+      if ((blockClassNumber === 2) && this.models[this.activeModel].modelParams.table) {
+        this.renderDataTable()
+      } else if ((blockClassNumber === 0) && (this.models[this.activeModel].modelParams.method === 'deterministic') && (this.models[this.activeModel].blocks.filter(b => b.typeCode === 0).length === 1)) {
+        // Random variable added
+        // Should we check the simulation method?
+        // Probably yes!
+        this.models[this.activeModel].modelParams.method = 'rejection'
+      } else if ((blockClassNumber === 4) && (['deterministic', 'rejection', 'forward', 'enumerate'].includes(this.models[this.activeModel].modelParams.method))) {
+        this.models[this.activeModel].modelParams.method = 'MCMC'
+      }
     },
-    toggleBlock: function (blockIndex) {
-      this.$emit('toggleBlock', blockIndex)
+    cloneBlock (blockIndex) {
+      const block = this.models[this.activeModel].blocks[blockIndex]
+      const newBlock = JSON.parse(JSON.stringify(block))
+      newBlock.id = 'b' + Math.round(Math.random() * 100000000)
+      if ('name' in newBlock) {
+        const nameArr = newBlock.name.split('')
+        if (nameArr.length && !isNaN(nameArr[nameArr.length - 1])) {
+          nameArr[nameArr.length - 1] = 1 + parseInt(nameArr[nameArr.length - 1])
+        } else {
+          nameArr.push(2)
+        }
+        newBlock.name = nameArr.join('')
+      }
+      this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, newBlock)
     },
-    moveBlockUp: function (blockIndex) {
-      this.$emit('moveBlockUp', blockIndex)
+    removeBlock (blockIndex) {
+      const typeCode = this.models[this.activeModel].blocks[blockIndex].typeCode
+      this.models[this.activeModel].blocks.splice(blockIndex, 1)
     },
-    moveBlockDown: function (blockIndex) {
-      this.$emit('moveBlockDown', blockIndex)
+    toggleBlock (blockIndex) {
+      const oldMinimized = this.models[this.activeModel].blocks[blockIndex].minimized
+      this.models[this.activeModel].blocks[blockIndex].minimized = !oldMinimized
+    },
+    moveBlockToTop (blockIndex) {
+      if (blockIndex > 0) {
+        this.models[this.activeModel].blocks.splice(0, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
+      }
+    },
+    moveBlockUp (blockIndex) {
+      if (blockIndex > 0) {
+        this.models[this.activeModel].blocks.splice(blockIndex - 1, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
+      }
+    },
+    moveBlockDown (blockIndex) {
+      if (blockIndex < this.models[this.activeModel].blocks.length - 1) {
+        this.models[this.activeModel].blocks.splice(blockIndex + 1, 0, this.models[this.activeModel].blocks.splice(blockIndex, 1)[0])
+      }
     },
   }
 }
