@@ -918,12 +918,6 @@ const params = {
         // Current: Dataframe
       } else {
         // Current: Model
-        const chartContainer = document.querySelector('.charts')
-
-        if (chartContainer) {
-          chartContainer.innerHTML = ''
-          document.querySelector('.charts-2d').innerHTML = ''
-        }
 
         // Get current positions of the graph and save them
         // if (this.$refs.network) {
