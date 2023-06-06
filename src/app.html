@@ -1,4 +1,9 @@
 <v-app>
+  <s-dialogs
+    :dialogs="dialogs"
+    @newProject="newProject"
+  ></s-dialogs>
+
   <s-menu
     @openDialog="openDialog"
     @openFile="openFile"

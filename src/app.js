@@ -47,6 +47,7 @@ const Worker = window['Worker']
 import { useTheme } from 'vuetify'
 
 // Vue components
+import DialogsComponent from './components/Dialogs.vue'
 import SidebarComponent from './components/Sidebar.vue'
 import NetworkComponent from './components/Network.vue'
 import InputsComponent from './components/Inputs.vue'
@@ -141,6 +142,7 @@ const params = {
     'draggable': draggable,
     's-inputs': InputsComponent,
     // 's-flow': FlowComponent,
+    's-dialogs': DialogsComponent,
     's-network': NetworkComponent,
     's-sidebar': SidebarComponent,
     's-menu': MenuComponent,
@@ -157,6 +159,9 @@ const params = {
     chooseIconForBlock: -1, // If > 0 icon selector activates
     code: '', // Compiled webppl code
     colors, // Array of block colors
+    dialogs: {
+      'new-project-dialog': false
+    },
     error: '', // Error string, activates error bar
     expressions, // List of expression types with parameters
     icons, // List of icons with codes
@@ -764,20 +769,19 @@ const params = {
       document.cookie = 'theme=' + theme
       theme.global.name.value = newTheme
     },
-    newProject (confirm) {
-      if (confirm === 'ok') {
-        delay.call(this, 300, () => {
-          // Switch to edit mode
-          this.preview = false
-          // Update history
-          window.history.replaceState({}, 'New project', '.')
-          // Switch to firstModel model
-          this.switchModel(0)
-          // Clean models
-          this.models = [createBaseModel('Main')]
-          this.notify('New project created')
-        })
-      }
+    newProject () {
+      this.log('Creating a new project...')
+      delay.call(this, 300, () => {
+        // Switch to edit mode
+        this.preview = false
+        // Update history
+        window.history.replaceState({}, 'New project', '.')
+        // Switch to firstModel model
+        this.switchModel(0)
+        // Clean models
+        this.models = [createBaseModel('Main')]
+        this.notify('New project created')
+      })
     },
     openFile (fileType) {
       document.getElementById(`open${fileType}File`).click()
@@ -873,11 +877,11 @@ const params = {
       fileSaver.saveAs(blob, this.models[0].modelParams.name + '.json')
     },
     // Open remove model dialog
-    openDialog (ref) {
-      this.$refs[ref].open()
+    openDialog (dialogName) {
+      this.dialogs[dialogName] = true
     },
-    closeDialog (ref) {
-      this.$refs[ref].close()
+    closeDialog (dialogName) {
+      this.dialogs[dialogName] = false
     },
     createModel () {
       const index = 1 + this.models.filter(m => !(m.modelParams.type && (m.modelParams.type === 'dataframe'))).length
