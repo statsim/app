@@ -22,7 +22,7 @@ async function waitForNoText (page, text) {
 } 
 
 // await new Promise(resolve => setTimeout(resolve, 1000))
-describe('Block examples', () => {
+describe('Basic', () => {
   const modelName = 'data_input'
   const model = require(`./test/${modelName}.json`)[0]
   const expectedValue = parseFloat(model.blocks[0].value)
@@ -57,10 +57,22 @@ describe('Block examples', () => {
     await page.waitForSelector('.result-value')
     const resultValue = await page.$eval('.result-value', el => parseFloat(el.textContent))
     expect(Math.abs(resultValue - (expectedValue + 1000)) < 5).toBe(true)
+  })
+
+  test('Dialog: Creating a new project', async () => {
+    await page.goto(urlModel('test/' + modelName + '.json'))
+    await page.waitForSelector('.block')
+    await waitForText(page, 'D1')
+    await expect(page).toClick('button', { text: 'File' })
+    await waitForText(page, 'New project')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await expect(page).toClick('.menu-file .v-list-item', { text: 'New' })
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await expect(page).toClick('button', { text: 'New project' })
+    await waitForNoText(page, 'D1')
     await page.screenshot({ path: `./tmp/screenshot_blocks_${modelName}.png` })
   })
 })
-
 
 describe('Z3 (SMT)', () => {
   const modelName = 'bananas'

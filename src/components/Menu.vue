@@ -62,6 +62,7 @@
     <v-menu
       v-for="(menuElements, menuName) in menuFunctions"
       :key="menuName"
+      :class="'menu-' + menuName.toLowerCase()"
     >
       <template v-slot:activator="{ props }">
         <v-btn
