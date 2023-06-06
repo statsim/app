@@ -22,8 +22,15 @@
       @click="preview=!preview"
       ></v-btn>
       <!-- v-if="preview" -->
+
+    <!--
+      v-model in v-tabs updates modelId before 
+      switchModel is called, so we loose current model
+      use v-bind:model-value instead
+      https://vuetifyjs.com/en/api/v-tabs/#events-update:modelValue
+    -->
     <v-tabs
-      v-model="activeModel"
+      :model-value="activeModel"
       bg-color="white"
       center-active
       density="compact"
@@ -31,6 +38,8 @@
       <v-tab
         v-for="(model, modelId) in models"
         :value="modelId"
+        :key="modelId"
+        @click="switchModel(modelId)"
       >
         {{ model.modelParams.name }}
       </v-tab>

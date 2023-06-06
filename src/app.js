@@ -153,6 +153,7 @@ const params = {
     activeModel: 0, // Selected model
     autorun: false, // TODO: Autorun simulation after each change
     baklava: null,
+    baklavaGraphs: {}, // Temporary store graphs for Baklava when switching between models
     chooseIconForBlock: -1, // If > 0 icon selector activates
     code: '', // Compiled webppl code
     colors, // Array of block colors
@@ -942,6 +943,17 @@ const params = {
           // this.$set(b, 'minimized', true) 
           b.minimized = true
         })
+      }
+
+
+      // Switch flow
+      const isCurrentModelFlow = currentModel.modelParams.type && (currentModel.modelParams.type === 'flow')
+      const isTargetModelFlow = targetModel.modelParams.type && (targetModel.modelParams.type === 'flow')
+      if (isCurrentModelFlow) {
+        this.baklavaGraphs[this.activeModel] = this.baklava.editor.save()
+      }
+      if (isTargetModelFlow && this.baklavaGraphs[modelId]) {
+        this.baklava.editor.load(this.baklavaGraphs[modelId])
       }
 
       // Change activeModel index to target model
