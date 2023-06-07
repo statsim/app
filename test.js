@@ -116,6 +116,21 @@ describe('Flow', () => {
   })
 })
 
+describe('Dataset', () => {
+  const modelName = 'empty'
+  test('Create dataset', async () => {
+    await page.goto(urlModel('test/' + modelName + '.json'))
+    await page.setViewport({ width: 1920, height: 1080 })
+    await page.waitForSelector('#btn-add-model')
+    await expect(page).toClick('#btn-add-model')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await page.waitForSelector('#menu-add-dataframe')
+    await expect(page).toClick('#menu-add-dataframe')
+    await page.waitForSelector('.ht_master')
+    await page.screenshot({ path: `./tmp/screenshot_dataset_${modelName}.png` })
+  })
+})
+
 describe('Multiple models', () => {
   const modelName = 'multi_model_output'
   test('Output is preserved when switching', async () => {

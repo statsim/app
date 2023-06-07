@@ -5,7 +5,7 @@ const version = require('../package.json').version
 const fileSaver = require('file-saver')
 const cookie = require('cookie')
 const draggable = require('vuedraggable')
-// const Table = require('handsontable')
+const Table = require('handsontable')
 const Qty = require('js-quantities')
 const VueColor = require('vue-color')
 const beautify = require('js-beautify').js
@@ -593,7 +593,7 @@ const params = {
         }
 
         var container = document.querySelector('.table-wrapper')
-        console.log('[Vue] Table container: ', container)
+        this.log('[renderDataTable] Container: ', container)
         // Clear old table
         container.innerHTML = ''
         // Create a new table

@@ -54,12 +54,14 @@
     <v-menu>
       <template v-slot:activator="{ props }">
         <v-btn 
+          id="btn-add-model"
           v-bind="props" 
           icon="mdi-plus"
         ></v-btn>
       </template>
       <v-list>
         <v-list-item 
+          id="menu-add-model"
           @click="createModel" 
           key="0"
         >
@@ -68,6 +70,7 @@
           </v-list-item-title>
         </v-list-item>
         <v-list-item 
+          id="menu-add-dataframe"
           @click="createDataframe" 
           key="1" 
         >
@@ -159,6 +162,27 @@
   ></s-sidebar>
 
   <v-main class="content" style="transition: none !important" v-if="models && models.length">
+
+    <!-- TABLE -->
+    <div id="table-container" class="tables wl" v-if="models.length && models[activeModel].modelParams.table">
+      <!--<div class="control-buttons" v-if="false && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">-->
+      <div class="control-buttons" v-if="!preview">
+        <md-button class="md-dense" @click.native="renderDataTable">
+          <md-icon>refresh</md-icon>
+          Reload
+        </md-button>
+        <md-button class="md-dense" @click.native="disableDataTable">
+          <md-icon>close</md-icon>
+          Close
+        </md-button>
+      </div>
+      <div class="table-wrapper"></div>
+      <div id="table-gradient" class="table-gradient" v-if="models[activeModel].preview">
+        <h4>Preloaded data</h4>
+        <p>Only 50 rows loaded. Click "Load" to read all data from the file</p>
+      </div>
+    </div>
+
     <div v-if="!(models[activeModel].modelParams.type && (['dataframe', 'flow'].includes(models[activeModel].modelParams.type)))" style="position: relative" class="graph-container">
       <div class="wl">
         <s-network

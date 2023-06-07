@@ -185,7 +185,7 @@
       </v-expansion-panel>
 
       <v-expansion-panel
-        v-if="!(models[activeModel].modelParams.type && models[activeModel].modelParams.type === 'flow')"
+        v-if="!(models[activeModel].modelParams.type && ['dataframe', 'flow'].includes(models[activeModel].modelParams.type))"
       >
         <v-expansion-panel-title>
           Blocks         
@@ -284,7 +284,7 @@
       </v-expansion-panel>
 
       <v-expansion-panel
-        v-if="!(models[activeModel].modelParams.type && models[activeModel].modelParams.type === 'flow')"
+        v-if="!(models[activeModel].modelParams.type && ['dataframe', 'flow'].includes(models[activeModel].modelParams.type))"
       >
         <v-expansion-panel-title>
           Output
