@@ -32,9 +32,12 @@
 
 <template>
   <!--
-    id is used by graph selection
+    `id` is used by graph selection and testing
+    not sure why, but `id` in props is optional for dev builds
+    in production (minimization + babel) it is required
   -->
   <v-card
+    :id="id"
     class="mx-auto"
     :class="['block', 'block-' + block.typeCode, block.minimized ? 'block-minimized' : 'block-full']"
   >
@@ -135,6 +138,6 @@ export default {
     's-block-optimize': BlockOptimize,
     's-block-condition': BlockCondition,
   },
-  props: ['block', 'blockIndex'],
+  props: ['block', 'blockIndex', 'id'],
 }
 </script>
