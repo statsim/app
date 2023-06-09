@@ -27,12 +27,6 @@ module.exports = (env) => {
           test: /\.vue$/,
           loader: 'vue-loader'
         },
-        // {
-        //   test: /\.js$/,
-        //   loader: 'babel-loader'
-        // },
-        // If broad, webpack will throw an error:
-        // Can't import the named export 'render' (imported as 'render') from default-exporting module (only default export is available)
         {
           test: /(index|404)\.html/,
           type: 'asset/source'
@@ -58,7 +52,28 @@ module.exports = (env) => {
             'css-loader',
             'sass-loader'
           ]
-        }
+        },
+        // If broad, webpack will throw an error:
+        // Can't import the named export 'render' (imported as 'render') from default-exporting module (only default export is available)
+        ...(env.DEVELOPMENT ? [] : [
+          {
+            test: /\.js$/,
+            loader: 'babel-loader',
+            // exclude: /node_modules/,
+            // options: {
+            //   presets: [
+            //     [
+            //       '@babel/preset-env',
+            //       {
+            //         targets: {
+            //           esmodules: true,
+            //         },
+            //       },
+            //     ],
+            //   ],
+            // },
+          },
+        ]),
       ]
     },
     plugins: [
@@ -99,12 +114,13 @@ module.exports = (env) => {
     },
     // Remove comments
     optimization: {
-      minimize: false,
+      minimize: !env.DEVELOPMENT,
       minimizer: [new TerserPlugin({
-        extractComments: false,
+        extractComments: !env.DEVELOPMENT,
         terserOptions: {
+          keep_classnames: true, // class names are used in blocks' subtitles
           format: {
-            comments: false,
+            comments: !env.DEVELOPMENT,
           },
         }
       })],
