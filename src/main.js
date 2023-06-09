@@ -53,13 +53,11 @@ console.log('components', components)
 const vuetify = createVuetify()
 */
 
-// in your main.js
-
-
 import App from './app.vue'
 const app = createApp(App)
 
 // Plugins
 app.use(vuetify) 
 
-app.mount('#app')
+// Mount and keep a reference to the root component
+window.vm = app.mount('#app')

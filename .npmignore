@@ -4,4 +4,3 @@ node_modules
 bin
 npm-debug.log
 tmp
-dist
