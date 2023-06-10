@@ -16,9 +16,10 @@
     "_watch": "nodemon --watch src --ext vue,js,css,html --exec 'npm run build-dev'",
     "_electron": "electron .",
     "build-dev": "webpack --mode=development --progress --stats-children --env DEVELOPMENT",
-    "build": "webpack --mode=production --progress",
+    "build": "webpack --mode=production --progress && npm test && npm run test-examples",
     "watch": "nodemon --watch . --ignore dist --ext vue,js,css,html,json --exec 'npm run build-dev && npm test'",
-    "test": "jest test.js --detectOpenHandles",
+    "test": "jest test-main.test.js --detectOpenHandles",
+    "test-examples": "jest test-examples.test.js --detectOpenHandles",
     "test-head": "HEADLESS=false npm test"
   },
   "author": "Anton Zemlyansky",
