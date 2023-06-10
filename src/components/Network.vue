@@ -333,14 +333,12 @@
       // create a network
       // Relying on `this` so not using arrow
       const container = document.getElementById("mynetwork");
-      console.log('>>', this.models)
       this.data = {
         nodes: this.nodes,
         edges: this.edges
       }
       network = new Network(container, this.data, networkOptions)
       
-      console.log(network)
       network.on('selectNode', (params) => {
         // Using arrow here to preserve `this` of the Vue component
         console.log('selectNode Event:', params)

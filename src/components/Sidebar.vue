@@ -84,7 +84,7 @@
 
 <template>
   <v-navigation-drawer
-    :width="drawerWidth"
+    :width="sidebarWidth"
     class="sidebar"
     id="sidebar"
     location="left"
@@ -116,33 +116,7 @@
 
 
     
-    <!-- Hide / Show all blocks-->
-    <!--
 
-    <v-container style="opacity: 0.4" v-if="models[activeModel]?.blocks?.length">
-      <v-row justify="center">
-        <v-col cols="auto">
-      <v-btn 
-        @click="$emit('minimizeAllBlocks')" 
-        density="compact"
-      >
-        <v-icon>mdi-arrow-collapse-vertical</v-icon>
-        Hide all
-      </v-btn>
-        </v-col>
-        <v-col cols="auto">
-      <v-btn 
-        @click="$emit('maximizeAllBlocks')"
-        density="compact"
-      >
-        <v-icon>mdi-arrow-expand-vertical</v-icon>
-        Show all
-      </v-btn>
-
-        </v-col>
-      </v-row>
-    </v-container>
-     -->
 
     <!-- Possibly model selector? -->
     <!-- 
@@ -309,9 +283,125 @@
           </div>  
         </v-expansion-panel-text>
       </v-expansion-panel>
+      
+      <v-expansion-panel
+        v-if="!(models[activeModel].modelParams.type && ['dataframe'].includes(models[activeModel].modelParams.type))"
+      >
+        <v-expansion-panel-title>
+          Engine settings
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <div>
+            <!-- Simulation method -->
+            <v-select
+              v-model="models[activeModel].modelParams.method"
+              :items="Object.keys(simulationMethods)"
+              label="Simulation method"
+              item-text="name"
+              item-value="method"
+              outlined
+              density="compact"
+            ></v-select>
+            
+            <!-- Number of chains -->
+            <v-text-field
+              v-if="!['deterministic', 'smt'].includes(models[activeModel].modelParams.method)"
+              label="Number of chains/workers"
+              type="number"
+              step="1"
+              v-model="models[activeModel].methodParams.chains"
+              outlined
+              density="compact"
+            ></v-text-field>
+            
+            <!-- Simulation settings -->
+            <!-- Method parameters -->
+            <div
+              class="method-param"
+              v-for="(paramOptions, param) in simulationMethods[models[activeModel].modelParams.method].params"
+              :key="param"
+            >
+              <!-- Boolean -->
+              <v-checkbox 
+                :label="param"
+                v-model="models[activeModel].methodParams[param]"
+                v-if="paramOptions.type === 'boolean'"
+                density="compact"
+              ></v-checkbox>
+              <!-- Number-->
+              <v-text-field
+                v-else-if="(paramOptions.type === 'int') || (paramOptions.type === 'real')"
+                :label="param"
+                type="number"
+                :step="(paramOptions.type === 'int') ? 1 : 0.001"
+                v-model="models[activeModel].methodParams[param]"
+                outlined
+                density="compact"
+              ></v-text-field>
+              <!-- Select -->
+              <v-select
+                v-else-if="paramOptions.type === 'select'"
+                :label="param"
+                v-model="models[activeModel].methodParams[param]"
+                :items="paramOptions.values"
+                outlined
+                density="compact"
+              ></v-select>
+            </div>
+          </div>  
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+
     </v-expansion-panels>
 
+    <!-- Remove / Clone-->
+    <!--
+    <v-container style="opacity: 0.4">
+      <v-row justify="center">
+        <v-col cols="auto">
+          <v-btn 
+            @click="minimizeAllBlocks" 
+            density="compact"
+          >
+            <v-icon>mdi-content-copy</v-icon>
+          </v-btn>
+            </v-col>
+            <v-col cols="auto">
+          <v-btn 
+            @click="maximizeAllBlocks"
+            density="compact"
+          >
+            <v-icon>mdi-delete-alert</v-icon>
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-container> 
+    -->
 
+    <!-- Hide / Show all blocks-->
+    <!-- 
+    <v-container style="opacity: 0.4" v-if="models[activeModel]?.blocks?.length">
+      <v-row justify="center">
+        <v-col cols="auto">
+      <v-btn 
+        @click="minimizeAllBlocks" 
+        density="compact"
+      >
+        <v-icon>mdi-arrow-collapse-vertical</v-icon>
+      </v-btn>
+        </v-col>
+        <v-col cols="auto">
+      <v-btn 
+        @click="maximizeAllBlocks"
+        density="compact"
+      >
+        <v-icon>mdi-arrow-expand-vertical</v-icon>
+      </v-btn>
+
+        </v-col>
+      </v-row>
+    </v-container> 
+    -->
 
       <!-- 
     <draggable :list="test" item-key="id" group="blocks">
@@ -361,12 +451,13 @@ import Block from './Block.vue'
 import BlockMenu from './BlockMenu.vue'
 
 const BlockClasses = require('../lib/blockClasses')
+const simulationMethods = require('../lib/methods')
 
 export default {
   data: () => ({
     panel: [1],
     drag: false,
-    drawerWidth: 300, 
+    // drawerWidth: 300, 
     items: [
       {name: 'Input', code: 2},
       {name: 'Variable', code: 0},
@@ -377,6 +468,7 @@ export default {
       {name: 'Function', code: 7},
       {name: 'Optimize', code: 8},
     ],
+    simulationMethods: simulationMethods,
     test: [{'id': 1, 'name': 'test1'}, {'id': 2, 'name': 'test2'}]
   }),
   computed: {
@@ -389,15 +481,25 @@ export default {
   props: [
     'models', 
     'activeModel',
+    'sidebarWidth'
   ],
   methods: {
+    maximizeAllBlocks () {
+      this.panel = [0,1,2,3]
+      this.models[this.activeModel].blocks.forEach(b => { b.minimized = false })
+    },
+    minimizeAllBlocks () {
+      this.panel = []
+      this.models[this.activeModel].blocks.forEach(b => { b.minimized = true })
+    },
     resizeStart(event) {
       document.addEventListener('mousemove', this.resize);
       document.addEventListener('mouseup', this.resizeEnd);
     },
     resize(event) {
       // TODO: disable transition in .v-navigation-drawer
-      this.drawerWidth = event.clientX;
+      // this.sidebarWidth = event.clientX;
+      this.$emit('update:sidebarWidth', event.clientX)
     },
     resizeEnd(event) {
       document.removeEventListener('mousemove', this.resize);

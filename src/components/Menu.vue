@@ -10,55 +10,6 @@
   <v-system-bar
     color="white"
   >
-
- 
-    <!-- 
-    <v-menu>
-      <template v-slot:activator="{ props }">
-        <v-btn
-          v-bind="props"
-          density="compact"
-          variant="text"
-          class="btn-menu"
-        >
-          File
-        </v-btn>
-      </template>
-      <v-list>
-        <v-list-item
-          v-for="(item, index) in menuFunctions"
-          :key="index"
-          
-        >
-          <v-list-item-title>{{ item }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-menu>
-        <v-btn
-      density="compact"
-      variant="text"
-      style="text-transform: none; font-weight: 500; font-size: 12px"
-    >
-      Edit
-    </v-btn>
-    <v-btn
-      density="compact"
-      variant="text"
-      style="text-transform: none; font-weight: 500; font-size: 12px"
-    >
-      View
-    </v-btn>
-    <v-btn
-      density="compact"
-      variant="text"
-      style="text-transform: none; font-weight: 500; font-size: 12px"
-    >
-      Help
-    </v-btn>
-
-
-     -->
-
     <v-menu
       v-for="(menuElements, menuName) in menuFunctions"
       :key="menuName"
@@ -79,6 +30,7 @@
           v-for="(element, elementIndex) in menuElements"
           :key="menuName + elementIndex"
           @click="$emit(element.method, ...element.args)"
+          density="compact"
         >
           <v-list-item-title>{{ element.name }}</v-list-item-title>
         </v-list-item>
@@ -110,16 +62,23 @@ export default {
             'name': 'Open project',
             'method': 'openFile',
             'args': ['Project']
-          }
+          },
+          {
+            'name': 'Save As...',
+            'method': 'saveProject',
+            'args': []
+          },
         ],
         'Edit': [
           {
-            'name': 'Undo',
-            'f': () => this.$emit('undo')
+            'name': 'Remove model',
+            'method': 'removeModel',
+            'args': []
           },
           {
-            'name': 'Redo',
-            'f': () => this.$emit('redo')
+            'name': 'Duplicate model',
+            'method': 'duplicateModel',
+            'args': []
           }
         ],
       }

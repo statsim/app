@@ -459,8 +459,11 @@ textarea {
   overflow-x: auto;
   margin: 0;
   padding: 10px;
-  background-color: #EEE;
-  border: 1px solid #CCC;
+  background-color: #FFF;
+  border: 1px solid #D9D9D9;
+  font-size: 11px;
+  color: #37383e;
+  border-radius: 4px;
 }
 
 .content .graph-container {
@@ -1157,17 +1160,5 @@ tile {
     /* Make smaller in preview mode */
     height: 50px;
     min-height: 50px;
-  }
-}
-
-@media only screen and (min-width: 861px) and (max-width: 1200px) {
-  .version {
-    display: none;
-  }
-  .tool-bar, .side-bar {
-    width: 33%;
-  }
-  .content {
-    padding-left: 33%;
   }
 }

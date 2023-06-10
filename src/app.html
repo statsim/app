@@ -2,11 +2,15 @@
   <s-dialogs
     :dialogs="dialogs"
     @newProject="newProject"
+    @removeModelConfirmed="removeModelConfirmed"
   ></s-dialogs>
 
   <s-menu
     @openDialog="openDialog"
     @openFile="openFile"
+    @saveProject="saveProject"
+    @removeModel="removeModel"
+    @duplicateModel="duplicateModel"
     :version="version"
   ></s-menu> 
 
@@ -90,12 +94,59 @@
 
     <v-btn 
       id="btn-flow"
+      class="d-none d-md-flex"
       :icon="models[activeModel].modelParams.type === 'flow' ? 'mdi-view-column-outline' : 'mdi-source-fork'"
       @click="toggleFlow(models[activeModel])"
       style="transform: rotate(90deg);"
     ></v-btn>
-    <v-btn icon="mdi-account"></v-btn>
-    <v-btn icon="mdi-eye"></v-btn>
+    <v-menu>
+      <template v-slot:activator="{ props }">
+        <v-btn 
+          class="d-none d-md-flex"
+          v-bind="props" 
+          icon="mdi-code-json"
+        ></v-btn>
+      </template>
+      <v-list>
+        <v-list-item 
+          id="menu-code-wppl"
+          @click="generateWebPPL" 
+          key="0"
+        >
+          <v-list-item-title>
+            <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> WebPPL
+          </v-list-item-title>
+        </v-list-item>
+        <v-list-item 
+          id="menu-code-z3"
+          @click="generateZ3"
+          key="1" 
+        >
+          <v-list-item-title>
+            <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> Z3
+          </v-list-item-title>
+        </v-list-item>
+        <v-list-item 
+          id="menu-code-pymc3"
+          @click="generatePYMC3"
+          key="2" 
+        >
+          <v-list-item-title>
+            <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> PyMC3
+          </v-list-item-title>
+        </v-list-item>
+        <v-list-item 
+          id="menu-code-pymc3"
+          @click="generateJSON"
+          key="3" 
+        >
+          <v-list-item-title>
+            <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> JSON
+          </v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+    <v-btn icon="mdi-link"></v-btn>
     <v-btn icon="mdi-cog"></v-btn>
 
   </v-app-bar>
@@ -110,12 +161,46 @@
     density="compact"
     :elevation="0"
   >
-    <v-app-bar-title>Engine</v-app-bar-title>
+      
+    <!-- Minimize/Maximize all blocks in the sidebar -->
+    <div
+      v-if="!preview"
+      style="border-right: 1px solid #DDD; margin-right: 10px; text-align: center;"
+      :style="{'width': sidebarWidth + 'px'}"
+    >
+      <v-btn 
+        v-if="!preview"
+        @click="minimizeAllBlocks" 
+        density="compact"
+      >
+        <v-icon>mdi-arrow-collapse-vertical</v-icon>
+        <small
+          v-if="sidebarWidth > 275"
+          class="d-none d-sm-inline-block" 
+        > Collapse all </small>
+      </v-btn>
+      <v-btn 
+        v-if="!preview"
+        @click="maximizeAllBlocks"
+        density="compact"
+      >
+        <v-icon>mdi-arrow-expand-vertical</v-icon>
+        <small
+          v-if="sidebarWidth > 275"        
+          class="d-none d-sm-inline-block"
+        > Expand all </small>
+      </v-btn>
+    </div>
+      
+    <v-spacer></v-spacer>
 
+    <!-- Visible only on screens larger than small -->
     <v-select
       v-model="models[activeModel].modelParams.method"
       :items="Object.keys(simulationMethods)"
       :rules="[v => !!v || 'Item is required']"
+      class="d-none d-sm-block"
+      style="max-width: 350px; margin-right: 10px;"
       density="compact"
       label="Inference method"
       hide-details
@@ -123,13 +208,13 @@
     ></v-select>
 
     <template v-slot:append>
-        <v-btn
+        <!-- <v-btn
           prepend-icon="mdi-cog"
           variant="outlined"
           @click="toggleRightSidenav"
         >
           Settings
-        </v-btn>
+        </v-btn> -->
         <v-btn
           id="btn-run"
           prepend-icon="mdi-play"
@@ -145,16 +230,13 @@
   <!-- 
     Sidebar is used to design models 
     `v-if` is used to show sidebar only when models are loaded/initiated
+    `ref` is used to trigger sidebar methods from parent component
   -->
-  <!-- 
-    @addBlock="addBlock"
-    @toggleBlock="toggleBlock"
-    @moveBlockUp="moveBlockUp"
-    @moveBlockDown="moveBlockDown"
-   -->
   <s-sidebar 
     :models="models"
     :active-model="activeModel"
+    v-model:sidebar-width="sidebarWidth"
+    ref="sidebar"
     @toggleSidebar="preview=!preview"
     @minimizeAllBlocks="minimizeAllBlocks"
     @maximizeAllBlocks="maximizeAllBlocks"
@@ -163,18 +245,43 @@
 
   <v-main class="content" style="transition: none !important" v-if="models && models.length">
 
+    <!-- Generated links and code -->
+    <div class="links wl" v-if="link.length">
+      <div class="control-buttons">
+        <v-btn @click="downloadCode" variant="text" size="x-small">
+          <v-icon left>mdi-content-save</v-icon>
+          <span class="desktop">Download</span>
+        </v-btn>
+        <v-btn @click="copyCode" variant="text" size="x-small">
+          <v-icon left>mdi-clipboard-text</v-icon>
+          <span class="desktop">Copy to clipboard</span>
+        </v-btn>
+        <v-btn @click="link = ''" variant="text" size="x-small">
+          <v-icon left>mdi-close</v-icon>
+          <span class="desktop">Close</span>
+        </v-btn>
+      </div>
+      <pre id="link">{{ link }}</pre>
+    </div>
+
     <!-- TABLE -->
     <div id="table-container" class="tables wl" v-if="models.length && models[activeModel].modelParams.table">
       <!--<div class="control-buttons" v-if="false && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">-->
       <div class="control-buttons" v-if="!preview">
-        <md-button class="md-dense" @click.native="renderDataTable">
-          <md-icon>refresh</md-icon>
-          Reload
-        </md-button>
-        <md-button class="md-dense" @click.native="disableDataTable">
-          <md-icon>close</md-icon>
-          Close
-        </md-button>
+        <v-btn 
+          @click="renderDataTable"
+          density="compact"
+        >
+          <v-icon>mdi-refresh</v-icon>
+          <small> Reload </small>
+        </v-btn>
+        <v-btn 
+          @click="disableDataTable"
+          density="compact"
+        >
+          <v-icon>mdi-close</v-icon>
+          <small> Close </small>
+        </v-btn>
       </div>
       <div class="table-wrapper"></div>
       <div id="table-gradient" class="table-gradient" v-if="models[activeModel].preview">
@@ -197,11 +304,6 @@
           :models="models"
           :active-model="activeModel"
         ></s-inputs>
-        <v-btn
-          @click="getPositions(true)"
-        >
-          Positions
-        </v-btn>
       </div>
     </div>
 
@@ -213,14 +315,19 @@
       Save
     </v-btn> -->
     <!-- <s-flow></s-flow> -->
-    <div class="flow" style="width: 100%; height: 800px">
-      <baklava-editor 
+    <div 
       v-if="baklava && models[activeModel].modelParams.type === 'flow'"
-      :view-model="baklava" 
+      class="flow" 
+      style="width: 100%; height: 800px"
+    >
+      <baklava-editor 
+        :view-model="baklava" 
       ></baklava-editor>
     </div>
         
-    <pre style="font-size: 9px; line-height: 9px;">{{ JSON.stringify(models, null, 2) }}</pre>
+    <!-- 
+      <pre style="font-size: 9px; line-height: 9px;">{{ JSON.stringify(models, null, 2) }}</pre> 
+    -->
     
     <!-- Computation running indicator -->
     <div id="loader"></div>

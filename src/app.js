@@ -160,7 +160,8 @@ const params = {
     code: '', // Compiled webppl code
     colors, // Array of block colors
     dialogs: {
-      'new-project-dialog': false
+      'new-project-dialog': false,
+      'remove-model-dialog': false,
     },
     error: '', // Error string, activates error bar
     expressions, // List of expression types with parameters
@@ -185,6 +186,7 @@ const params = {
     serverAPI: '',
     serverURL: '',
     // showDataTable: false, // Show or not data table?
+    sidebarWidth: 300, // Sidebar width
     simulationMethods, // Array of simulation methods
     theme: 'light', // Current theme
     // units: Qty.getUnits().map(u => ({ name: u })), // All units -> BlockData.vue
@@ -870,8 +872,9 @@ const params = {
     },
     saveProject () {
       // Store current model nodes positions
+      const positions = this.getPositions(false)
       this.models[this.activeModel].blocks.forEach((b, bi) => {
-        b.pos = this.$refs.network.getPositions([bi])[bi]
+        b.pos = positions[bi]
       })
       const blob = new Blob([JSON.stringify(cleanModels(this.models), null, 2)], {type: 'text/plain;charset=utf-8'})
       fileSaver.saveAs(blob, this.models[0].modelParams.name + '.json')
@@ -954,6 +957,10 @@ const params = {
         this.baklava.editor.load(this.baklavaGraphs[modelId])
       }
 
+      if (this.models[this.activeModel].modelParams.type && (this.models[this.activeModel].modelParams.type === 'flow')) {
+        this.preview = false
+      }
+
       // Change activeModel index to target model
       this.activeModel = modelId
 
@@ -979,13 +986,17 @@ const params = {
         // Check if it's a model before active
         if (i < this.activeModel) this.switchModel(this.activeModel - 1)
         // Remove model
-        this.models.splice(i, 1)
+        this.log('Active model: ', this.activeModel)
+        this.log('Removing model: ', i)
+        setTimeout(() => {
+          this.models.splice(i, 1)
+        }, 1)
       }
     },
     // That's just a wrapper for dialog and removeModelConfirmed()
     removeModel (modelId) {
-      modelToRemove = modelId
-      this.openDialog('remove-dialog')
+      modelToRemove = modelId || this.activeModel
+      this.openDialog('remove-model-dialog')
     },
     // Callback for autocomplete element
     // Filter the blocks list to match query string (using a block's name)
@@ -1070,10 +1081,10 @@ const params = {
       this.models[this.activeModel].blocks[blockIndex].minimized = !oldMinimized
     },
     maximizeAllBlocks () {
-      this.models[this.activeModel].blocks.forEach(b => { b.minimized = false })
+      this.$refs.sidebar.maximizeAllBlocks()
     },
     minimizeAllBlocks () {
-      this.models[this.activeModel].blocks.forEach(b => { b.minimized = true })
+      this.$refs.sidebar.minimizeAllBlocks()
     },
     compile (target) {
       // Convert available models (this.models) to the probabilistic lang
