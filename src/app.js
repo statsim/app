@@ -351,6 +351,9 @@ const params = {
         })
       }
     },
+    togglePreview () {
+      this.preview = !this.preview
+    },
     init,
     preprocessDataframe,
     previewDataframe,
@@ -771,6 +774,9 @@ const params = {
       document.cookie = 'theme=' + theme
       theme.global.name.value = newTheme
     },
+    toggleTheme () {
+      this.setTheme(this.theme === 'dark' ? 'light' : 'dark')
+    },
     newProject () {
       this.log('Creating a new project...')
       delay.call(this, 300, () => {
@@ -1102,6 +1108,9 @@ const params = {
       console.log('Vue: F* yeah! Got compiled code!')
     },
     toggleFlow (model) {
+      if (typeof model === 'undefined') {
+        model = this.models[this.activeModel]
+      }
       if (model.modelParams.type === undefined) {
         model.modelParams.type = 'blocks'
       }
