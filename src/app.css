@@ -27,10 +27,20 @@ label {
  /* text-transform: capitalize; */
 }
 
-.md-button {
-  padding: 0 10px 0 10px;
-  font-weight: 400;
-  text-transform: initial;
+.v-btn {
+  /* min-width: 40px; */
+}
+
+.v-btn .v-icon {
+  margin: 0 5px !important;
+}
+
+#btn-run {
+  height: 42px;
+  font-size: 16px;
+  /* background: rgb(0, 26, 234) linear-gradient(to right bottom, rgb(19, 54, 238) 0%, rgb(0, 26, 234) 100%); */
+  /* color: white; */
+  /* border: none; */
 }
 
 .onboarding-menu {
@@ -205,12 +215,6 @@ textarea {
   top: 55px;
   width: 27%;
   z-index: 1000;
-}
-
-.side-bar:hover {
-  /*
-  overflow-y: auto;
-  */
 }
 
 .side-bar .block .md-tab-header.md-active {
@@ -468,6 +472,7 @@ textarea {
 
 .content .graph-container {
   background-color: #F3F4F7;
+  border-bottom: 1px solid #D9D9D9;
 }
 
 .content .chips .md-chip {
@@ -620,8 +625,8 @@ textarea {
 }
 
 .content .chart, .content .chart-2d, .content .charts-extra img, .content .archive, .content .tables .md-table {
-  border: 1px solid #EEE;
-  margin: 0 1% 1% 0;
+  /* border: 1px solid #EEE; */
+  margin: 0 2% 2% 0;
 }
 
 .content .chart, .content .chart-2d, .content .charts-extra img {
@@ -642,12 +647,14 @@ textarea {
 }
 
 .content .chart {
-  width: 48%;
+  /* background-color: white; */
+  /* outline: 5px solid white; */
+  width: 46%;
   height: 300px;
 }
 
 .content .charts-extra img {
-  width: 48%;
+  width: 46%;
   height: auto;
 }
 
@@ -657,19 +664,23 @@ textarea {
   left: inherit !important;
   position: absolute;
   margin: 0 !important;
-  background: rgba(255,255,255,.9);
+  /* background: rgba(255,255,255,.9); */
   padding: 4px 10px;
   z-index: 100;
+  font-size: 10px;
 }
 
 .content .dygraph-title {
-  /*
   font-weight: bold !important;
-  */
-  font-size: 12px !important;
-  margin: 4px 55px !important;
-  color: #808086;
+  font-size: 14px !important;
+  margin: 0 55px !important;
+  color: #111111;
   opacity: .8;
+}
+
+.content .dygraph-axis-label {
+  font-size: 12px !important;
+  opacity: 0.7;
 }
 
 .content .chart-heavy .dygraph-legend > span {
@@ -826,7 +837,7 @@ tile {
 /* DARK THEME */
 .dark {
   min-height: 100%;
-  background: #292735;
+  background: #141517;
 }
 .dark h2 {
   color: #ddd;
@@ -838,10 +849,10 @@ tile {
 .dark .tool-bar {
   background: #161325 !important;
 }
-.dark textarea, .dark #include {
+/* .dark textarea, .dark #include {
   background: rgb(32, 30, 41) none repeat scroll 0% 0%;
   color: #c4c3d4;
-}
+} */
 .dark .side-bar .model-selector {
   background: #201e29;
   color: white;
@@ -944,7 +955,7 @@ tile {
   color: rgb(68, 134, 255);
 }
 .dark .content .chart, .dark  .content .chart-2d, .dark .content .archive {
-  background: #19181E !important;
+  /* background: #19181E !important; */
   color: #e3e4f2 !important;
   border: none;
 }
@@ -952,10 +963,15 @@ tile {
   background-color: #100f16;
 }
 .dark .content .dygraph-legend {
-  background-color: #100f16;
+  /* background-color: #100f16; */
+}
+
+.dark .content .dygraph-title {
+  color: #ffffff;
 }
 .dark .graph-container {
-  background-color: #1D1C26 !important;
+  background-color: #141517 !important;
+  border-bottom: 1px solid rgba(125,125,125,0.2);
 }
 .dark .node-label {
   fill: #e3e4f2 !important;
@@ -1033,6 +1049,36 @@ tile {
 .dark .model-summary {
   color: #fff;
 }
+.dark .add-block-here {
+  background-color: #212121;
+  color: #686868;
+}
+.dark .add-block-here:hover {
+  background-color: #4e4e4e;
+}
+.dark #sidebar .v-toolbar__content {
+  background-color: rgba(27, 34, 50, 0.2)
+  /* background: linear-gradient(to left, #242424 95%, #2d2d2d 0%, #fff0 100%) !important; */
+}
+.dark .block {
+  background: #2b2b2b;
+}
+.dark .block header.v-toolbar {
+  color: black;
+}
+
+.flow {
+  filter: saturate(0%) invert() contrast(140%);
+  border-bottom: 1px solid rgba(125,125,125,0.2);
+}
+.flow .baklava-node {
+  filter: none;
+  border: 1px solid #80808048
+}
+.dark .flow {
+  filter: saturate(20%) brightness(0.9) contrast(1.1);
+}
+
 /* Preview mode */
 .preview .editor-only {
   display: none;

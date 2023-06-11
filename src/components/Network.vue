@@ -24,8 +24,8 @@
     nodes: {
       shape: 'dot',
       font: {
-        size: 14,
-        color: '#000000'
+        size: 12,
+        color: '#777777'
       },
       /*
       scaling: {

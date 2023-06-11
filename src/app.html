@@ -1,4 +1,6 @@
-<v-app>
+<v-app
+  :class="{dark: theme === 'dark'}"
+>
   <s-dialogs
     :dialogs="dialogs"
     @newProject="newProject"
@@ -6,11 +8,17 @@
   ></s-dialogs>
 
   <s-menu
+    :preview="preview"
+    :flow="models && models.length > 0 && models[activeModel].flow"
+    :dark="theme === 'dark'"
     @openDialog="openDialog"
     @openFile="openFile"
     @saveProject="saveProject"
     @removeModel="removeModel"
     @duplicateModel="duplicateModel"
+    @toggleTheme="toggleTheme"
+    @togglePreview="togglePreview"
+    @toggleFlow="toggleFlow"
     :version="version"
   ></s-menu> 
 
@@ -19,10 +27,10 @@
   -->
   <v-app-bar 
     v-if="models && models.length > 0"
-    color="white"
     location="top"
     app
-    style="transition: none !important; border:1px solid #DDD;"
+    style="transition: none !important"
+    :style="{'border-bottom': theme=='light' ? '1px solid #DDD' : '1px solid #333'}"
     density="compact"
     variant="outlined"
     :elevation="0"
@@ -40,7 +48,6 @@
     -->
     <v-tabs
       :model-value="activeModel"
-      bg-color="white"
       center-active
       density="compact"
     >
@@ -59,9 +66,12 @@
       <template v-slot:activator="{ props }">
         <v-btn 
           id="btn-add-model"
-          v-bind="props" 
-          icon="mdi-plus"
-        ></v-btn>
+          v-bind="props"
+          style="margin-left: 5px;"
+        >
+          <v-icon>mdi-plus</v-icon>
+          <small class="d-none d-md-inline-block"> Add model </small>
+        </v-btn>
       </template>
       <v-list>
         <v-list-item 
@@ -94,18 +104,30 @@
 
     <v-btn 
       id="btn-flow"
-      class="d-none d-md-flex"
-      :icon="models[activeModel].modelParams.type === 'flow' ? 'mdi-view-column-outline' : 'mdi-source-fork'"
+      class="d-none d-sm-flex"
       @click="toggleFlow(models[activeModel])"
-      style="transform: rotate(90deg);"
-    ></v-btn>
+    >
+      <v-icon style="transform: rotate(90deg);"> 
+        {{ models[activeModel].modelParams.type === 'flow' ? 'mdi-view-column-outline' : 'mdi-source-fork' }} 
+      </v-icon>
+      <small class="d-none d-md-inline-block"> 
+        {{ models[activeModel].modelParams.type === 'flow' ? 'Toggle blocks' : 'Toggle flow' }} 
+      </small>
+    </v-btn>
     <v-menu>
       <template v-slot:activator="{ props }">
-        <v-btn 
+        <!-- <v-btn 
           class="d-none d-md-flex"
           v-bind="props" 
           icon="mdi-code-json"
-        ></v-btn>
+        ></v-btn> -->
+        <v-btn 
+          class="d-none d-sm-flex"
+          v-bind="props"
+        >
+          <v-icon>mdi-code-json</v-icon>
+          <small class="d-none d-md-inline-block"> Code </small>
+        </v-btn>
       </template>
       <v-list>
         <v-list-item 
@@ -146,18 +168,21 @@
         </v-list-item>
       </v-list>
     </v-menu>
-    <v-btn icon="mdi-link"></v-btn>
-    <v-btn icon="mdi-cog"></v-btn>
-
+    <v-btn 
+      @click="generateLink"
+    >
+      <v-icon>mdi-link</v-icon>
+      <small class="d-none d-md-inline-block"> Link </small>
+    </v-btn>
   </v-app-bar>
   
 
   <v-app-bar
     v-if="models && models.length > 0"
-    color="white"
     location="bottom"
     fixed
-    style="transition: none !important; border:1px solid #DDD;"
+    style="transition: none !important"
+    :style="{'border-top': theme=='light' ? '1px solid #DDD' : '1px solid #333'}"
     density="compact"
     :elevation="0"
   >
@@ -165,7 +190,7 @@
     <!-- Minimize/Maximize all blocks in the sidebar -->
     <div
       v-if="!preview"
-      style="border-right: 1px solid #DDD; margin-right: 10px; text-align: center;"
+      style="border-right: 1px solid #80808030; margin-right: 10px; text-align: center;"
       :style="{'width': sidebarWidth + 'px'}"
     >
       <v-btn 
@@ -217,11 +242,15 @@
         </v-btn> -->
         <v-btn
           id="btn-run"
-          prepend-icon="mdi-play"
           variant="outlined"
           @click="run"
         >
-          Run
+          <v-icon left>mdi-play</v-icon>
+          <span
+            class="d-none d-sm-inline-block"
+          >
+            Run
+          </span>
         </v-btn>
     </template>
   </v-app-bar>
