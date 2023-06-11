@@ -8,7 +8,7 @@
 
 <template>
   <v-system-bar
-    color="white"
+    :color="dark ? '#191a1c' : 'white'"
   >
     <v-menu
       v-for="(menuElements, menuName) in menuFunctions"
@@ -32,14 +32,24 @@
           @click="$emit(element.method, ...element.args)"
           density="compact"
         >
-          <v-list-item-title>{{ element.name }}</v-list-item-title>
+          <v-list-item-title>
+            <span v-if="element.flag">
+              <v-icon v-if="flags[element.flag]" size="x-small">
+                mdi-check
+              </v-icon>
+              <v-icon v-else size="x-small">
+                mdi-minus
+              </v-icon>
+            </span>
+            {{ element.name }}
+          </v-list-item-title>
         </v-list-item>
       </v-list>
     </v-menu>
 
 
     <v-spacer></v-spacer>
-    StatSim {{ version }}
+    <span class="d-none d-sm-inline-block"> StatSim &nbsp;</span> {{ version }}
     <!-- <v-icon>mdi-square</v-icon> -->
     <!-- <v-icon>mdi-circle</v-icon> -->
     <!-- <v-icon>mdi-triangle</v-icon> -->
@@ -81,13 +91,41 @@ export default {
             'args': []
           }
         ],
+        'View': [
+          {
+            'name': 'Preview',
+            'method': 'togglePreview',
+            'args': [],
+            'flag': 'preview'
+          },
+          {
+            'name': 'Dark mode',
+            'method': 'toggleTheme',
+            'args': [],
+            'flag': 'dark'
+          },
+          {
+            'name': 'Flow',
+            'method': 'toggleFlow',
+            'args': [],
+            'flag': 'flow'
+          }
+        ]
       }
       //
     }
   },
-  methods: {
-    //
+  computed: {
+    flags() {
+      const flags = []
+      for (const [key, value] of Object.entries(this.$props)) {
+        if (typeof value === 'boolean') {
+          flags[key] = value
+        }
+      }
+      return flags
+    }
   },
-  props: ['version']
+  props: ['version', 'preview', 'flow', 'dark'],
 }
 </script>
