@@ -856,6 +856,7 @@ const params = {
       reader.onload = () => {
         console.log(new Date(), 'Reader: Opened the file of length', reader.result.length)
         const models = JSON.parse(reader.result)
+        processModels(models) // Apply some fixes to the models before loading
         delay.call(this, 500, () => {
           window.history.replaceState({}, 'New project', '.')
           this.switchModel(0)
