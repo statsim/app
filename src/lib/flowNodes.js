@@ -217,14 +217,14 @@ const AccumulatorNode = defineDynamicNode({
   inputs: {
     show: () => new CheckboxInterface('Show in results', true).setPort(false),
     name: () => new TextInputInterface('Name...', '').setPort(false),
-    value: () => new TextInputInterface('Value', 'Increment').setPort(false),
+    increment: () => new TextInputInterface('Increment', 'Increment'),
     initialValue: () => new NumberInterface('Initial', 0),
     min: () => new TextInputInterface('Min', ''),
     max: () => new TextInputInterface('Max', ''),
   },
-  onUpdate({ value }) {
+  onUpdate({ increment }) {
     return { 
-      inputs: getInputsFromExpression(value) 
+      inputs: getInputsFromExpression(increment) 
     }
   },
   outputs: {

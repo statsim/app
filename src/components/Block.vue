@@ -19,7 +19,7 @@
   font-size: 0.675rem !important;
 }
 .v-toolbar-title {
-  margin-top: -10px;
+  margin-top: -2px;
 }
 .v-toolbar-subtitle {
   position: absolute;
@@ -27,6 +27,20 @@
   bottom: 2px;
   font-size: 8px;
   color: rgba(0,0,0,0.4);
+}
+
+.block-value {
+  text-align: right;
+  font-size: 11px;
+  opacity: 0.6;
+  background: white;
+  display: inline-block;
+  border-radius: 30px;
+  padding: 1px 5px; 
+}
+.dark .block-value {
+  background: #00000073;
+  color: white;
 }
 </style>
 
@@ -52,9 +66,8 @@
       <v-toolbar-title class="text-h6">
         {{ block.name ? block.name : block.type }}
       </v-toolbar-title>
-      <div class="v-toolbar-subtitle">
-        {{ block.type }}
-      </div>
+      <div class="v-toolbar-subtitle"> {{ subtitle }} </div>
+      <div class="block-value" v-if="block.typeCode <= 3 && block.value && block.value.length > 0"> {{ value }} </div>
       <v-btn
         size="small"
         :icon="block.minimized ? 'mdi-arrow-expand-vertical' : 'mdi-arrow-collapse-vertical'"
@@ -128,6 +141,56 @@ export default {
   data() {
     return {
       colors: colors,
+    }
+  },
+  computed: {
+    subtitle() {
+      let subtitle = this.block.type
+      switch (this.block.typeCode) {
+        case 0:
+          // Variable
+          if (this.block.distribution) {
+            return 'Random Variable: ' + this.block.distribution
+          } else {
+            return subtitle
+          }
+        case 1:
+          // Expression
+          if (this.block.expressionType) { 
+            if (this.block.params.expression) {
+              return subtitle + ': ' + this.block.params.expression
+            } else {
+              return subtitle + ': ' + this.block.expressionType
+            } 
+          } else {
+            return subtitle
+          }
+        case 3:
+          // Accumulator
+          if (this.block.increment) {
+            return subtitle + ': ' + this.block.increment
+          } else {
+            return subtitle
+          }
+        default:
+          return subtitle
+      }
+    },
+    value() {
+
+      switch (this.block.typeCode) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+          return this.block.value 
+            ? this.block.value.includes(',') 
+              ? this.block.value.split(',').length
+              : this.block.value
+            : ''
+        default:
+          return ''
+      }
     }
   },
   components: {

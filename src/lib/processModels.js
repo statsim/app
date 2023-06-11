@@ -23,7 +23,7 @@ function processModels (models) {
           if (typeof block.expressionType === 'undefined') {
             block.expressionType = Object.keys(expressions)[0] // First - default
           }
-          if (typeof block.params  === 'undefined') {
+          if (typeof block.params  === 'undefined' || Object.keys(block.params).length === 0) {
             block.params = {}
             Object.keys(expressions[block.expressionType]).forEach((paramName, pi) => {
               if (pi === 0 && typeof(block.value) !== 'undefined') {
@@ -33,6 +33,14 @@ function processModels (models) {
                 block.params[paramName] = ''
               }
             })
+          }
+        }
+
+        // Apply accumulator correction
+        if (block.typeCode === 3) {
+          if (typeof block.increment === 'undefined' && typeof block.value !== 'undefined') {
+            block.increment = block.value
+            delete block.value
           }
         }
       })

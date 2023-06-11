@@ -299,6 +299,11 @@ function blockToNode(block, position) {
       value: block['initialValue'] || 0,
       type: 'float'
     }
+    node.inputs['increment'] = {
+      id: genId('i'),
+      value: block['increment'] || 1,
+      type: 'float'
+    }
     ;['min', 'max'].forEach(paramName => {
       node.inputs[paramName] = {
         id: genId('i'),

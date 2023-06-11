@@ -9,6 +9,7 @@ const Table = require('handsontable')
 const Qty = require('js-quantities')
 const VueColor = require('vue-color')
 const beautify = require('js-beautify').js
+const Stats = require('online-stats')
 
 // Local deps
 const BlockClasses = require('./lib/blockClasses')
@@ -1144,8 +1145,26 @@ const params = {
     process (data) {
       this.loading = false
       document.getElementById('loader').className = 'hidden'
-      console.log('[Vue] Process results:', data)
+      this.log('Process results:', data)
       this.samples = processResults(data, this.models[this.activeModel].blocks, this.models[this.activeModel].modelParams)
+      // Update values in the blocks
+      Object.keys(this.samples).forEach((key) => {
+        const samplesCurrent = this.samples[key]
+        const block = this.models[this.activeModel].blocks.find(b => b.name.replace(/ /g, '__') === key)
+        if (typeof block === 'undefined') {
+          return
+        } else if (typeof samplesCurrent === 'number') {
+          block.value = samplesCurrent.toFixed(2)
+        } else if (Array.isArray(samplesCurrent)) {
+          if (samplesCurrent.length === 1) {
+            block.value = samplesCurrent[0].toFixed(2)
+          } else {
+            const mean = Stats.Mean()(samplesCurrent)
+            const std = Stats.Std()(samplesCurrent)
+            block.value = `${mean.toFixed(2)} ± ${std.toFixed(2)}`
+          }
+        }
+      })
       this.notify('Done!')
     },
     run () {

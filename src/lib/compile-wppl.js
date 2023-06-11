@@ -361,7 +361,7 @@ module.exports = function (models, activeModel) {
       } else if ((b.typeCode === 2) && !b.value.length & b.name.length) {
         // Parameter
           model += `var ${b.name} = param({name: '${b.name}'})\n`
-      } else if ((b.typeCode === 3) && b.value.length) {
+      } else if ((b.typeCode === 3) && b.increment.length) {
         // --> ACCUMULATOR
 
         // Check if we are inside the loop
@@ -373,7 +373,7 @@ module.exports = function (models, activeModel) {
           step.innerList += `_` + b.name + ((b.history) ? ', ' + b.name + '_hist' : '')
 
           // Check if expressions or accumulators are defined, if not use previous _value
-          let value = addIterationChecks(b.value, blocks)
+          let value = addIterationChecks(b.increment, blocks)
 
           // Accumulate value in the step body
           step.body += `var ___${b.name} = ${value}\n`
@@ -403,7 +403,7 @@ module.exports = function (models, activeModel) {
           // step.initial += (b.history) ? `,\n${b.name}_hist: [${b.initialValue}]` : ''
           step.initial += (b.history) ? `,\n${b.name}_hist: []` : ''
         } else {
-          model += `var ${b.name} = ${b.initialValue} + ${b.value}\n`
+          model += `var ${b.name} = ${b.initialValue} + ${b.increment}\n`
         }
       } else if ((b.typeCode === 7) && b.name && b.name.length) {
         // --> FUNCTION

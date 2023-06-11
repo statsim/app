@@ -120,9 +120,19 @@ module.exports = function (models, activeModel) {
   // Iterate over all blocks of the model
   model.blocks.forEach(block => {
     const dataType = Object.keys(dataTypes).includes(block.dataType) ? dataTypes[block.dataType] : 'Int'
-    if ((block.typeCode === 1) && block.name.length && block.value.length) {
+    if ((block.typeCode === 1) && block.name.length) {
       // Expression
-      code += `(define-fun ${block.name} () ${dataType} ${toSMT(block.value)})\n`
+      if (typeof block.expressionType === 'string' && block.expressionType.toLowerCase() === 'custom') {
+        // Expression: Custom
+        if (typeof block.params.expression !== 'undefined') {
+          code += `(define-fun ${block.name} () ${dataType} ${toSMT(block.params.expression)})\n`
+        } else {
+          throw new Error(`Z3 compiler: Expression ${block.name} is not defined in params.expressio`)
+        }
+      } else {
+        // Expression: Other
+        throw new Error(`Z3 compiler: Expression type ${block.expressionType} is not supported`)
+      }
     } else if ((block.typeCode === 2) && block.name.length) {
       // Data block
       if (['array', 'vector', 'tensor'].includes(block.dataType) && block.dims) {

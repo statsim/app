@@ -736,7 +736,7 @@ textarea {
 }
 
 .content .parameters h2 {
-  margin: 0 0 5px 0;
+  margin: 0 0 15px 0;
   font-size: 30px;
   line-height: 34px;
 }
@@ -959,9 +959,7 @@ tile {
   color: #e3e4f2 !important;
   border: none;
 }
-.dark .content .parameters input, .dark .content .parameters .md-select {
-  background-color: #100f16;
-}
+
 .dark .content .dygraph-legend {
   /* background-color: #100f16; */
 }
@@ -981,9 +979,9 @@ tile {
   color: white;
 }
 .dark pre {
-  background-color: #151222 !important;
-  border: 1px solid #3e5269 !important;
-  color: #7fb9f8 !important;
+  background-color: #141517 !important;
+  border: 1px solid #4f4f4f !important;
+  color: #767676 !important;
 }
 .dark .run-button, .dark .params-button, .dark .add-block-button {
   background-color: transparent !important;

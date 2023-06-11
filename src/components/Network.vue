@@ -24,7 +24,8 @@
     nodes: {
       shape: 'dot',
       font: {
-        size: 12,
+        size: 11,
+        multi: true,
         color: '#777777'
       },
       /*
@@ -220,9 +221,19 @@
         // console.log(new Date(), 'Nodes: Starting dynamic update')
         const nodes = this.models[this.activeModel].blocks
           .map((b, i) => {
+            let label = (b.name && b.name.length) ? `${b.name}` : b.type
+            label = '<b>' + label + '</b>'
+            if (b.typeCode <= 3 && b.value && b.value.length) {
+              if (b.value.includes(',')) {
+                // List
+                label += `\n${b.value.split(',').length} items`
+              } else {
+                label += `\n${b.value}`
+              }
+            }
             let node = {
               id: i,
-              label: (b.name && b.name.length) ? `${b.name}` : b.type,
+              label: label,
             }
             if (b.icon && b.icon.length) {
               node.group = 'icon'
@@ -303,7 +314,7 @@
               links = links.concat(check(b.value, i))
               break
             case 3: // Accum
-              links = links.concat(check(b.value, i))
+              links = links.concat(check(b.increment, i))
               links = links.concat(check(b.initialValue, i))
               break
             case 4: // Observer

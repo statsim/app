@@ -11,7 +11,7 @@
     <!-- Value -->
     <v-text-field
       label="Increment" 
-      v-model="block.value" 
+      v-model="block.increment" 
       density="compact"
     ></v-text-field>
 
