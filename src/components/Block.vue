@@ -66,7 +66,7 @@
       <v-toolbar-title class="text-h6">
         {{ block.name ? block.name : block.type }}
       </v-toolbar-title>
-      <div class="v-toolbar-subtitle"> {{ subtitle }} </div>
+      <div class="v-toolbar-subtitle"> {{ subtitle.length > 30 ? subtitle.substring(0, 30) + '...' : subtitle }} </div>
       <div class="block-value" v-if="block.typeCode <= 3 && block.value && block.value.length > 0"> {{ value }} </div>
       <v-btn
         size="small"
