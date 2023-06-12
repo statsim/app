@@ -1,6 +1,6 @@
 {
   "name": "@statsim/app",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Statistical simulations and bayesian inference in the browser",
   "main": "main.js",
   "repository": {
