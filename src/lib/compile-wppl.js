@@ -258,9 +258,13 @@ module.exports = function (models, activeModel) {
         }
       } else if ((b.typeCode === 1) && b.name.length) {
         // --> EXPRESSION
-        const transformedValue = (!b.expressionType || (b.expressionType === 'Custom') && b.value && b.value.length)
-          ? b.value
-          : generateExpression(b.expressionType, b.params)
+        // Check needed fields
+        if (typeof b.expressionType === 'undefined' || typeof b.params === 'undefined') {
+          throw new Error(`[WebPPL Compiler] Expression "${b.name}" has no expressionType or params`)
+        }
+
+        // Generate expression
+        const transformedValue = generateExpression(b.expressionType, b.params)
 
         console.log('[WebPPL Compiler] Transformed expression value - ', transformedValue)
         // Check if we are inside the loop
