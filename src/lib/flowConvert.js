@@ -11,6 +11,12 @@ const expressions = {
   'List': require('./expressionsList'),
 }
 
+// Position transformations (graph <-> flow)
+const X_SCALE = 100
+const X_OFFSET = 100
+const Y_SCALE = 100
+const Y_OFFSET = 100
+
 function genId (suffix) {
   return suffix + '_' + Math.random().toString(16).slice(2, 9)
 }
@@ -49,6 +55,12 @@ function flowToBlocks (flowInput, log) {
       : blockClassMap[node.type]
     const block = new blockClass(ni)
     block.id = node.id
+
+    // Store position
+    block.posFlow = {
+      x: node.position.x, // / X_SCALE - X_OFFSET,
+      y: node.position.y // / Y_SCALE - Y_OFFSET
+    }
 
     // First deal with edge cases (Expressions, Variables, etc.)
     // For each input, remove it from the node and add it to the block
@@ -153,13 +165,17 @@ function flowToBlocks (flowInput, log) {
 
     blocks.push(block)
   })
+  log('[flowToBlocks] Blocks:', JSON.stringify(blocks, null, 2))
   return blocks
 }
 
 function addDynamicExpressionInputs(node, expression) {
   try {
-    esprima.tokenize(expression).forEach(token => {
+    const tokens = esprima.tokenize(expression)
+    tokens.forEach((token, ti) => {
       if (token.type === 'Identifier') {
+        if (token.value === 'Math') return
+        if (ti > 0 && tokens[ti - 1].type === 'Punctuator' && tokens[ti - 1].value === '.') return
         node.inputs[token.value] = {
           id: genId('i'),
           value: token.value,
@@ -172,7 +188,7 @@ function addDynamicExpressionInputs(node, expression) {
   }
 }
 
-function blockToNode(block, position) {
+function blockToNode(block) {
   const blockClassName = blockClasses[block.typeCode].name
   let nodeType = blockClassName
   
@@ -195,7 +211,7 @@ function blockToNode(block, position) {
     title: nodeType,
     inputs: {},
     outputs: {},
-    position: position,
+    position: block.posFlow,
     width: 200,
     twoColumn: false
   }
@@ -301,9 +317,10 @@ function blockToNode(block, position) {
     }
     node.inputs['increment'] = {
       id: genId('i'),
-      value: block['increment'] || 1,
-      type: 'float'
+      value: block['increment'] || '',
+      type: 'expression'
     }
+    addDynamicExpressionInputs(node, block.increment || '')
     ;['min', 'max'].forEach(paramName => {
       node.inputs[paramName] = {
         id: genId('i'),
@@ -321,7 +338,7 @@ function blockToNode(block, position) {
     }
   }
   
-  // `value` (for Accumulator, Condition and Optimize)
+  // `value` (for Condition and Optimize)
   if (typeof block.value !== 'undefined' && [3, 5, 8].includes(block.typeCode)) {
     node.inputs.value = {
       id: genId('i'),
@@ -341,18 +358,19 @@ function blockToNode(block, position) {
   return node
 }
 
-function blocksToFlow (blocks, positions, log) {
-    log('[blocksToFlow] Positions before:', positions)
-    // Create sorted list of unique x and y positions
-    const xSet = Array.from(new Set(positions.map(p => p.x)))
-
-    const ySet = Array.from(new Set(positions.map(p => p.y)))
-    console.log(xSet, ySet)
-    positions.forEach(p => {
-      p.x = 300 + xSet.indexOf(p.x) * 350
-      p.y = ySet.indexOf(p.y) * 430
-    })
-    log('[blocksToFlow] Positions after:', positions)
+function blocksToFlow (blocks, log) {
+    
+    // log('[blocksToFlow] Positions before:', positions)
+    // Scale and offset positions
+    // // Create sorted list of unique x and y positions
+    // const xSet = Array.from(new Set(positions.map(p => p.x)))
+    // const ySet = Array.from(new Set(positions.map(p => p.y)))
+    // console.log(xSet, ySet)
+    // positions.forEach(p => {
+    //   p.x = X_OFFSET + xSet.indexOf(p.x) * X_SCALE
+    //   p.y = Y_OFFSET + ySet.indexOf(p.y) * Y_SCALE
+    // })
+    // log('[blocksToFlow] Positions after:', positions)
 
     // ...
     log('[blocksToFlow]', blocks)
@@ -368,7 +386,7 @@ function blocksToFlow (blocks, positions, log) {
     const nodes = []
     const nameToOutputIdMap = {}
     blocks.forEach((block, bi) => {
-      const node = blockToNode(block, positions[bi])
+      const node = blockToNode(block)
       nodes.push(node)
       if (typeof node.inputs.name === 'undefined') return
       if (typeof node.outputs.output === 'undefined') return
@@ -383,8 +401,8 @@ function blocksToFlow (blocks, positions, log) {
       if (node.type === 'Data') return
 
       // Get list of all node names that can be mentioned in the current node inputs
+      // We could have self-reference, right?
       const allOtherNodeNames = Object.keys(nameToOutputIdMap)
-        .filter(name => typeof node.inputs.name === 'undefined' || name !== node.inputs.name.value)
 
       Object.keys(node.inputs).forEach(inputName => {
         const input = node.inputs[inputName]

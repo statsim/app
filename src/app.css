@@ -1,3 +1,151 @@
+/* Variables (Light theme) */
+:root {
+--baklava-control-color-primary: #b1b1b1;
+--baklava-control-color-error: red;
+--baklava-control-color-background: #d5d5d5;
+--baklava-control-color-foreground: black;
+--baklava-control-color-hover: #e6e5e5;
+--baklava-control-color-active: #e6e5e5;
+--baklava-control-color-disabled-foreground: gray;
+--baklava-control-border-radius: 3px;
+--baklava-sidebar-color-background: #3f3f3f;
+--baklava-sidebar-color-foreground: white;
+--baklava-node-color-background: #fffc;
+--baklava-node-color-foreground: black;
+--baklava-node-color-selected: var(--baklava-control-color-primary);
+--baklava-node-title-color-background: black;
+--baklava-node-title-color-foreground: white;
+--baklava-group-node-title-color-background: rgb(5, 75, 5);
+--baklava-group-node-title-color-foreground: white;
+--baklava-node-border-radius: 4px;
+--baklava-color-connection-default: #8c8c8c;
+--baklava-color-connection-allowed: green;
+--baklava-color-connection-forbidden: red;
+--baklava-editor-background-pattern-default: #e6e7ec;
+--baklava-editor-background-pattern-line: #dbdcdf;
+--baklava-editor-background-pattern-black: #cacaca00;
+--baklava-context-menu-background: #fffc;
+--baklava-context-menu-shadow: 0 0 8px rgba(0, 0, 0, 0.65);
+--baklava-toolbar-background: rgba(255, 255, 255, 0.95);
+--baklava-toolbar-foreground: rgb(0, 0, 0);
+--baklava-node-palette-background: rgba(0, 0, 0, 0);
+--baklava-node-palette-foreground: white;
+--baklava-visual-transition: 0.1s linear;
+}
+
+.baklava-node-interface .__port {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffffffd8;
+  border: 2px solid #bababad8;
+  border-radius: 50%;
+  top: calc(50% - 5px);
+  cursor: crosshair;
+}
+
+.baklava-node-interface.--connected .__port {
+  background: #8c8c8c;
+  width: 8px;
+  height: 8px;
+  border: none;
+}
+
+.baklava-toolbar {
+  border-bottom: 1px solid #82828226;
+}
+
+.baklava-node .__title {
+  background: rgb(200, 207, 221) linear-gradient(to right, #00000029 0%, #0000001c 100%);
+}
+.dark .baklava-node .__title {
+  background: rgb(88, 91, 98) linear-gradient(to right, #00000029 0%, #0000001c 100%)
+}
+
+.baklava-node[data-node-type="Data"] .__title {
+    background-color: rgb(37, 177, 112) 
+}
+
+.baklava-node[data-node-type="Variable"] .__title {
+    background-color: rgb(29, 121, 207)
+}
+
+.baklava-node[data-node-type="Expression (Custom)"] .__title, .baklava-node[data-node-type="Expression (Math)"] .__title, .baklava-node[data-node-type="Expression (Logic)"] .__title, .baklava-node[data-node-type="Expression (List)"] .__title {
+    background-color: rgb(179, 70, 131)
+}
+
+.baklava-node[data-node-type="Accumulator"] .__title {
+    background-color: rgb(255, 156, 51)
+}
+
+/* Variables (Dark theme) */
+.dark {
+    --baklava-control-color-primary: #5379b5;
+    --baklava-control-color-error: red;
+    --baklava-control-color-background: #2c2c2c;
+    --baklava-control-color-foreground: white;
+    --baklava-control-color-hover: #4c4c4c;
+    --baklava-control-color-active: #6c6c6c;
+    --baklava-control-color-disabled-foreground: gray;
+    --baklava-control-border-radius: 3px;
+
+    --baklava-sidebar-color-background: #3f3f3f;
+    --baklava-sidebar-color-foreground: white;
+
+    --baklava-node-color-background: #3f3f3fcc;
+    --baklava-node-color-foreground: white;
+    --baklava-node-color-selected: var(--baklava-control-color-primary);
+    --baklava-node-title-color-background: black;
+    --baklava-node-title-color-foreground: white;
+    --baklava-group-node-title-color-background: rgb(5, 75, 5);
+    --baklava-group-node-title-color-foreground: white;
+    --baklava-node-border-radius: 4px;
+
+    --baklava-color-connection-default: white;
+    --baklava-color-connection-allowed: green;
+    --baklava-color-connection-forbidden: red;
+
+    --baklava-editor-background-pattern-default: #232323;
+    --baklava-editor-background-pattern-line: #1a1a1a;
+    --baklava-editor-background-pattern-black: #0000000d;
+
+    --baklava-context-menu-background: #000000cc;
+    --baklava-context-menu-shadow: 0 0 8px rgba(0, 0, 0, 0.65);
+
+    --baklava-toolbar-background: #191a1cde;
+    --baklava-toolbar-foreground: white;
+
+    --baklava-node-palette-background: #00000000;
+    --baklava-node-palette-foreground: white;
+
+    --baklava-visual-transition: 0.1s linear;
+}
+
+.flow {
+  /* filter: saturate(0%) invert() contrast(140%); */
+  border-bottom: 1px solid rgba(125,125,125,0.2);
+}
+.flow .connections-container {
+  opacity: 0.5;
+}
+.flow .baklava-node {
+  filter: none;
+  border: none;
+  opacity: 0.9;
+}
+.flow .baklava-node.--selected {
+  z-index: 5;
+  box-shadow: none !important;
+  /* border: 1px solid #80808087 !important; */
+  outline: 2px solid #80808087 !important;
+  opacity: 1 !important;
+}
+
+.flow input[title="Name"] {
+  content: 'Name:'
+}
+
+
 /* Global styles */
 body {
   height: 100%;
@@ -1064,19 +1212,6 @@ tile {
 .dark .block header.v-toolbar {
   color: black;
 }
-
-.flow {
-  filter: saturate(0%) invert() contrast(140%);
-  border-bottom: 1px solid rgba(125,125,125,0.2);
-}
-.flow .baklava-node {
-  filter: none;
-  border: 1px solid #80808048
-}
-.dark .flow {
-  filter: saturate(20%) brightness(0.9) contrast(1.1);
-}
-
 /* Preview mode */
 .preview .editor-only {
   display: none;

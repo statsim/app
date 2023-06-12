@@ -65,6 +65,7 @@ import "@baklavajs/themes/dist/syrup-dark.css";
 // Flow helpers (Nodes, Converter)
 import nodes from './lib/flowNodes' 
 import { blocksToFlow, flowToBlocks } from './lib/flowConvert'
+import { e, p } from './lib/abbr'
 
 // Define a custom node
 // import { defineNode, NodeInterface, NumberInterface, SelectInterface } from "baklavajs";
@@ -854,36 +855,38 @@ const params = {
       const file = e.target.files[0]
       reader.readAsText(file)
       reader.onload = () => {
-        console.log(new Date(), 'Reader: Opened the file of length', reader.result.length)
         const models = JSON.parse(reader.result)
         processModels(models) // Apply some fixes to the models before loading
+        this.log('[openProjectFile] Opening a project:')
+        this.log(JSON.stringify(models, null, 2))
         delay.call(this, 500, () => {
           window.history.replaceState({}, 'New project', '.')
-          this.switchModel(0)
-          console.log(new Date(), 'Reader: Updating models')
+          // Why here, not after update?
+          // this.switchModel(0)
           this.models = Array.isArray(models) ? models : [models]
-          console.log(new Date(), 'Reader: Models updated!')
-          this.models.forEach(m => {
-            // Add include field to each model
-            if (typeof m.modelParams.include === 'undefined') {
-              m.modelParams.include = []
-            }
-            // Add ID to each block for better list rendering
-            m.blocks.forEach(b => {
-              // this.$set(b, 'id', ((b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000)))
-              b.id = ((b.id) ? b.id : 'b' + Math.round(Math.random() * 100000000))
-            })
-          })
+          this.switchModel(0, true)
           // this.fitNetwork()
         })
       }
     },
     saveProject () {
       // Store current model nodes positions
-      const positions = this.getPositions(false)
-      this.models[this.activeModel].blocks.forEach((b, bi) => {
-        b.pos = positions[bi]
-      })
+      const currentModel = this.models[this.activeModel]
+      if (currentModel.modelParams.type && (currentModel.modelParams.type === 'flow')) {
+        // If flow: 
+        // Convert current flow to blocks
+        // Coordinates are stored in block.posFlow.x, .y
+        const flow = this.baklava.editor.save()
+        const blocks = flowToBlocks(flow, this.log)
+        currentModel.blocks = blocks
+      } else {
+        // If blocks: 
+        // Store current positions from the graph
+        const positions = this.getPositions(false)
+        currentModel.blocks.forEach((b, bi) => {
+          b.pos = positions[bi]
+        })
+      }
       const blob = new Blob([JSON.stringify(cleanModels(this.models), null, 2)], {type: 'text/plain;charset=utf-8'})
       fileSaver.saveAs(blob, this.models[0].modelParams.name + '.json')
     },
@@ -913,7 +916,7 @@ const params = {
       this.renderDataTable()
       this.notify('New dataframe created')
     },
-    switchModel (modelId) {
+    switchModel (modelId, ignoreCurrentModel = false) {
       this.log('[switchModel] Switching to model', modelId)
       this.samples = {} // Clear old samples
       this.error = ''
@@ -922,51 +925,69 @@ const params = {
         modelId = 0
       }
 
+      // Get current model
+      const currentModel = ignoreCurrentModel 
+        ? undefined
+        : this.models[this.activeModel]
+
       // Get target model
-      const currentModel = this.models[this.activeModel]
       const targetModel = this.models[modelId]
 
       this.link = '' // clean code
       this.message = ''
 
-      if (currentModel.modelParams.type && (currentModel.modelParams.type === 'dataframe')) {
-        // Current: Dataframe
-      } else {
-        // Current: Model
+      // if (currentModel.modelParams.type && (currentModel.modelParams.type === 'dataframe')) {
+      //   // Current: Dataframe
+      // } else {
+      //   // Current: Model
 
-        // Get current positions of the graph and save them
-        // if (this.$refs.network) {
-        //   currentModel.blocks.forEach((b, bi) => {
-        //     console.log('Network: get pos')
-        //     b.pos = this.$refs.network.getPositions([bi])[bi]
-        //   })
-        // }
-      }
+      //   // Get current positions of the graph and save them
+      //   // if (this.$refs.network) {
+      //   //   currentModel.blocks.forEach((b, bi) => {
+      //   //     console.log('Network: get pos')
+      //   //     b.pos = this.$refs.network.getPositions([bi])[bi]
+      //   //   })
+      //   // }
+      // }
 
       if (targetModel.modelParams.type && (targetModel.modelParams.type === 'dataframe')) {
         // Target: Dataframe
       } else {
-        // Target: Model
+        // Target: Model or Flow
         targetModel.blocks.forEach(b => {
-          // Uncaught TypeError: this.$set is not a function
-          // this.$set(b, 'minimized', true) 
           b.minimized = true
         })
       }
-
-
-      // Switch flow
-      const isCurrentModelFlow = currentModel.modelParams.type && (currentModel.modelParams.type === 'flow')
-      const isTargetModelFlow = targetModel.modelParams.type && (targetModel.modelParams.type === 'flow')
+      
+      // Switch flow (current flow -> ...)
+      const isCurrentModelFlow = currentModel && currentModel.modelParams.type && (currentModel.modelParams.type === 'flow')
       if (isCurrentModelFlow) {
-        this.baklavaGraphs[this.activeModel] = this.baklava.editor.save()
-      }
-      if (isTargetModelFlow && this.baklavaGraphs[modelId]) {
-        this.baklava.editor.load(this.baklavaGraphs[modelId])
+        // Save current flow
+        this.log('[switchModel] Saving current flow...')
+        const flow = this.baklava.editor.save()
+        this.baklavaGraphs[this.activeModel] = flow
+        // Update model blocks
+        currentModel.blocks = flowToBlocks(flow, this.log)
+        // Disable preview when switching from flow (can be re-enabled later in the next if branch)
+        this.preview = false
       }
 
-      if (this.models[this.activeModel].modelParams.type && (this.models[this.activeModel].modelParams.type === 'flow')) {
-        this.preview = false
+      // Switch flow (... -> target flow)
+      const isTargetModelFlow = targetModel.modelParams.type && (targetModel.modelParams.type === 'flow')
+      if (isTargetModelFlow) {
+        if (this.baklavaGraphs[modelId]) {
+          this.log('[switchModel] Loading flow from cache...')
+          this.baklava.editor.load(this.baklavaGraphs[modelId])
+        } else {
+          this.log('[switchModel] Loading flow from blocks...')
+          const flow = blocksToFlow(
+            targetModel.blocks, 
+            this.log
+          )
+          this.baklava.editor.load(flow)
+        }
+        // Enable preview when switching to flow
+        this.preview = true
       }
 
       // Change activeModel index to target model
@@ -1110,6 +1131,11 @@ const params = {
       console.log('Vue: F* yeah! Got compiled code!')
     },
     toggleFlow (model) {
+      const X_SCALE = 2
+      const X_OFFSET = 350
+      const Y_SCALE = 4.5
+      const Y_OFFSET = 0
+
       if (typeof model === 'undefined') {
         model = this.models[this.activeModel]
       }
@@ -1119,16 +1145,56 @@ const params = {
       if (model.modelParams.type === 'flow') {
         this.log('[toggleFlow] Converting to blocks')
         const flow = this.baklava.editor.save()
-        console.log('[toggleFlow] Flow:', JSON.stringify(flow, null, 2))
+        console.log('[toggleFlow] Current flow:', JSON.stringify(flow, null, 2))
         const blocks = flowToBlocks(flow, this.log)
+        // Initialize graph positions
+        // They will be removed when the graph is updated
+        for (let i = 0; i < blocks.length; i++) {
+          let block = blocks[i]
+          if (block.hasOwnProperty('posFlow')) {
+            block.pos = {
+              x: block.posFlow.x / X_SCALE - X_OFFSET,
+              y: block.posFlow.y / Y_SCALE - Y_OFFSET
+            }
+          } else {
+            block.pos = { 
+              x: 0, 
+              y: 0 
+            }
+          }
+        }
         model.blocks = blocks
+        console.log('[toggleFlow] New blocks:', JSON.stringify(blocks, null, 2))
         model.modelParams.type = 'blocks'
         this.preview = false
       } else {
         this.log('[toggleFlow] Converting to flow')
+        // Generate new positions using hierarchical layout and indexing by x and y
+        const positions = this.getPositions(true)
+        const xArray = positions.map(p => p.x)
+        const yArray = positions.map(p => p.y)
+        const xUnique = Array.from(new Set(xArray)).sort((a, b) => a - b)
+        const yUnique = Array.from(new Set(yArray)).sort((a, b) => a - b)
+        const positionsNew = positions.map(p => { 
+          return {
+            x: xUnique.indexOf(p.x) * 350,
+            y: yUnique.indexOf(p.y) * 450
+          }
+        })
+        
+        console.log('[toggleFlow] New positions:', positionsNew)
+        this.models[this.activeModel].blocks.forEach((block, i) => {
+          if (!block.hasOwnProperty('posFlow')) {
+            block.posFlow = {
+              //x: X_OFFSET + positionsNew[i].x * X_SCALE,
+              //y: Y_OFFSET + positionsNew[i].y * Y_SCALE
+              x: positionsNew[i].x,
+              y: positionsNew[i].y
+            }
+          }
+        })
         const flow = blocksToFlow(
           this.models[this.activeModel].blocks, 
-          this.getPositions(true),
           this.log
         )
         this.baklava.editor.load(flow)
@@ -1137,8 +1203,20 @@ const params = {
       }
     },
     getPositions (hierarchical=false) {
-      const positions = this.$refs.network.getPositions(hierarchical) // Object
-      return Object.keys(positions).map(k => positions[k])
+      const positions = this.$refs.network.getPositions(hierarchical) // -> Object
+      return Object.keys(positions).map(k => {
+        // Check if current block has positions `pos`
+        if (this.models[this.activeModel].blocks[k].hasOwnProperty('pos')) {
+          // If so, return the positions from the block
+          return this.models[this.activeModel].blocks[k].pos
+        } else {
+          // Otherwise, return the positions from the network
+          return positions[k]
+        }
+      })
+    },
+    updateBlockPosition (id, pos) {
+      this.models[this.activeModel].blocks[id].pos = pos
     },
     log() {
       console.log('[App]', ...arguments)
