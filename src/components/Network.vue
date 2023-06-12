@@ -153,6 +153,9 @@
     }
   }
 
+  let nodesPrev = null
+  let edgesPrev = null
+
   export default {
     props: [
       // 'nodes',
@@ -349,12 +352,25 @@
         edges: this.edges
       }
       network = new Network(container, this.data, networkOptions)
+      window.network = network
       
       network.on('selectNode', (params) => {
         // Using arrow here to preserve `this` of the Vue component
         console.log('selectNode Event:', params)
         this.$emit('selectNode', params);
       });
+
+      // network.on('dragEnd', (params) => {
+      //   // Using arrow here to preserve `this` of the Vue component
+      //   console.log('dragEnd Event:', params)
+      //   this.updateBlockPosition(
+      //     params.nodes[0],
+      //     {
+      //       x: params.pointer.canvas.x,
+      //       y: params.pointer.canvas.y
+      //     }
+      //   )
+      // })
     },
     watch: {
       // models() {
@@ -372,14 +388,29 @@
         network.setData({ nodes, edges })
       },
       getPositions(hierarchical=false) {
-        let n = network
         if (hierarchical) {
+          // Here is a trick: we create a new network with the same data
+          // Make it hierarchical so that there's a natural flow from left to right
+          // Then we stabilize it and get the positions
+          // Later we will use this positions to create a flow-based representation
           const container = document.createElement('div')
-          networkOptions.layout.hierarchical.enabled = hierarchical
-          n = new Network(container, this.data, networkOptions)
-          n.stabilize()
+          const networkOptionsHierarchical = JSON.parse(JSON.stringify(networkOptions))
+          networkOptionsHierarchical.layout.hierarchical.enabled = true
+          const networkHierarchical = new Network(
+            container,
+            {
+              nodes: this.nodes,
+              edges: this.edges
+            },
+            networkOptionsHierarchical
+          )
+          networkHierarchical.stabilize()
+          return networkHierarchical.getPositions()
         } 
-        return n.getPositions()
+        return network.getPositions()
+      },
+      updateBlockPosition(id, pos) {
+        this.$emit('updateBlockPosition', id, pos)
       },
     },
   }
