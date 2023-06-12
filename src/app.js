@@ -1134,7 +1134,7 @@ const params = {
       const X_SCALE = 2
       const X_OFFSET = 350
       const Y_SCALE = 4.5
-      const Y_OFFSET = 0
+      const Y_OFFSET = 100
 
       if (typeof model === 'undefined') {
         model = this.models[this.activeModel]
@@ -1177,8 +1177,8 @@ const params = {
         const yUnique = Array.from(new Set(yArray)).sort((a, b) => a - b)
         const positionsNew = positions.map(p => { 
           return {
-            x: xUnique.indexOf(p.x) * 350,
-            y: yUnique.indexOf(p.y) * 450
+            x: X_OFFSET + xUnique.indexOf(p.x) * 350,
+            y: Y_OFFSET + yUnique.indexOf(p.y) * 450
           }
         })
         
