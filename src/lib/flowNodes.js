@@ -18,6 +18,7 @@ const expressionsMath = require('./expressionsMath')
 const expressionsLogic = require('./expressionsLogic')
 const expressionsList = require('./expressionsList')
 
+
 // Define a custom node
 const DataNode = defineDynamicNode({
   type: 'Data',
@@ -30,7 +31,6 @@ const DataNode = defineDynamicNode({
     ).setPort(false),
   },
   onUpdate({ dataType }) {
-    console.log(dataType)
     const inputs = {}
     if (dataType === 'integer') {
       inputs['value'] = () => new IntegerInterface('Value', 0).setPort(false)
@@ -41,9 +41,16 @@ const DataNode = defineDynamicNode({
     } else {
       inputs['value'] = () => new TextInputInterface('Value', '').setPort(false)
     }
+
+    // When using `forceUpdateInputs`, dynamic inputs will be updated even if only `name` changes
+    // That mean loosing the value of the input. To avoid that, we store the previous trigger value
+    // and only update the inputs if the value changes.
+    const update = this.previousValue !== dataType
+    this.previousValue = dataType
+
     return {
       inputs,
-      forceUpdateInputs: ['value']
+      forceUpdateInputs: update ? ['value'] : []
     }
   },
   outputs: {
@@ -82,8 +89,11 @@ const VariableNode = defineDynamicNode({
         else
           inputs[paramName] = () => new NumberInterface(paramName, 0, param.min, param.max)
       })
+      const update = this.previousValue !== operation
+      this.previousValue = operation
       return {
-        inputs
+        inputs,
+        forceUpdateInputs: update ? ['value'] : []
       }
     }
   },
@@ -126,17 +136,23 @@ const ExpressionNode = defineDynamicNode({
 })
 */
 
+const mathMethods = Object.getOwnPropertyNames(Math).filter(prop => {
+  return typeof Math[prop] === 'function';
+})
+
 function getInputsFromExpression(expression) {
   const inputs = {}
   try {
     const tokens = esprima.tokenize(expression)
-    tokens.forEach(token => {
+    tokens.forEach((token, ti) => {
       if (token.type === 'Identifier') {
+        if (token.value === 'Math') return
+        if (ti > 0 && tokens[ti - 1].type === 'Punctuator' && tokens[ti - 1].value === '.') return
         inputs[token.value] = () => new TextInputInterface(token.value, '')
       }
     })
   } catch (e) {
-    // Do nothing
+    console.error(e)
   }
   return inputs
 }
@@ -266,12 +282,12 @@ const OptimizeNode = defineDynamicNode({
 })
 
 export default [
+  DataNode, 
   VariableNode,
   ExpressionCustomNode,
   ExpressionMathNode,
   ExpressionLogicNode,
   ExpressionListNode,
-  DataNode, 
   AccumulatorNode,
   ConditionNode,
   OptimizeNode
