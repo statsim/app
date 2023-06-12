@@ -359,18 +359,6 @@
         console.log('selectNode Event:', params)
         this.$emit('selectNode', params);
       });
-
-      // network.on('dragEnd', (params) => {
-      //   // Using arrow here to preserve `this` of the Vue component
-      //   console.log('dragEnd Event:', params)
-      //   this.updateBlockPosition(
-      //     params.nodes[0],
-      //     {
-      //       x: params.pointer.canvas.x,
-      //       y: params.pointer.canvas.y
-      //     }
-      //   )
-      // })
     },
     watch: {
       // models() {
@@ -408,9 +396,6 @@
           return networkHierarchical.getPositions()
         } 
         return network.getPositions()
-      },
-      updateBlockPosition(id, pos) {
-        this.$emit('updateBlockPosition', id, pos)
       },
     },
   }
