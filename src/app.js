@@ -275,7 +275,7 @@ const params = {
           this.log('[parseLink] Got models from queries:', models, activeModel)
           processModels(models)
           this.models = models
-          this.switchModel(0 || activeModel)
+          this.switchModel(0 || activeModel, true)
           if (query.indexOf('url=') > 0) {
             console.log('[Vue] Initializing stream for data url')
             // Adding delay here because somewhere else table redraw is initialized
@@ -291,7 +291,7 @@ const params = {
     } else { // *if window.location.search is not empty
       // Clean start
       this.models = [createBaseModel('Main')]
-      this.switchModel(0)
+      this.switchModel(0, true)
       // delay.call(this, 500, () => {
       //   this.openDialog('onboarding')
       // })
@@ -787,7 +787,7 @@ const params = {
         // Update history
         window.history.replaceState({}, 'New project', '.')
         // Switch to firstModel model
-        this.switchModel(0)
+        this.switchModel(0, true)
         // Clean models
         this.models = [createBaseModel('Main')]
         this.notify('New project created')
