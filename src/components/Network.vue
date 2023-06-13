@@ -319,6 +319,8 @@
             case 3: // Accum
               links = links.concat(check(b.increment, i))
               links = links.concat(check(b.initialValue, i))
+              links = links.concat(check(b.min, i))
+              links = links.concat(check(b.max, i))
               break
             case 4: // Observer
               Object.keys(distributions[b.distribution]).forEach(k => {
