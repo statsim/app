@@ -64,6 +64,8 @@ function flowToBlocks (flowInput, log) {
 
     // First deal with edge cases (Expressions, Variables, etc.)
     // For each input, remove it from the node and add it to the block
+    // But why are we removing the inputs? 
+    // -> Later we iterate over what's left
 
     // Case: Expression
     if (node.type.includes('Expression')) {
@@ -132,6 +134,30 @@ function flowToBlocks (flowInput, log) {
       delete node.inputs.operation
     }
 
+    // Case: Accumulator
+    if (node.type === 'Accumulator') {
+      block.increment = node.inputs.increment.value
+      delete node.inputs.increment
+      // Similarly to custom expression, value can have dynamic inputs
+      Object.keys(node.inputs).forEach(inputName => {
+        const input = node.inputs[inputName]
+        // Check if input is present in the expression
+        if (block.increment.includes(inputName)) {
+          // 1. Input has incoming connections
+          const connectionName = getConnectionName(input.id)
+          if (connectionName) {
+            block.increment = block.increment.replace(inputName, connectionName)
+          }
+          // 2. Input has a value and no incoming connections
+          else if (input.value !== undefined) {
+            block.increment = block.increment.replace(inputName, input.value)
+          }
+          // Remove input from the node
+          delete node.inputs[inputName]
+        }
+      })
+    }
+
     // Case: Condition, Optimize
     if (node.type === 'Condition' || node.type === 'Optimize') {
         block.value = node.inputs.value.value
@@ -160,7 +186,15 @@ function flowToBlocks (flowInput, log) {
     // E.g. `name` or `show`
     Object.keys(node.inputs).forEach(inputName => {
       const input = node.inputs[inputName]
-      block[inputName] = input.value
+      const connectionName = getConnectionName(input.id)
+      // 1. Input has incoming connections
+      if (connectionName) {
+        block[inputName] = connectionName
+      }
+      // 2. Input has a value and no incoming connections
+      else if (input.value !== undefined) {
+        block[inputName] = input.value
+      }
     })
 
     blocks.push(block)
