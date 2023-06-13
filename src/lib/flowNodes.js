@@ -18,12 +18,11 @@ const expressionsMath = require('./expressionsMath')
 const expressionsLogic = require('./expressionsLogic')
 const expressionsList = require('./expressionsList')
 
-
 // Define a custom node
 const DataNode = defineDynamicNode({
   type: 'Data',
   inputs: {
-    name: () => new TextInputInterface('Name', 'X').setPort(false),
+    name: () => new TextInputInterface('Name', '').setPort(false),
     dataType: () => new SelectInterface(
       'Data type', 
       'integer', 
@@ -162,7 +161,7 @@ const ExpressionCustomNode = defineDynamicNode({
   type: 'Expression (Custom)',
   inputs: {
     show: () => new CheckboxInterface('Show in results', true).setPort(false),
-    name: () => new TextInputInterface('Name...', '').setPort(false),
+    name: () => new TextInputInterface('Name', '').setPort(false),
     expression: () => new TextInputInterface('Expression string...', 'Input').setPort(false),
   },
   onUpdate({ expression }) {
@@ -232,8 +231,8 @@ const AccumulatorNode = defineDynamicNode({
   type: 'Accumulator',
   inputs: {
     show: () => new CheckboxInterface('Show in results', true).setPort(false),
-    name: () => new TextInputInterface('Name...', '').setPort(false),
-    increment: () => new TextInputInterface('Increment', 'Increment'),
+    name: () => new TextInputInterface('Name', '').setPort(false),
+    increment: () => new TextInputInterface('Increment', 'Increment').setPort(false),
     initialValue: () => new NumberInterface('Initial', 0),
     min: () => new TextInputInterface('Min', ''),
     max: () => new TextInputInterface('Max', ''),
