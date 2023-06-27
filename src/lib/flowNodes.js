@@ -101,6 +101,41 @@ const VariableNode = defineDynamicNode({
   },
 })
 
+
+// Define a custom node
+// https://v2.baklava.tech/nodes/dynamic-nodes.html
+const ObserverNode = defineDynamicNode({
+  type: 'Observer',
+  inputs: {
+    value: () => new TextInputInterface('Observed data', ''),
+    operation: () => new SelectInterface(
+      'Distribution', 
+      'Gaussian', 
+      Object.keys(distributions)
+    ).setPort(false),
+  },
+  onUpdate({ operation }) {
+    const inputs = {}
+    const params = distributions[operation]
+    Object.keys(params).forEach(paramName => {
+      const param = params[paramName]
+      if (param.type === 'int')
+        inputs[paramName] = () => new IntegerInterface(paramName, 0, param.min, param.max)
+      else if (param.type === 'vector')
+        inputs[paramName] = () => new TextInputInterface(paramName, '')
+      else
+        inputs[paramName] = () => new NumberInterface(paramName, 0, param.min, param.max)
+    })
+    const update = this.previousValue !== operation
+    this.previousValue = operation
+    return {
+      inputs,
+      forceUpdateInputs: update ? ['value'] : []
+    }
+  },
+  outputs: {},
+})
+
 /*
 const ExpressionNode = defineDynamicNode({
     type: 'Expression',
@@ -289,5 +324,6 @@ export default [
   ExpressionListNode,
   AccumulatorNode,
   ConditionNode,
-  OptimizeNode
+  OptimizeNode,
+  ObserverNode
 ]

@@ -116,7 +116,7 @@ function flowToBlocks (flowInput, log) {
     }
 
     // Case: Variable
-    if (node.type === 'Variable' && node.inputs.operation && node.inputs.operation.value !== 'None') {
+    if (((node.type === 'Variable') || (node.type === 'Observer')) && node.inputs.operation && node.inputs.operation.value !== 'None') {
       block.distribution = node.inputs.operation.value
       block.params = {}
       Object.keys(distributions[node.inputs.operation.value]).forEach(inputName => {
@@ -261,9 +261,9 @@ function blockToNode(block) {
   // In blocks models strict integer/float inputs can contain string names of other blocks
   // Baklava throws TypeError: intf.value.value.toFixed is not a function
 
-  // [Variable]
-  if (block.typeCode === 0) {
-    // Variable -> Distribution, Params
+  // [Variable || Observer]
+  if (block.typeCode === 0 || block.typeCode === 4) {
+    // Distribution, Params
     if (typeof block.distribution !== 'undefined') {
       node.inputs.operation = {
         id: genId('i'),
@@ -279,7 +279,7 @@ function blockToNode(block) {
         }
       })
     }
-    // Variable -> Shape
+    // Shape
     if (typeof block.dims !== 'undefined') {
       node.inputs.dims = {
         id: genId('i'),
@@ -371,8 +371,16 @@ function blockToNode(block) {
       value: block.show
     }
   }
+
+  // `value` for Observer (non-dynamic)
+  if (typeof block.value !== 'undefined' && block.typeCode === 4) {
+    node.inputs.value = {
+      id: genId('i'),
+      value: block.value || '',
+    }
+  }
   
-  // `value` (for Condition and Optimize)
+  // `value` (for Accumulator, Condition and Optimize)
   if (typeof block.value !== 'undefined' && [3, 5, 8].includes(block.typeCode)) {
     node.inputs.value = {
       id: genId('i'),

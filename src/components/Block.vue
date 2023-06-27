@@ -121,6 +121,7 @@
       <s-block-expression :block="block" v-if="block.typeCode === 1"></s-block-expression>
       <s-block-data :block="block" v-if="block.typeCode === 2"></s-block-data>
       <s-block-accumulator :block="block" v-if="block.typeCode === 3"></s-block-accumulator>
+      <s-block-observer :block="block" v-if="block.typeCode === 4"></s-block-observer>
       <s-block-condition :block="block" v-if="block.typeCode === 5"></s-block-condition>
       <s-block-optimize :block="block" v-if="block.typeCode === 8"></s-block-optimize>
     </template>
@@ -134,6 +135,7 @@ import BlockExpression from './BlockExpression.vue'
 import BlockAccumulator from './BlockAccumulator.vue'
 import BlockOptimize from './BlockOptimize.vue'
 import BlockCondition from './BlockCondition.vue'
+import BlockObserver from './BlockObserver.vue'
 
 import colors from '../lib/blockColors.js'
 
@@ -200,6 +202,7 @@ export default {
     's-block-accumulator': BlockAccumulator,
     's-block-optimize': BlockOptimize,
     's-block-condition': BlockCondition,
+    's-block-observer': BlockObserver,
   },
   props: ['block', 'blockIndex', 'id'],
 }
