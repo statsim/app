@@ -1,4 +1,4 @@
-<style> 
+<style>
 </style>
 <template>
   <div id="mynetwork"></div>
@@ -10,7 +10,7 @@
 
   const distributions = require('../lib/distributions')
   const expressions = require('../lib/expressions')
-  
+
   // Defining network here rather than in `data` to prevent proxifying by Vue
   // TypeError: Cannot read private member from an object whose class did not declare it
   let network
@@ -221,48 +221,88 @@
         return sn
       },
       nodes: function () {
-        // console.log(new Date(), 'Nodes: Starting dynamic update')
-        const nodes = this.models[this.activeModel].blocks
-          .map((b, i) => {
-            let label = (b.name && b.name.length) ? `${b.name}` : b.type
-            label = '<b>' + label + '</b>'
-            if (b.typeCode <= 3 && b.value && b.value.length) {
-              if (b.value.includes(',')) {
-                // List
-                label += `\n${b.value.split(',').length} items`
-              } else {
-                label += `\n${b.value}`
-              }
-            }
-            let node = {
-              id: i,
-              label: label,
-            }
-            if (b.icon && b.icon.length) {
-              node.group = 'icon'
-              node.shape = 'icon'
-              node.icon = {
-                face: 'Material Icons',
-                code: b.icon,
-                size: b.size ? b.size : 40,
-                color: (b.color && b.color.length) ? b.color : '#ababab'
-              }
+        return this.getNodes({shadow: true})
+      },
+      edges: function() {
+        return this.getEdges({shadow: true})
+      }
+    },
+    mounted() {
+      // create a network
+      // Relying on `this` so not using arrow
+      const container = document.getElementById("mynetwork");
+      this.data = {
+        nodes: this.nodes,
+        edges: this.edges
+      }
+      network = new Network(container, this.data, networkOptions)
+      window.network = network
+
+      network.on('selectNode', (params) => {
+        // Using arrow here to preserve `this` of the Vue component
+        console.log('selectNode Event:', params)
+        this.$emit('selectNode', params);
+      });
+    },
+    watch: {
+      // models() {
+      //   this.updateNetworkData(this.nodes, this.edges)
+      // },
+      nodes(nodes) {
+        this.updateNetworkData(nodes, this.edges)
+      },
+      edges(edges) {
+        this.updateNetworkData(this.nodes, edges)
+      }
+    },
+    methods: {
+      updateNetworkData(nodes, edges) {
+        network.setData({ nodes, edges })
+      },
+      getNodes(params) {
+        params = Object.assign({shadow: true}, params)
+        const nodes = this.models[this.activeModel].blocks.map((b, i) => {
+          let label = (b.name && b.name.length) ? `${b.name}` : b.type
+          label = '<b>' + label + '</b>'
+          if (b.typeCode <= 3 && b.value && b.value.length) {
+            if (b.value.includes(',')) {
+              // List
+              label += `\n${b.value.split(',').length} items`
             } else {
-              node.group = b.typeCode + '' // Stopped working with raw numbers
+              label += `\n${b.value}`
             }
-            if (b.pos) {
-              node.x = b.pos.x
-              node.y = b.pos.y
-              delete b.pos
+          }
+          let node = {
+            id: i,
+            label: label,
+          }
+          if (b.icon && b.icon.length) {
+            node.group = 'icon'
+            node.shape = 'icon'
+            node.icon = {
+              face: 'Material Icons',
+              code: b.icon,
+              size: b.size ? b.size : 40,
+              color: (b.color && b.color.length) ? b.color : '#ababab'
             }
-            return node
-          })
-          .concat(this.shadowNodes)
-        // console.log(new Date(), 'Nodes: returning nodes', nodes)
+          } else {
+            node.group = b.typeCode + '' // Stopped working with raw numbers
+          }
+          if (b.pos) {
+            node.x = b.pos.x
+            node.y = b.pos.y
+            delete b.pos
+          }
+          return node
+        })
+        // Check for shadow nodes if the flag is set
+        if (params.shadow) {
+          nodes.push(...this.shadowNodes)
+        }
         return nodes
       },
-      edges: function () {
-        // console.log(new Date(), 'Links: generating network links')
+      getEdges(params) {
+        params = Object.assign({shadow: true}, params)
         const check = (str, baseBlockIndex) => {
           const l = []
           if (typeof str === 'string') {
@@ -274,14 +314,16 @@
                 })
               }
             })
-            this.shadowNodes.forEach((s, i) => {
-              if (s.label && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(s.label.trim()) >= 0)) {
-                l.push({
-                  to: baseBlockIndex,
-                  from: s.id
-                })
-              }
-            })
+            if (params.shadow) {
+              this.shadowNodes.forEach((s, i) => {
+                if (s.label && (str.split(/[^A-Za-z0-9_\s]/g).map(s => s.trim()).indexOf(s.label.trim()) >= 0)) {
+                  l.push({
+                    to: baseBlockIndex,
+                    from: s.id
+                  })
+                }
+              })
+            }
           }
           return l
         }
@@ -343,39 +385,6 @@
         })
         // console.log(new Date(), 'Links: returning links', links.length)
         return links
-      }
-    },
-    mounted() {
-      // create a network
-      // Relying on `this` so not using arrow
-      const container = document.getElementById("mynetwork");
-      this.data = {
-        nodes: this.nodes,
-        edges: this.edges
-      }
-      network = new Network(container, this.data, networkOptions)
-      window.network = network
-      
-      network.on('selectNode', (params) => {
-        // Using arrow here to preserve `this` of the Vue component
-        console.log('selectNode Event:', params)
-        this.$emit('selectNode', params);
-      });
-    },
-    watch: {
-      // models() {
-      //   this.updateNetworkData(this.nodes, this.edges)
-      // },
-      nodes(nodes) {
-        this.updateNetworkData(nodes, this.edges)
-      },
-      edges(edges) {
-        this.updateNetworkData(this.nodes, edges)
-      }
-    },
-    methods: {
-      updateNetworkData(nodes, edges) {
-        network.setData({ nodes, edges })
       },
       getPositions(hierarchical=false) {
         if (hierarchical) {
@@ -389,14 +398,14 @@
           const networkHierarchical = new Network(
             container,
             {
-              nodes: this.nodes,
-              edges: this.edges
+              nodes: this.getNodes({shadow: false}),
+              edges: this.getEdges({shadow: false}),
             },
             networkOptionsHierarchical
           )
           networkHierarchical.stabilize()
           return networkHierarchical.getPositions()
-        } 
+        }
         return network.getPositions()
       },
     },
