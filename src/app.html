@@ -20,12 +20,12 @@
     @togglePreview="togglePreview"
     @toggleFlow="toggleFlow"
     :version="version"
-  ></s-menu> 
+  ></s-menu>
 
-  <!--  
+  <!--
     clipped-left
   -->
-  <v-app-bar 
+  <v-app-bar
     v-if="models && models.length > 0"
     location="top"
     app
@@ -41,7 +41,7 @@
       <!-- v-if="preview" -->
 
     <!--
-      v-model in v-tabs updates modelId before 
+      v-model in v-tabs updates modelId before
       switchModel is called, so we loose current model
       use v-bind:model-value instead
       https://vuetifyjs.com/en/api/v-tabs/#events-update:modelValue
@@ -64,7 +64,7 @@
 
     <v-menu>
       <template v-slot:activator="{ props }">
-        <v-btn 
+        <v-btn
           id="btn-add-model"
           v-bind="props"
           style="margin-left: 5px;"
@@ -74,19 +74,19 @@
         </v-btn>
       </template>
       <v-list>
-        <v-list-item 
+        <v-list-item
           id="menu-add-model"
-          @click="createModel" 
+          @click="createModel"
           key="0"
         >
           <v-list-item-title>
             <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> Model
           </v-list-item-title>
         </v-list-item>
-        <v-list-item 
+        <v-list-item
           id="menu-add-dataframe"
-          @click="createDataframe" 
-          key="1" 
+          @click="createDataframe"
+          key="1"
         >
           <v-list-item-title>
             <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> Data
@@ -95,33 +95,33 @@
       </v-list>
     </v-menu>
 
-    <!-- <v-btn 
+    <!-- <v-btn
       @click="createModel"
       icon="mdi-plus"
     ></v-btn> -->
 
     <v-spacer></v-spacer>
 
-    <v-btn 
+    <v-btn
       id="btn-flow"
       class="d-none d-sm-flex"
       @click="toggleFlow(models[activeModel])"
     >
-      <v-icon style="transform: rotate(90deg);"> 
-        {{ models[activeModel].modelParams.type === 'flow' ? 'mdi-view-column-outline' : 'mdi-source-fork' }} 
+      <v-icon style="transform: rotate(90deg);">
+        {{ models[activeModel].modelParams.type === 'flow' ? 'mdi-view-column-outline' : 'mdi-source-fork' }}
       </v-icon>
-      <small class="d-none d-md-inline-block"> 
-        {{ models[activeModel].modelParams.type === 'flow' ? 'Toggle blocks' : 'Toggle flow' }} 
+      <small class="d-none d-md-inline-block">
+        {{ models[activeModel].modelParams.type === 'flow' ? 'Toggle blocks' : 'Toggle flow' }}
       </small>
     </v-btn>
     <v-menu>
       <template v-slot:activator="{ props }">
-        <!-- <v-btn 
+        <!-- <v-btn
           class="d-none d-md-flex"
-          v-bind="props" 
+          v-bind="props"
           icon="mdi-code-json"
         ></v-btn> -->
-        <v-btn 
+        <v-btn
           class="d-none d-sm-flex"
           v-bind="props"
         >
@@ -130,37 +130,37 @@
         </v-btn>
       </template>
       <v-list>
-        <v-list-item 
+        <v-list-item
           id="menu-code-wppl"
-          @click="generateWebPPL" 
+          @click="generateWebPPL"
           key="0"
         >
           <v-list-item-title>
             <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> WebPPL
           </v-list-item-title>
         </v-list-item>
-        <v-list-item 
+        <v-list-item
           id="menu-code-z3"
           @click="generateZ3"
-          key="1" 
+          key="1"
         >
           <v-list-item-title>
             <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> Z3
           </v-list-item-title>
         </v-list-item>
-        <v-list-item 
+        <v-list-item
           id="menu-code-pymc3"
           @click="generatePYMC3"
-          key="2" 
+          key="2"
         >
           <v-list-item-title>
             <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> PyMC3
           </v-list-item-title>
         </v-list-item>
-        <v-list-item 
+        <v-list-item
           id="menu-code-pymc3"
           @click="generateJSON"
-          key="3" 
+          key="3"
         >
           <v-list-item-title>
             <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> JSON
@@ -168,14 +168,14 @@
         </v-list-item>
       </v-list>
     </v-menu>
-    <v-btn 
+    <v-btn
       @click="generateLink"
     >
       <v-icon>mdi-link</v-icon>
       <small class="d-none d-md-inline-block"> Link </small>
     </v-btn>
   </v-app-bar>
-  
+
 
   <v-app-bar
     v-if="models && models.length > 0"
@@ -186,37 +186,37 @@
     density="compact"
     :elevation="0"
   >
-      
+
     <!-- Minimize/Maximize all blocks in the sidebar -->
     <div
       v-if="!preview"
       style="border-right: 1px solid #80808030; margin-right: 10px; text-align: center;"
       :style="{'width': sidebarWidth + 'px'}"
     >
-      <v-btn 
+      <v-btn
         v-if="!preview"
-        @click="minimizeAllBlocks" 
+        @click="minimizeAllBlocks"
         density="compact"
       >
         <v-icon>mdi-arrow-collapse-vertical</v-icon>
         <small
           v-if="sidebarWidth > 275"
-          class="d-none d-sm-inline-block" 
+          class="d-none d-sm-inline-block"
         > Collapse all </small>
       </v-btn>
-      <v-btn 
+      <v-btn
         v-if="!preview"
         @click="maximizeAllBlocks"
         density="compact"
       >
         <v-icon>mdi-arrow-expand-vertical</v-icon>
         <small
-          v-if="sidebarWidth > 275"        
+          v-if="sidebarWidth > 275"
           class="d-none d-sm-inline-block"
         > Expand all </small>
       </v-btn>
     </div>
-      
+
     <v-spacer></v-spacer>
 
     <!-- Visible only on screens larger than small -->
@@ -253,15 +253,25 @@
           </span>
         </v-btn>
     </template>
+
+    <v-progress-linear
+      :active="loading"
+      :indeterminate="loading"
+      :height="2"
+      color="black"
+      absolute
+      bottom
+    ></v-progress-linear>
+
   </v-app-bar>
 
 
-  <!-- 
-    Sidebar is used to design models 
+  <!--
+    Sidebar is used to design models
     `v-if` is used to show sidebar only when models are loaded/initiated
     `ref` is used to trigger sidebar methods from parent component
   -->
-  <s-sidebar 
+  <s-sidebar
     :models="models"
     :active-model="activeModel"
     v-model:sidebar-width="sidebarWidth"
@@ -297,14 +307,14 @@
     <div id="table-container" class="tables wl" v-if="models.length && models[activeModel].modelParams.table">
       <!--<div class="control-buttons" v-if="false && !(models[activeModel].modelParams.type && (models[activeModel].modelParams.type === 'dataframe'))">-->
       <div class="control-buttons" v-if="!preview">
-        <v-btn 
+        <v-btn
           @click="renderDataTable"
           density="compact"
         >
           <v-icon>mdi-refresh</v-icon>
           <small> Reload </small>
         </v-btn>
-        <v-btn 
+        <v-btn
           @click="disableDataTable"
           density="compact"
         >
@@ -344,26 +354,26 @@
       Save
     </v-btn> -->
     <!-- <s-flow></s-flow> -->
-    <div 
+    <div
       v-if="baklava && models[activeModel].modelParams.type === 'flow'"
-      class="flow" 
+      class="flow"
       style="width: 100%; height: 800px"
     >
-      <baklava-editor 
-        :view-model="baklava" 
+      <baklava-editor
+        :view-model="baklava"
       ></baklava-editor>
     </div>
-        
-    <!-- 
-      <pre style="font-size: 9px; line-height: 9px;">{{ JSON.stringify(models, null, 2) }}</pre> 
+
+    <!--
+      <pre style="font-size: 9px; line-height: 9px;">{{ JSON.stringify(models, null, 2) }}</pre>
     -->
-    
+
     <!-- Computation running indicator -->
     <div id="loader"></div>
 
     <!-- Active model has all output blocks with the expected classNames -->
     <!-- Now we can switch .output.active with visible: visi -->
-    <div 
+    <div
       v-for="(model, modelIndex) in models"
       :key="modelIndex"
     >
@@ -376,8 +386,8 @@
         <div :class="{ wl: true, 'archives': activeModel === modelIndex }"></div>
       </div>
     </div>
-    
-<!--  
+
+<!--
         <div class="charts wl"></div>
         <div class="charts-2d wl"></div>
         <div class="charts-extra wl"></div>
@@ -401,19 +411,19 @@
   </v-snackbar>
 
   <!-- Fake file inputs-->
-  <input 
-    type="file" 
-    accept=".csv, .tsv, .txt" 
-    id="openDataFile" 
-    v-on:change="openDataFile" 
-    style="display: none;" 
+  <input
+    type="file"
+    accept=".csv, .tsv, .txt"
+    id="openDataFile"
+    v-on:change="openDataFile"
+    style="display: none;"
   />
-  <input 
-    type="file" 
-    accept=".json, .ssp" 
-    id="openProjectFile" 
-    v-on:change="openProjectFile" 
-    style="display: none;" 
+  <input
+    type="file"
+    accept=".json, .ssp"
+    id="openProjectFile"
+    v-on:change="openProjectFile"
+    style="display: none;"
   />
 
 
