@@ -63,9 +63,8 @@ import { EditorComponent, useBaklava } from "@baklavajs/renderer-vue";
 import "@baklavajs/themes/dist/syrup-dark.css";
 
 // Flow helpers (Nodes, Converter)
-import nodes from './lib/flowNodes' 
+import nodes from './lib/flowNodes'
 import { blocksToFlow, flowToBlocks } from './lib/flowConvert'
-import { e, p } from './lib/abbr'
 
 // Define a custom node
 // import { defineNode, NodeInterface, NumberInterface, SelectInterface } from "baklavajs";
@@ -317,7 +316,7 @@ const params = {
       deep: true
     }
     */
-    /* 
+    /*
     activeModel () {
       this.log('[Watch] Active model changed')
       this.switchModel(this.activeModel)
@@ -873,14 +872,14 @@ const params = {
       // Store current model nodes positions
       const currentModel = this.models[this.activeModel]
       if (currentModel.modelParams.type && (currentModel.modelParams.type === 'flow')) {
-        // If flow: 
+        // If flow:
         // Convert current flow to blocks
         // Coordinates are stored in block.posFlow.x, .y
         const flow = this.baklava.editor.save()
         const blocks = flowToBlocks(flow, this.log)
         currentModel.blocks = blocks
       } else {
-        // If blocks: 
+        // If blocks:
         // Store current positions from the graph
         const positions = this.getPositions(false)
         currentModel.blocks.forEach((b, bi) => {
@@ -926,7 +925,7 @@ const params = {
       }
 
       // Get current model
-      const currentModel = ignoreCurrentModel 
+      const currentModel = ignoreCurrentModel
         ? undefined
         : this.models[this.activeModel]
 
@@ -958,7 +957,7 @@ const params = {
           b.minimized = true
         })
       }
-      
+
       // Switch flow (current flow -> ...)
       const isCurrentModelFlow = currentModel && currentModel.modelParams.type && (currentModel.modelParams.type === 'flow')
       if (isCurrentModelFlow) {
@@ -981,7 +980,7 @@ const params = {
         } else {
           this.log('[switchModel] Loading flow from blocks...')
           const flow = blocksToFlow(
-            targetModel.blocks, 
+            targetModel.blocks,
             this.log
           )
           this.baklava.editor.load(flow)
@@ -1157,9 +1156,9 @@ const params = {
               y: block.posFlow.y / Y_SCALE - Y_OFFSET
             }
           } else {
-            block.pos = { 
-              x: 0, 
-              y: 0 
+            block.pos = {
+              x: 0,
+              y: 0
             }
           }
         }
@@ -1175,13 +1174,13 @@ const params = {
         const yArray = positions.map(p => p.y)
         const xUnique = Array.from(new Set(xArray)).sort((a, b) => a - b)
         const yUnique = Array.from(new Set(yArray)).sort((a, b) => a - b)
-        const positionsNew = positions.map(p => { 
+        const positionsNew = positions.map(p => {
           return {
             x: X_OFFSET + xUnique.indexOf(p.x) * 350,
             y: Y_OFFSET + yUnique.indexOf(p.y) * 450
           }
         })
-        
+
         console.log('[toggleFlow] New positions:', positionsNew)
         this.models[this.activeModel].blocks.forEach((block, i) => {
           if (!block.hasOwnProperty('posFlow')) {
@@ -1194,7 +1193,7 @@ const params = {
           }
         })
         const flow = blocksToFlow(
-          this.models[this.activeModel].blocks, 
+          this.models[this.activeModel].blocks,
           this.log
         )
         this.baklava.editor.load(flow)
@@ -1204,16 +1203,18 @@ const params = {
     },
     getPositions (hierarchical=false) {
       const positions = this.$refs.network.getPositions(hierarchical) // -> Object
-      return Object.keys(positions).map(k => {
-        // Check if current block has positions `pos`
-        if (this.models[this.activeModel].blocks[k].hasOwnProperty('pos')) {
-          // If so, return the positions from the block
-          return this.models[this.activeModel].blocks[k].pos
-        } else {
-          // Otherwise, return the positions from the network
-          return positions[k]
-        }
-      })
+      // Why loading position from blocks?
+      // return Object.keys(positions).map(k => {
+      //   // Check if current block has positions `pos`
+      //   if (this.models[this.activeModel].blocks[k].hasOwnProperty('pos')) {
+      //     // If so, return the positions from the block
+      //     return this.models[this.activeModel].blocks[k].pos
+      //   } else {
+      //     // Otherwise, return the positions from the network
+      //     return positions[k]
+      //   }
+      // })
+      return Object.keys(positions).map(k => positions[k])
     },
     updateBlockPosition (id, pos) {
       this.models[this.activeModel].blocks[id].pos = pos
