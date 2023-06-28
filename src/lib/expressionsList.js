@@ -4,6 +4,17 @@ module.exports = {
       type: 'vector'
     }
   },
+  'Slice': {
+    'input': {
+      type: 'vector'
+    },
+    'start': {
+      type: 'int'
+    },
+    'end': {
+      type: 'int'
+    }
+  },
   'Reduce product': {
     'input': {
       type: 'vector'

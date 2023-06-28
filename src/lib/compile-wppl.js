@@ -19,6 +19,64 @@ function generateExpression (expressionType, params) {
     case 'Mean':
     case 'Reduce mean':
       return `sum(${params.input}) / ${params.input}.length`
+    case 'Slice':
+      if (params.end && params.end.trim() !== '') {
+        return `${params.input}.slice(${params.start}, ${params.end})`
+      } else {
+        return `${params.input}.slice(${params.start})`
+      }
+    case 'Add':
+      return `${params.a} + ${params.b}`
+    case 'Subtract':
+      return `${params.a} - ${params.b}`
+    case 'Multiply':
+      return `${params.a} * ${params.b}`
+    case 'Divide':
+      return `${params.a} / ${params.b}`
+    case 'Power':
+      return `Math.pow(${params.a}, ${params.b})`
+    case 'Log':
+      return `Math.log(${params.a})`
+    case 'Exp':
+      return `Math.exp(${params.a})`
+    case 'Sqrt':
+      return `Math.sqrt(${params.a})`
+    case 'Abs':
+      return `Math.abs(${params.a})`
+    case 'Sin':
+      return `Math.sin(${params.a})`
+    case 'Cos':
+      return `Math.cos(${params.a})`
+    case 'Tan':
+      return `Math.tan(${params.a})`
+    case 'Ceil':
+      return `Math.ceil(${params.a})`
+    case 'Floor':
+      return `Math.floor(${params.a})`
+    case 'Round':
+      return `Math.round(${params.a})`
+    case 'Min':
+      return `Math.min(${params.a}, ${params.b})`
+    case 'Max':
+      return `Math.max(${params.a}, ${params.b})`
+    case 'And':
+      return `${params.a} && ${params.b}`
+    case 'Or':
+      return `${params.a} || ${params.b}`
+    case 'Not':
+      return `!${params.a}`
+    case 'Equal':
+      return `${params.a} === ${params.b}`
+    case 'Not equal':
+      return `${params.a} !== ${params.b}`
+    case 'Greater than':
+      return `${params.a} > ${params.b}`
+    case 'Greater than or equal':
+      return `${params.a} >= ${params.b}`
+    case 'Less than':
+      return `${params.a} < ${params.b}`
+    case 'Less than or equal':
+      return `${params.a} <= ${params.b}`
   }
 }
 
@@ -106,7 +164,7 @@ module.exports = function (models, activeModel) {
           dataTensors.push(b.name)
         }
       } else if ((b.typeCode === 0) && b.dims) {
-        b.dims += '' // Make sure it's string 
+        b.dims += '' // Make sure it's string
         // Multiple random variables:
         if (b.dims.trim() !== '1') {
           if (!b.dims.includes(',') && (parseInt(b.dims) > 1)) {
@@ -146,7 +204,7 @@ module.exports = function (models, activeModel) {
         paramKeys.forEach((key, i) => {
           // Convert to string
           let value = paramObj[key] + ''
-          
+
           // Detect csv with commas and no brackets: add brackets
           value = ((value.indexOf(',') >= 0) && (value.indexOf('(') < 0) && (value.indexOf('[') < 0))
              ? `[${value}]`
@@ -536,7 +594,7 @@ mapN(function (__j) {
           }
 
           observer += `
-mapIndexed(function (_j, _v) { 
+mapIndexed(function (_j, _v) {
   observe(${b.distribution}(${params}), _v)
 }, ${value})\n`
         } else {
