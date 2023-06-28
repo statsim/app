@@ -1,8 +1,8 @@
 {
   "name": "@statsim/app",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "description": "Statistical simulations and bayesian inference in the browser",
-  "main": "main.js",
+  "main": "electron.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/statsim/app"
@@ -11,12 +11,12 @@
   "scripts": {
     "_build": "npm run build-web && npm run build-bin",
     "_build-web": "browserify src/main.js -t [ vueify ] -t [ babelify ] -g [ envify --NODE_ENV production ] | uglifyjs -cm > dist/bundle.js",
-    "_build-bin": "rm -r bin && mkdir bin && electron-packager . --ignore=\"(node_modules|src)\"  --platform linux,win32 --out bin && cd ./bin && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "_build-dev": "browserify src/main.js -t [ vueify ] -o dist/bundle.js --debug",
     "_watch": "nodemon --watch src --ext vue,js,css,html --exec 'npm run build-dev'",
-    "_electron": "electron .",
+    "build-bin": "rm -r bin || true && mkdir bin && electron-packager . statsim --ignore=\"(node_modules|src)\"  --platform linux --out bin && cd ./bin && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "build-dev": "webpack --mode=development --progress --stats-children --env DEVELOPMENT",
     "build": "webpack --mode=production --progress && npm test && npm run test-examples",
+    "electron": "electron .",
     "watch": "nodemon --watch . --ignore dist --ext vue,js,css,html,json --exec 'npm run build-dev && npm test'",
     "test": "jest test-main.test.js --detectOpenHandles",
     "test-examples": "jest test-examples.test.js --detectOpenHandles",
