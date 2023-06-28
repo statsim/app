@@ -556,11 +556,19 @@ return ${transformedValue}
           return is
         }
 
-        const isVectorData = (str) => {
+        const isVectorBlock = (str) => {
+          // Check if `value` in the observer block references a block with vector values
           let is = false
           m.blocks.forEach(b => {
-            if ((b.typeCode === 2) && (b.name === str) && isVector(b.value) && (!b.hasOwnProperty('dims') || (b.dims.trim().length === 0))) {
-              is = true
+            if (b.name === str) {
+              if ((b.typeCode === 1) && ((b.dataType === 'vector') || (b.dataType === 'array'))) {
+                // Expression block
+                is = true
+              }
+              if ((b.typeCode === 2) && isVector(b.value) && (!b.hasOwnProperty('dims') || (b.dims.trim().length === 0))) {
+                // Data block
+                is = true
+              }
             }
           })
           return is
@@ -584,7 +592,7 @@ mapN(function (__j) {
           // Convert observer distribution params to string
           let params = getParams(b)
           observer += `observe(${b.distribution}(${params}), ${b.value})\n`
-        } else if (isVector(value) || isVectorData(value)) {
+        } else if (isVector(value) || isVectorBlock(value)) {
           // Vector
           let params = getParams(b, '_j')
           if (isVector(value) && (value.indexOf('[') < 0)) {
