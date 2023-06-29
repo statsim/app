@@ -157,6 +157,16 @@
             v-model="models[activeModel].modelParams.description"
             density="compact"
           ></v-textarea>
+
+          <!-- Number of steps -->
+          <v-text-field
+            label="Number of steps/iterations"
+            type="number"
+            step="1"
+            v-model="models[activeModel].modelParams.steps"
+            outlined
+            density="compact"
+          ></v-text-field>
         </v-expansion-panel-text>
       </v-expansion-panel>
 
