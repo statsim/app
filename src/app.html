@@ -387,13 +387,15 @@
       </div>
     </div>
 
-<!--
-        <div class="charts wl"></div>
-        <div class="charts-2d wl"></div>
-        <div class="charts-extra wl"></div>
-        <div class="archives wl"></div>
+    <v-btn
+      v-if="Object.keys(samples).length > 0"
+      @click="download"
+      style="margin:20px"
+    >
+      <v-icon>mdi-download-box</v-icon>
+      <small> Download results </small>
+    </v-btn>
 
--->
   </v-main>
 
   <!-- Notifications -->
