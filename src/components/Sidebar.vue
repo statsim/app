@@ -90,9 +90,9 @@
     location="left"
   >
 
-    <!-- 
+    <!--
 
-    <v-toolbar 
+    <v-toolbar
       color="primary"
       location="top"
       dense
@@ -115,11 +115,11 @@
 
 
 
-    
+
 
 
     <!-- Possibly model selector? -->
-    <!-- 
+    <!--
     <v-container>
       <v-card>
         <v-tabs
@@ -144,13 +144,15 @@
         <v-expansion-panel-title>Model details</v-expansion-panel-title>
         <v-expansion-panel-text>
           <!-- Name -->
-          <v-text-field 
+          <v-text-field
             label="Model name"
-            v-model="models[activeModel].modelParams.name" 
-            clearable 
+            v-model="models[activeModel].modelParams.name"
+            clearable
             density="compact"
           ></v-text-field>
-          <v-textarea 
+
+          <!-- Description -->
+          <v-textarea
             label="Description"
             v-model="models[activeModel].modelParams.description"
             density="compact"
@@ -162,7 +164,7 @@
         v-if="!(models[activeModel].modelParams.type && ['dataframe', 'flow'].includes(models[activeModel].modelParams.type))"
       >
         <v-expansion-panel-title>
-          Blocks         
+          Blocks
           <v-badge
             color="#AAA"
             :content="models[activeModel].blocks.length"
@@ -171,21 +173,21 @@
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <div>
-            <draggable 
-              v-model="models[activeModel].blocks" 
-              group="blocks" 
-              @start="drag=true" 
-              @end="drag=false" 
+            <draggable
+              v-model="models[activeModel].blocks"
+              group="blocks"
+              @start="drag=true"
+              @end="drag=false"
               item-key="id"
               handle=".handle"
             >
               <template #item="{element, index}">
                 <v-row dense>
-                  <v-col 
+                  <v-col
                     cols="12"
                     style="padding-bottom: 0px !important; padding-top: 0px !important;"
                   >
-                    <s-block 
+                    <s-block
                       :id="'block-id-' + activeModel + '-' + index"
                       :block="element"
                       :block-index="index"
@@ -198,9 +200,9 @@
                     ></s-block>
                     <v-menu>
                       <template v-slot:activator="{ props }">
-                        <a 
+                        <a
                           v-if="index < models[activeModel].blocks.length - 1"
-                          v-bind="props" 
+                          v-bind="props"
                           class="add-block-here"
                         > + </a>
                       </template>
@@ -228,10 +230,10 @@
               <template v-slot:activator="{ props }">
                 <v-btn
                   id="btn-add-block"
-                  v-bind="props" 
-                  size="small" 
+                  v-bind="props"
+                  size="small"
                   variant="outlined"
-                  block 
+                  block
                   style="border: 1px dashed #CCC; height: 48px"
                 >
                   <v-icon>mdi-plus</v-icon>
@@ -247,7 +249,7 @@
                   @click="addBlock(item.code, index)"
                 >
                   <v-list-item-title>
-                    <v-icon size="x-small" color="#DDD">mdi-plus</v-icon> 
+                    <v-icon size="x-small" color="#DDD">mdi-plus</v-icon>
                     {{ item.name }}
                   </v-list-item-title>
                 </v-list-item>
@@ -271,19 +273,19 @@
         <v-expansion-panel-text>
           <div>
             <div
-              v-for="block in models[activeModel].blocks" 
+              v-for="block in models[activeModel].blocks"
             >
               <v-checkbox
-                v-if="block.hasOwnProperty('show')" 
+                v-if="block.hasOwnProperty('show')"
                 v-model="block.show"
                 :label="block.name"
                 density="compact"
               ></v-checkbox>
             </div>
-          </div>  
+          </div>
         </v-expansion-panel-text>
       </v-expansion-panel>
-      
+
       <v-expansion-panel
         v-if="!(models[activeModel].modelParams.type && ['dataframe'].includes(models[activeModel].modelParams.type))"
       >
@@ -302,7 +304,7 @@
               outlined
               density="compact"
             ></v-select>
-            
+
             <!-- Number of chains -->
             <v-text-field
               v-if="!['deterministic', 'smt'].includes(models[activeModel].modelParams.method)"
@@ -313,7 +315,7 @@
               outlined
               density="compact"
             ></v-text-field>
-            
+
             <!-- Simulation settings -->
             <!-- Method parameters -->
             <div
@@ -322,7 +324,7 @@
               :key="param"
             >
               <!-- Boolean -->
-              <v-checkbox 
+              <v-checkbox
                 :label="param"
                 v-model="models[activeModel].methodParams[param]"
                 v-if="paramOptions.type === 'boolean'"
@@ -348,7 +350,7 @@
                 density="compact"
               ></v-select>
             </div>
-          </div>  
+          </div>
         </v-expansion-panel-text>
       </v-expansion-panel>
 
@@ -359,15 +361,15 @@
     <v-container style="opacity: 0.4">
       <v-row justify="center">
         <v-col cols="auto">
-          <v-btn 
-            @click="minimizeAllBlocks" 
+          <v-btn
+            @click="minimizeAllBlocks"
             density="compact"
           >
             <v-icon>mdi-content-copy</v-icon>
           </v-btn>
             </v-col>
             <v-col cols="auto">
-          <v-btn 
+          <v-btn
             @click="maximizeAllBlocks"
             density="compact"
           >
@@ -375,23 +377,23 @@
           </v-btn>
         </v-col>
       </v-row>
-    </v-container> 
+    </v-container>
     -->
 
     <!-- Hide / Show all blocks-->
-    <!-- 
+    <!--
     <v-container style="opacity: 0.4" v-if="models[activeModel]?.blocks?.length">
       <v-row justify="center">
         <v-col cols="auto">
-      <v-btn 
-        @click="minimizeAllBlocks" 
+      <v-btn
+        @click="minimizeAllBlocks"
         density="compact"
       >
         <v-icon>mdi-arrow-collapse-vertical</v-icon>
       </v-btn>
         </v-col>
         <v-col cols="auto">
-      <v-btn 
+      <v-btn
         @click="maximizeAllBlocks"
         density="compact"
       >
@@ -400,16 +402,16 @@
 
         </v-col>
       </v-row>
-    </v-container> 
+    </v-container>
     -->
 
-      <!-- 
+      <!--
     <draggable :list="test" item-key="id" group="blocks">
       <template #item="{element}">
-        <div> 
+        <div>
           {{ element.name }}
         </div>
-        <s-block 
+        <s-block
         :block="block"
         :block-index="blockIndex"
         @toggleBlock="toggleBlock"
@@ -420,12 +422,12 @@
     </draggable>
   -->
 
-    <!-- 
+    <!--
 
     <v-container>
       <v-row dense v-for="(block, blockIndex) in models[activeModel].blocks">
         <v-col cols="12">
-          <s-block 
+          <s-block
             :block="block"
             :block-index="blockIndex"
             @toggleBlock="toggleBlock"
@@ -457,7 +459,7 @@ export default {
   data: () => ({
     panel: [1],
     drag: false,
-    // drawerWidth: 300, 
+    // drawerWidth: 300,
     items: [
       {name: 'Input', code: 2},
       {name: 'Variable', code: 0},
@@ -479,7 +481,7 @@ export default {
     draggable,
   },
   props: [
-    'models', 
+    'models',
     'activeModel',
     'sidebarWidth'
   ],
