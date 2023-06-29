@@ -261,7 +261,7 @@ function blockToNode(block) {
   // In blocks models strict integer/float inputs can contain string names of other blocks
   // Baklava throws TypeError: intf.value.value.toFixed is not a function
 
-  // [Variable || Observer]
+  // [Variable || Observer] Distribution and its params
   if (block.typeCode === 0 || block.typeCode === 4) {
     // Distribution, Params
     if (typeof block.distribution !== 'undefined') {
@@ -279,12 +279,16 @@ function blockToNode(block) {
         }
       })
     }
-    // Shape
-    if (typeof block.dims !== 'undefined') {
-      node.inputs.dims = {
-        id: genId('i'),
-        value: parseInt(block.dims)
-      }
+  }
+
+  // [Variable] Shape is required
+  // If it's empty, the block to flow transition will fail
+  if (block.typeCode === 0) {
+    node.inputs.dims = {
+      id: genId('i'),
+      value: (typeof block.dims === 'undefined' || block.dims === '')
+        ? 1
+        : parseInt(block.dims),
     }
   }
 
