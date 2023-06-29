@@ -64,7 +64,7 @@ function flowToBlocks (flowInput, log) {
 
     // First deal with edge cases (Expressions, Variables, etc.)
     // For each input, remove it from the node and add it to the block
-    // But why are we removing the inputs? 
+    // But why are we removing the inputs?
     // -> Later we iterate over what's left
 
     // Case: Expression
@@ -74,7 +74,7 @@ function flowToBlocks (flowInput, log) {
         block.expressionType = 'Custom'
         block.params.expression = node.inputs.expression.value
         delete node.inputs.expression
-        // Here expression can have dynamic inputs 
+        // Here expression can have dynamic inputs
         // For example, expression: "x + y" has x and y as dynamic inputs with possibleconnections)
         // Those inputs can have values or connections
         Object.keys(node.inputs).forEach(inputName => {
@@ -106,7 +106,7 @@ function flowToBlocks (flowInput, log) {
             block.params[inputName] = connectionName
           }
           // 2. Input has a value and no incoming connections
-          else if (input.value !== undefined) {  
+          else if (input.value !== undefined) {
             block.params[inputName] = input.value
           }
           delete node.inputs[inputName]
@@ -127,7 +127,7 @@ function flowToBlocks (flowInput, log) {
           block.params[inputName] = connectionName
         }
         // 2. Input has a value and no incoming connections
-        else if (input.value !== undefined) {  
+        else if (input.value !== undefined) {
           block.params[inputName] = input.value
         }
       })
@@ -225,7 +225,7 @@ function addDynamicExpressionInputs(node, expression) {
 function blockToNode(block) {
   const blockClassName = blockClasses[block.typeCode].name
   let nodeType = blockClassName
-  
+
   // With expressions there's no 1-to-1 mapping between block type and node type
   // There's only one block class for expressions, but there are many expression node types
   let expressionGroup = null
@@ -237,7 +237,7 @@ function blockToNode(block) {
         return
       }
     })
-  } 
+  }
 
   const node = {
     id: genId('n'),
@@ -318,8 +318,8 @@ function blockToNode(block) {
   // [Data]
   if (block.typeCode === 2) {
     // Get data type and prepare value
-    const dataType = typeof block.dataType === 'string' && block.dataType.trim() !== '' 
-      ? block.dataType.trim() 
+    const dataType = typeof block.dataType === 'string' && block.dataType.trim() !== ''
+      ? block.dataType.trim()
       : 'integer'
     let value
     if (dataType === 'integer') {
@@ -330,7 +330,7 @@ function blockToNode(block) {
       value = block.value === 'true' || block.value === true
     } else {
       value = block.value + ''
-    } 
+    }
     // Add inputs
     node.inputs.dataType = {
       id: genId('i'),
@@ -340,7 +340,7 @@ function blockToNode(block) {
       id: genId('i'),
       value: value
     }
-  } 
+  }
 
   // [Accumulator]
   if (block.typeCode === 3) {
@@ -363,7 +363,7 @@ function blockToNode(block) {
       }
     })
   }
-    
+
   // `show` (for Variable, Expression, Accumulator)
   if (typeof block.show !== 'undefined' && [0, 1, 3].includes(block.typeCode)) {
     node.inputs.show = {
@@ -379,7 +379,7 @@ function blockToNode(block) {
       value: block.value || '',
     }
   }
-  
+
   // `value` (for Accumulator, Condition and Optimize)
   if (typeof block.value !== 'undefined' && [3, 5, 8].includes(block.typeCode)) {
     node.inputs.value = {
@@ -401,7 +401,7 @@ function blockToNode(block) {
 }
 
 function blocksToFlow (blocks, log) {
-    
+
     // log('[blocksToFlow] Positions before:', positions)
     // Scale and offset positions
     // // Create sorted list of unique x and y positions
@@ -422,7 +422,7 @@ function blocksToFlow (blocks, log) {
       outputs: [],
     }
 
-    // First pass: 
+    // First pass:
     // - create nodes from blocks (with possible string inputs)
     // - create map of block name -> output id
     const nodes = []
@@ -449,7 +449,7 @@ function blocksToFlow (blocks, log) {
       Object.keys(node.inputs).forEach(inputName => {
         const input = node.inputs[inputName]
         // Skip name input
-        if (inputName === 'name') return 
+        if (inputName === 'name') return
         // Skip if input is not a string (here's it's not node type, but input value type)
         if (typeof input.value !== 'string') return
         if (input.value === '') return
@@ -476,7 +476,7 @@ function blocksToFlow (blocks, log) {
         delete node.inputs[inputName].type
       })
     })
-          
+
     graph.nodes = nodes
     graph.connections = connections
 
