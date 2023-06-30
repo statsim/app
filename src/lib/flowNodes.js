@@ -1,13 +1,13 @@
-import { 
-  defineNode, 
+import {
+  defineNode,
   defineDynamicNode,
   CheckboxInterface,
   IntegerInterface,
-  NodeInterface, 
+  NodeInterface,
   TextInterface,
   TextInputInterface,
-  NumberInterface, 
-  SelectInterface 
+  NumberInterface,
+  SelectInterface
 } from 'baklavajs';
 
 const esprima = require('esprima')
@@ -24,8 +24,8 @@ const DataNode = defineDynamicNode({
   inputs: {
     name: () => new TextInputInterface('Name', '').setPort(false),
     dataType: () => new SelectInterface(
-      'Data type', 
-      'integer', 
+      'Data type',
+      'integer',
       ['auto', 'proxy', 'boolean', 'integer', 'float', 'string', 'category', 'array', 'vector', 'tensor']
     ).setPort(false),
   },
@@ -65,8 +65,8 @@ const VariableNode = defineDynamicNode({
     show: () => new CheckboxInterface('Show in results', true).setPort(false),
     name: () => new TextInputInterface('Name', '').setPort(false),
     operation: () => new SelectInterface(
-      'Distribution', 
-      'None', 
+      'Distribution',
+      'None',
       ['None'].concat(Object.keys(distributions))
     ).setPort(false),
     dims: () => new IntegerInterface('Shape', 1),
@@ -109,8 +109,8 @@ const ObserverNode = defineDynamicNode({
   inputs: {
     value: () => new TextInputInterface('Observed data', ''),
     operation: () => new SelectInterface(
-      'Distribution', 
-      'Gaussian', 
+      'Distribution',
+      'Gaussian',
       Object.keys(distributions)
     ).setPort(false),
   },
@@ -142,8 +142,8 @@ const ExpressionNode = defineDynamicNode({
     inputs: {
         name: () => new TextInputInterface('Name', '').setPort(false),
         operation: () => new SelectInterface(
-          'Expression type', 
-          Object.keys(expressions)[0], 
+          'Expression type',
+          Object.keys(expressions)[0],
           Object.keys(expressions)
         ).setPort(false),
     },
@@ -217,8 +217,8 @@ function defineExpressionNode(expressionType, expressions) {
       show: () => new CheckboxInterface('Show in results', true).setPort(false),
       name: () => new TextInputInterface('Name', '').setPort(false),
       operation: () => new SelectInterface(
-        'Expression type', 
-        Object.keys(expressions)[0], 
+        'Expression type',
+        Object.keys(expressions)[0],
         Object.keys(expressions)
       ).setPort(false),
     },
@@ -273,8 +273,8 @@ const AccumulatorNode = defineDynamicNode({
     max: () => new TextInputInterface('Max', ''),
   },
   onUpdate({ increment }) {
-    return { 
-      inputs: getInputsFromExpression(increment) 
+    return {
+      inputs: getInputsFromExpression(increment)
     }
   },
   outputs: {
@@ -300,10 +300,10 @@ const ConditionNode = defineDynamicNode({
 const OptimizeNode = defineDynamicNode({
   type: 'Optimize',
   inputs: {
-    operation: () => new SelectInterface(
-      'Optimization type', 
-      'Minimize', 
-      ['Maximize', 'Minimize']
+    optimizationType: () => new SelectInterface(
+      'Optimization type',
+      'minimize',
+      ['maximize', 'minimize']
     ).setPort(false),
     value: () => new TextInputInterface('Value', 'Input').setPort(false),
   },
@@ -316,7 +316,7 @@ const OptimizeNode = defineDynamicNode({
 })
 
 export default [
-  DataNode, 
+  DataNode,
   VariableNode,
   ExpressionCustomNode,
   ExpressionMathNode,
