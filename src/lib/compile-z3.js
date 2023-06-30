@@ -1,4 +1,6 @@
 const esprima = require('esprima')
+const { data } = require('vis-network')
+const log = (...args) => console.log('[Z3 compiler]', ...args)
 
 function operatorToSMT (op) {
   const map = {
@@ -12,35 +14,87 @@ function operatorToSMT (op) {
   return Object.keys(map).includes(op) ? map[op] : op
 }
 
-function toSMT_old (js) {
-  const p = esprima.parseScript(js).body[0]
-
-  function proc (exp) {
-    console.log('toSMT:', exp)
-
-    let lr = {
-      'left': null,
-      'right': null
-    }
-    Object.keys(lr).forEach(k => {
-      if (exp[k].type === 'Identifier') {
-        lr[k] = exp[k].name
-      } else if (exp[k].type === 'Literal') {
-        lr[k] = exp[k].value + ''
+function generateExpression(expressionType, params, dataType) {
+  switch (expressionType) {
+    case 'If..Else':
+      return `${dataType} (ite ${params.condition} ${params.true} ${params.false})`;
+    case 'Length':
+      return `(str.len ${params.input})`;
+    case 'Sum':
+    case 'Reduce sum':
+      return `(sum ${params.input})`;
+    case 'Product':
+    case 'Reduce product':
+      return `(product ${params.input})`;
+    case 'Mean':
+    case 'Reduce mean':
+      return `Real (/ (sum ${params.input}) (str.len ${params.input}))`;
+    case 'Slice':
+      if (params.end && params.end.trim() !== '') {
+        return `(str.substr ${params.input} ${params.start} ${params.end})`;
       } else {
-        lr[k] = proc(exp[k])
+        return `(str.substr ${params.input} ${params.start})`;
       }
-    })
-    return '(' + operatorToSMT(exp.operator) + ' ' + lr.left + ' ' + lr.right + ')'
+    case 'Add':
+      return `${dataType} (+ ${params.a} ${params.b})`;
+    case 'Subtract':
+      return `${dataType} (- ${params.a} ${params.b})`;
+    case 'Multiply':
+      return `${dataType} (* ${params.a} ${params.b})`;
+    case 'Divide':
+      return `${dataType} (/ ${params.a} ${params.b})`;
+    case 'Power':
+      return `${dataType} (math.pow ${params.a} ${params.b})`;
+    case 'Log':
+      return `Real (math.log ${params.a})`;
+    case 'Exp':
+      return `Real (math.exp ${params.a})`;
+    case 'Sqrt':
+      return `${dataType} (math.sqrt ${params.a})`;
+    case 'Abs':
+      return `${dataType} (math.abs ${params.a})`;
+    case 'Sin':
+      return `Real (math.sin ${params.a})`;
+    case 'Cos':
+      return `Real (math.cos ${params.a})`;
+    case 'Tan':
+      return `Real (math.tan ${params.a})`;
+    case 'Ceil':
+      return `Int (math.ceil ${params.a})`;
+    case 'Floor':
+      return `Int (math.floor ${params.a})`;
+    case 'Round':
+      return `Int (math.round ${params.a})`;
+    case 'Min':
+      return `${dataType} (math.min ${params.a} ${params.b})`;
+    case 'Max':
+      return `${dataType} (math.max ${params.a} ${params.b})`;
+    case 'And':
+      return `Bool (and ${params.a} ${params.b})`;
+    case 'Or':
+      return `Bool (or ${params.a} ${params.b})`;
+    case 'Not':
+      return `Bool (not ${params.a})`;
+    case 'Equal':
+      return `Bool (= ${params.a} ${params.b})`;
+    case 'Not equal':
+      return `Bool (not (= ${params.a} ${params.b}))`;
+    case 'Greater than':
+      return `Bool (> ${params.a} ${params.b})`;
+    case 'Greater than or equal':
+      return `Bool (>= ${params.a} ${params.b})`;
+    case 'Less than':
+      return `Bool (< ${params.a} ${params.b})`;
+    case 'Less than or equal':
+      return `Bool (<= ${params.a} ${params.b})`;
   }
-
-  return proc(p.expression)
+  throw new Error(`Z3 compiler: Expression type ${expressionType} is not supported`)
 }
 
 function toSMT (js) {
   const p = esprima.parseScript(js).body[0]
   function proc (exp) {
-    console.log('toSMT:', exp)
+    log('Converting to SMT:', exp)
     // Convert a != b to !(a == b)
     switch (exp.type) {
       case 'CallExpression':
@@ -105,9 +159,8 @@ function genArrayNames (name, dims) {
 }
 
 module.exports = function (models, activeModel) {
-  console.log(`Mr. Compiler: Oh, models again! Active model is ${activeModel} of ${models.length}`)
   const model = models[activeModel]
-  console.log(model)
+  log(`Processing model: ${activeModel} of ${models.length} (${model.modelParams.name})`)
 
   let code = ''
 
@@ -119,19 +172,47 @@ module.exports = function (models, activeModel) {
 
   // Iterate over all blocks of the model
   model.blocks.forEach(block => {
-    const dataType = Object.keys(dataTypes).includes(block.dataType) ? dataTypes[block.dataType] : 'Int'
-    if ((block.typeCode === 1) && block.name.length) {
+    let dataType = Object.keys(dataTypes).includes(block.dataType) ? dataTypes[block.dataType] : 'Int'
+    if ((block.typeCode === 0) && block.name.length) {
+      // Variable
+      let min
+      let max
+      // Use provided distributions to infer min/max/dataType
+      if (block.distribution && block.distribution.toLowerCase() === 'uniform') {
+        min = block.params.a
+        max = block.params.b
+        dataType = 'Real'
+      } else if (block.distribution && block.distribution.toLowerCase() === 'randominterger') {
+        min = 0
+        max = block.params.n
+        dataType = 'Int'
+      }
+      if (block.dims && block.dims.length && block.dims !== '1') {
+        // Create array of unknown variables (pass '' as the value)
+        genArrayNames(block.name, block.dims).forEach((name, ni) => {
+          code += dataCode(name, '', dataType, min, max)
+        })
+      } else {
+        // Create scalar unknown variable (pass '' as the value)
+        code += dataCode(block.name, '', dataType, min, max)
+      }
+    } else if ((block.typeCode === 1) && block.name.length) {
       // Expression
-      if (typeof block.expressionType === 'string' && block.expressionType.toLowerCase() === 'custom') {
+      // Skip the block if no expressionType is provided
+      if (!block.expressionType) {
+        return
+      }
+      if (block.expressionType.toLowerCase() === 'custom') {
         // Expression: Custom
         if (typeof block.params.expression !== 'undefined') {
           code += `(define-fun ${block.name} () ${dataType} ${toSMT(block.params.expression)})\n`
         } else {
-          throw new Error(`Z3 compiler: Expression ${block.name} is not defined in params.expressio`)
+          throw new Error(`Expression ${block.name} is not defined in params.expression`)
         }
       } else {
         // Expression: Other
-        throw new Error(`Z3 compiler: Expression type ${block.expressionType} is not supported`)
+        // ${dataType} is returned as a string by generateExpression (e.g. `Bool (< x y)`)
+        code += `(define-fun ${block.name} () ${generateExpression(block.expressionType, block.params, dataType)})\n`
       }
     } else if ((block.typeCode === 2) && block.name.length) {
       // Data block
