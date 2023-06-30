@@ -7,7 +7,7 @@
     <title>StatSim | Statistical Simulation and Inference</title>
     <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
 
-    
+
     <!--
     <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic">
     <link rel="stylesheet" href="css/vis-network.min.css" media="screen">
@@ -15,11 +15,11 @@
     <link rel="stylesheet" href="css/vue2-perfect-scrollbar.min.css" media="screen">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vuetify@3.3.1/dist/vuetify.min.css" media="screen">
   -->
-  
+
     <link rel="stylesheet" href="css/icons.css" media="screen">
     <link rel="stylesheet" href="css/handsontable.full.min.css" media="screen">
     <link rel="stylesheet" href="css/roboto.css" media="screen">
-    
+
     <link rel="icon" type="image/png" sizes="192x192"  href="images/android-icon-192x192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96x96.png">
@@ -62,14 +62,14 @@
 
     <script charset="utf-8">
       if ('serviceWorker' in navigator) {
-        console.log('Index: registering service worker')
+        console.log('[Index] Registering service worker...')
         navigator.serviceWorker.register('sw.js').then(function() {
-          console.log('Index: service worker registration complete')
+          console.log('[Index] Service worker registration completed')
         }, function() {
-          console.log('Index: service worker registration failure')
+          console.log('[Index] Service worker registration failed')
         });
       } else {
-        console.log('Index: service worker is not supported')
+        console.log('[Index] Service worker is not supported')
       }
 
       /*

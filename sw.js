@@ -1,13 +1,16 @@
-const version = 'v0.11.0e'
+const version = 'v0.13.3e'
 const assets = [
   '/app/',
-  '/app/dist/density-plot.js',
   '/app/dist/bundle.js',
-  '/app/dist/webppl.min.js',
-  '/app/dist/worker.js',
-  '/app/css/vue-material.css',
+  'https://cdn.jsdelivr.net/npm/@statsim/app@latest/dist/bundle.js',
+  'https://unpkg.com/@statsim/app@latest/dist/bundle.js',
+  '/app/worker-wppl.js',
+  '/app/worker-z3.js',
+  '/app/assets/density-plot.js',
+  '/app/assets/webppl.min.js',
+  '/app/assets/z3w.js',
+  '/app/assets/z3w.wasm',
   '/app/css/handsontable.full.min.css',
-  '/app/css/vue2-perfect-scrollbar.min.css',
   '/app/css/roboto.css',
   '/app/css/icons.css',
   '/app/css/vis-network.min.css',
@@ -49,10 +52,11 @@ const assets = [
   '/app/fonts/Roboto-Regular.woff2'
 ]
 
-console.log('Service worker: version', version)
+const log = (...args) => console.log('[Service worker]', ...args)
+log('Version', version)
 
 self.addEventListener('install', function (event) {
-  console.log('Service worker: Installation started')
+  log('Installation started')
   event.waitUntil(
     caches
       .open(version)
@@ -60,67 +64,80 @@ self.addEventListener('install', function (event) {
         return cache.addAll(assets)
       })
       .then(function () {
-        console.log(`Service worker: Installation completed. Cached ${assets.length} assets`)
+        log(`Installation completed. Cached ${assets.length} assets`)
       })
   )
 })
 
 self.addEventListener('activate', function (event) {
-  console.log('Service worker: Activation started')
+  log('Activation started')
   event.waitUntil(
     caches
       .keys()
       .then(function (keys) {
-        console.log('Service worker: Caches', keys)
+        log('Caches:', keys)
         return Promise.all(
           keys
             .filter(function (key) {
               return !key.startsWith(version)
             })
             .map(function (key) {
-              console.log('Service worker: Remove cache', key)
+              log('Remove cache:', key)
               return caches.delete(key)
             })
         )
       })
       .then(function () {
-        console.log('Service worker: Activation completed')
+        log('Activation completed!')
       })
   )
 })
 
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') {
-    console.log('Service worker: fetch event ignored', event.request.method, event.request.url)
+    log('Fetch event ignored', event.request.method, event.request.url)
     return
   }
   event.respondWith(
     caches
       .match(event.request)
       .then(function (cached) {
-        const networked = fetch(event.request)
-          .then(fetchedFromNetwork, unableToResolve)
-          .catch(unableToResolve)
 
-        console.log('Service worker: fetch result ', cached ? '(cached)' : '(network)', event.request.url)
-        return cached || networked
+        // First try network fetch, then cache if failed
+        let networked = fetch(event.request)
+          .then(fetchedFromNetwork, loadFromCache)
+          .catch(loadFromCache)
+
+        return networked
+
+        // // First try cache, then network (no update)
+        // if (cached) {
+        //   log('Fetch result: (🟡 cached)', event.request.url)
+        //   return cached
+        // } else {
+        //   // If not in cache, try network
+        //   log('Fetching from network...')
+        //   return networked = fetch(event.request)
+        //     .then(fetchedFromNetwork, unableToResolve)
+        //     .catch(unableToResolve)
+        // }
 
         function fetchedFromNetwork (response) {
           const cacheCopy = response.clone()
-          // console.log('Service worker: fetch response from network', event.request.url)
+          log('Fetch result: (🟢 network)', event.request.url)
           caches
             .open(version)
             .then(function add (cache) {
               cache.put(event.request, cacheCopy)
             })
             .then(function () {
-              // console.log('Service worker: fetch response stored in cache', event.request.url)
+              // log('Store in cache:', event.request.url)
             })
           return response
         }
 
         function unableToResolve () {
-          console.log('Service worker: fetch request failed in both cache and network')
+          log('Fetch result: (🔴 failed)', event.request.url)
           return new Response('<h1>StatSim: Service Unavailable</h1><p>The page is not cached. Check your network connection.</p>', {
             status: 503,
             statusText: 'Service Unavailable',
@@ -128,6 +145,15 @@ self.addEventListener('fetch', function (event) {
               'Content-Type': 'text/html'
             })
           })
+        }
+
+        function loadFromCache () {
+          if (cached) {
+            log('Fetch result: (🟡 cached)', event.request.url)
+            return cached
+          } else {
+            return unableToResolve()
+          }
         }
       }) // *caches.match.then
   ) // *respondwith
