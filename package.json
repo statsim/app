@@ -1,6 +1,6 @@
 {
   "name": "@statsim/app",
-  "version": "0.13.2",
+  "version": "0.13.3",
   "description": "Statistical simulations and bayesian inference in the browser",
   "main": "electron.js",
   "repository": {
