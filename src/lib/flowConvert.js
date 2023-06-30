@@ -368,6 +368,15 @@ function blockToNode(block) {
     })
   }
 
+  // [Optimize]
+  if (block.typeCode === 8) {
+    node.inputs['optimizationType'] = {
+      id: genId('i'),
+      value: block['optimizationType'] || 'minimize',
+      type: 'string'
+    }
+  }
+
   // `show` (for Variable, Expression, Accumulator)
   if (typeof block.show !== 'undefined' && [0, 1, 3].includes(block.typeCode)) {
     node.inputs.show = {

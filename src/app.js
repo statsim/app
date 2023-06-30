@@ -133,6 +133,8 @@ function init (files, modelId) {
 let theme // Theme object
 let timeOutAutorun // Timeout for autorun updates
 
+let flowLoaded = false // Flag to check if flow is loaded
+
 const params = {
   /*
     COMPONENTS
@@ -241,6 +243,7 @@ const params = {
 
     // Baklava
     this.baklava = useBaklava();
+    // this.baklava.settings.enableMinimap = true
     nodes.forEach(node => {
       this.baklava.editor.registerNodeType(node)
     })
@@ -987,6 +990,12 @@ const params = {
         }
         // Enable preview when switching to flow
         this.preview = true
+
+        if (!flowLoaded) {
+          this.log('[switchModel] Loading flow for the first time...')
+          this.baklavaFit(targetModel.blocks.length)
+        }
+        flowLoaded = true
       }
 
       // Change activeModel index to target model
@@ -1197,9 +1206,23 @@ const params = {
           this.log
         )
         this.baklava.editor.load(flow)
+
+        if (!flowLoaded) {
+          this.log('[toggleFlow] Loading flow for the first time...')
+          this.baklavaFit(this.models[this.activeModel].blocks.length)
+        }
+        flowLoaded = true
+
         model.modelParams.type = 'flow'
         this.preview = true
       }
+    },
+    baklavaFit (nBlocks) {
+      this.log('[baklavaFit] Fitting flow to blocks: ' + nBlocks)
+      const scaling = Math.max(0.2, 1 - nBlocks / 15)
+      this.baklava.editor._graph.scaling = scaling
+      this.baklava.editor._graph.panning.x = 450 / scaling
+      this.baklava.editor._graph.panning.y = 50 / scaling
     },
     getPositions (hierarchical=false) {
       const positions = this.$refs.network.getPositions(hierarchical) // -> Object
